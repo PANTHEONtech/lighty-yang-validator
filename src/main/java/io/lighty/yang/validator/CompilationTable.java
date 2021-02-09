@@ -113,7 +113,7 @@ final class CompilationTable {
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd@HH:mm:ss");
             Date date = new Date(System.currentTimeMillis());
             String outputFile = outputDir + "/" + "compilation_results" + formatter.format(date) + ".html";
-            try (FileWriter writer = new FileWriter(outputFile)) {
+            try (FileWriter writer = new FileWriter(outputFile,  StandardCharsets.UTF_8)) {
                 text = Resources.toString(url, StandardCharsets.UTF_8);
                 text = text.replace("<DIRECTORY>", yangDirectory);
                 text = text.replace("<YANGTOOLS_VERSION>", yangtoolsVersion);

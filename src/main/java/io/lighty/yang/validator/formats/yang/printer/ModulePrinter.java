@@ -10,6 +10,7 @@ package io.lighty.yang.validator.formats.yang.printer;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,7 +65,9 @@ public class ModulePrinter {
     public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
                          final QNameModule moduleName, final OutputStream out,
                          final Set<TypeDefinition> usedTypes, final Set<String> usedImports) {
-        this(schemaTree, schemaContext, moduleName, new IndentingPrinter(new PrintStream(out)), usedTypes, usedImports);
+        this(schemaTree, schemaContext, moduleName,
+             new IndentingPrinter(new PrintStream(out, false, Charset.defaultCharset())),
+             usedTypes, usedImports);
     }
 
     public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
@@ -105,7 +108,6 @@ public class ModulePrinter {
     private void printAugmentations() {
         for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
             boolean printOpeningStatement = true;
-            final Set<String> uses = new HashSet<>();
             for (SchemaTree st : schemaTree) {
                 if (st.isAugmenting()
                         && st.getSchemaNode().getPath().getParent()
@@ -158,13 +160,18 @@ public class ModulePrinter {
             for (GroupingDefinition grouping : groupingDefinitions) {
                 final Optional<DataSchemaNode> dataChildByName = grouping.findDataChildByName(schemaNode.getQName());
                 if (dataChildByName.isPresent()) {
+                    DataSchemaNode dataSchemaNode = dataChildByName.get();
                     if (((DerivableSchemaNode) schemaNode).getOriginal().isPresent()) {
                         if (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath()
-                                .equals(dataChildByName.get().getPath())) {
+                                .equals(dataSchemaNode.getPath())) {
                             continue;
                         }
                     }
-                    final Collection collection = ((EffectiveStatement) dataChildByName.get()).effectiveSubstatements();
+
+                    if (!(dataSchemaNode instanceof EffectiveStatement || schemaNode instanceof EffectiveStatement)) {
+                        continue;
+                    }
+                    final Collection collection = ((EffectiveStatement) dataSchemaNode).effectiveSubstatements();
                     if (((EffectiveStatement) schemaNode).effectiveSubstatements().size() == collection.size()) {
                         boolean allSubstatementFound = true;
                         for (Object compare : ((EffectiveStatement) schemaNode).effectiveSubstatements()) {

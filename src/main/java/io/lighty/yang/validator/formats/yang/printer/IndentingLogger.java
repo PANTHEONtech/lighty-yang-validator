@@ -19,17 +19,15 @@ class IndentingLogger extends Indenting {
 
 
     void println(int level, final String name, final String text, final boolean separately) {
-        final String indent = indent(level, name, text, separately);
-        this.log.info(indent);
+        this.log.info("Indent: {}", indent(level, name, text, separately));
     }
 
     void println(final int level, final String text) {
-        final String indent = indent(level, "", text, false);
-        this.log.info(indent);
+        this.log.info("Indent: {}", indent(level, "", text, false));
     }
 
     void println(final String text) {
-        this.log.info(text);
+        this.log.info("Text: {}", text);
     }
 }
 

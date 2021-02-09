@@ -34,7 +34,7 @@ public class LyvParameters {
 
     public LyvParameters(final Format formatter, final String[] args) {
         this.formatter = formatter;
-        this.args = args;
+        this.args = Arrays.copyOf(args, args.length);
     }
 
     public Namespace parseArguments() {

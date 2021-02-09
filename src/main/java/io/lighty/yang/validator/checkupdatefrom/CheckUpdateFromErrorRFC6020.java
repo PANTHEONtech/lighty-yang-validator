@@ -160,6 +160,7 @@ class CheckUpdateFromErrorRFC6020 {
     }
 
     void print(int order) {
-        LOG.error("{} {}: {}{}{}{}\n", order, name, PRETEXT, description, newInformation, oldInformation);
+        LOG.error("order: {}, name: {}, pretext: {}, description: {}, newInformation: {}, oldInformation: {}\n",
+                  order, name, PRETEXT, description, newInformation, oldInformation);
     }
 }

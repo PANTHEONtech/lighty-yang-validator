@@ -40,9 +40,12 @@ import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Tree extends FormatPlugin {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Tree.class);
     private static final String HELP_NAME = "tree";
     private static final String HELP_DESCRIPTION = "Prints out tree of the modules";
     private static final String MODULE = "module: ";
@@ -56,10 +59,6 @@ public class Tree extends FormatPlugin {
     private Module usedModule = null;
     private int treeDepth;
     private int lineLength;
-
-    public Tree() {
-        super(Tree.class);
-    }
 
     @Override
     void init(final SchemaContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
@@ -89,7 +88,7 @@ public class Tree extends FormatPlugin {
                 }
             }
             final String firstLine = MODULE + usedModule.getName();
-            log.info(firstLine.substring(0, min(firstLine.length(), lineLength)));
+            LOG.info("Module substring: {}", firstLine.substring(0, min(firstLine.length(), lineLength)));
             final List<Integer> removeChoiceQnames = new ArrayList<>();
             int rootNodes = 0;
             for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
@@ -150,7 +149,7 @@ public class Tree extends FormatPlugin {
                     pathBuilder.append(qname.getLocalName());
                 }
                 final String augmentText = AUGMENT + pathBuilder.append(COLON).toString();
-                log.info(augmentText.substring(0, min(augmentText.length(), lineLength)));
+                LOG.info("Augmentation substring: {}", augmentText.substring(0, min(augmentText.length(), lineLength)));
                 int augmentationNodes = st.getValue().size();
                 for (final SchemaTree value : st.getValue()) {
                     DataSchemaNode node = value.getSchemaNode();
@@ -168,7 +167,7 @@ public class Tree extends FormatPlugin {
             // rpcs
             final Iterator<? extends RpcDefinition> rpcs = usedModule.getRpcs().iterator();
             if (rpcs.hasNext()) {
-                log.info(RPCS.substring(0, min(RPCS.length(), lineLength)));
+                LOG.info("RPCS substring : {}", RPCS.substring(0, min(RPCS.length(), lineLength)));
             }
             while (rpcs.hasNext()) {
                 final RpcDefinition node = rpcs.next();
@@ -202,7 +201,8 @@ public class Tree extends FormatPlugin {
             // Notifications
             final Iterator<? extends NotificationDefinition> notifications = usedModule.getNotifications().iterator();
             if (notifications.hasNext()) {
-                log.info(NOTIFICATION.substring(0, min(NOTIFICATION.length(), lineLength)));
+                LOG.info("Notification substring: {}",
+                        NOTIFICATION.substring(0, min(NOTIFICATION.length(), lineLength)));
             }
             while (notifications.hasNext()) {
                 final NotificationDefinition node = notifications.next();
@@ -413,12 +413,12 @@ public class Tree extends FormatPlugin {
     private void printLines(final List<Line> lines) {
         for (Line l : lines) {
             final String linesText = l.toString();
-            log.info(linesText.substring(0, min(linesText.length(), lineLength)));
+            LOG.info("Lines substring: {}", linesText.substring(0, min(linesText.length(), lineLength)));
         }
     }
 
     private void printHelp() {
-        log.info(
+        LOG.info(
                 "tree - tree is printed in following format <status>--<flags> <name><opts> <type> <if-features>\n"
                         + "\n"
                         + " <status> is one of:\n"

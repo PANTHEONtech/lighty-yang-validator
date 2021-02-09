@@ -150,13 +150,21 @@ final class YangContextFactory {
         if (recursiveSearch) {
             return iterateYangFilesRecursively(testSourcesDir);
         } else {
-            return Arrays.asList(testSourcesDir.listFiles(YANG_FILE_FILTER));
+            File[] files = testSourcesDir.listFiles(YANG_FILE_FILTER);
+            if (files == null) {
+                return null;
+            }
+            return Arrays.asList(files);
         }
     }
 
     private static List<File> iterateYangFilesRecursively(final File dir) {
         final List<File> yangFiles = new ArrayList<>();
-        for (final File file : dir.listFiles()) {
+        File[] files = dir.listFiles();
+        if (files == null) {
+            return null;
+        }
+        for (final File file : files) {
             if (file.isDirectory()) {
                 yangFiles.addAll(iterateYangFilesRecursively(file));
             } else if (file.isFile()

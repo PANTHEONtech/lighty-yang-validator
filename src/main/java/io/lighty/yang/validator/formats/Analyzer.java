@@ -15,16 +15,15 @@ import java.util.Optional;
 import java.util.TreeMap;
 import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
 import org.opendaylight.yangtools.yang.parser.stmt.reactor.EffectiveSchemaContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Analyzer extends FormatPlugin {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Analyzer.class);
     private static final String HELP_NAME = "analyze";
     private static final String HELP_DESCRIPTION = "return count of each keyword";
     private final Map<String, Integer> counter = new HashMap<>();
-
-    public Analyzer() {
-        super(Analyzer.class);
-    }
 
     @Override
     void emitFormat() {
@@ -37,7 +36,7 @@ public class Analyzer extends FormatPlugin {
 
     private void printOut() {
         for (Map.Entry<String, Integer> entry : new TreeMap<>(this.counter).entrySet()) {
-            log.info(String.format("%s: %d", entry.getKey(), entry.getValue()));
+            LOG.info("key: {}, value: {}", entry.getKey(), entry.getValue());
         }
     }
 

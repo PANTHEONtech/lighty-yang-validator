@@ -12,27 +12,26 @@ import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NameRevision extends FormatPlugin {
 
+    private static final Logger LOG = LoggerFactory.getLogger(NameRevision.class);
     private static final String HELP_NAME = "name-revision";
     private static final String HELP_DESCRIPTION = "return file name in a <name>@<revision> format";
     private static final String ET = "@";
-
-    public NameRevision() {
-        super(NameRevision.class);
-    }
 
     @Override
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
             final Optional<Revision> revision = module.getRevision();
-            String nameRevision = module.getName();
+            String moduleName = module.getName();
             if (revision.isPresent()) {
-                nameRevision += ET + revision.get().toString();
+                moduleName += ET + revision.get().toString();
             }
-            log.info(nameRevision);
+            LOG.info("Module name: {}", moduleName);
         }
     }
 
