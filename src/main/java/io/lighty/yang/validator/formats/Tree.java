@@ -9,6 +9,7 @@ package io.lighty.yang.validator.formats;
 
 import static java.lang.Math.min;
 
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.simplify.SchemaTree;
@@ -43,6 +44,7 @@ import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class Tree extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(Tree.class);
@@ -88,7 +90,7 @@ public class Tree extends FormatPlugin {
                 }
             }
             final String firstLine = MODULE + usedModule.getName();
-            LOG.info("Module substring: {}", firstLine.substring(0, min(firstLine.length(), lineLength)));
+            LOG.info(firstLine.substring(0, min(firstLine.length(), lineLength)));
             final List<Integer> removeChoiceQnames = new ArrayList<>();
             int rootNodes = 0;
             for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
@@ -149,7 +151,7 @@ public class Tree extends FormatPlugin {
                     pathBuilder.append(qname.getLocalName());
                 }
                 final String augmentText = AUGMENT + pathBuilder.append(COLON).toString();
-                LOG.info("Augmentation substring: {}", augmentText.substring(0, min(augmentText.length(), lineLength)));
+                LOG.info(augmentText.substring(0, min(augmentText.length(), lineLength)));
                 int augmentationNodes = st.getValue().size();
                 for (final SchemaTree value : st.getValue()) {
                     DataSchemaNode node = value.getSchemaNode();
@@ -167,7 +169,7 @@ public class Tree extends FormatPlugin {
             // rpcs
             final Iterator<? extends RpcDefinition> rpcs = usedModule.getRpcs().iterator();
             if (rpcs.hasNext()) {
-                LOG.info("RPCS substring : {}", RPCS.substring(0, min(RPCS.length(), lineLength)));
+                LOG.info(RPCS.substring(0, min(RPCS.length(), lineLength)));
             }
             while (rpcs.hasNext()) {
                 final RpcDefinition node = rpcs.next();
@@ -201,8 +203,7 @@ public class Tree extends FormatPlugin {
             // Notifications
             final Iterator<? extends NotificationDefinition> notifications = usedModule.getNotifications().iterator();
             if (notifications.hasNext()) {
-                LOG.info("Notification substring: {}",
-                        NOTIFICATION.substring(0, min(NOTIFICATION.length(), lineLength)));
+                LOG.info(NOTIFICATION.substring(0, min(NOTIFICATION.length(), lineLength)));
             }
             while (notifications.hasNext()) {
                 final NotificationDefinition node = notifications.next();
@@ -413,7 +414,7 @@ public class Tree extends FormatPlugin {
     private void printLines(final List<Line> lines) {
         for (Line l : lines) {
             final String linesText = l.toString();
-            LOG.info("Lines substring: {}", linesText.substring(0, min(linesText.length(), lineLength)));
+            LOG.info(linesText.substring(0, min(linesText.length(), lineLength)));
         }
     }
 

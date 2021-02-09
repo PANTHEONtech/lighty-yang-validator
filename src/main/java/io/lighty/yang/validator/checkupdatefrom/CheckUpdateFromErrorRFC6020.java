@@ -7,18 +7,19 @@
  */
 package io.lighty.yang.validator.checkupdatefrom;
 
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings({"SLF4J_FORMAT_SHOULD_BE_CONST", "SLF4J_SIGN_ONLY_FORMAT"})
 class CheckUpdateFromErrorRFC6020 {
 
     private static final String PRETEXT = "According to RFC 6020 ";
+    private static final Logger LOG = LoggerFactory.getLogger(CheckUpdateFromErrorRFC6020.class);
     private final String name;
     private final String description;
     private String newInformation;
     private String oldInformation;
-
-    private static final Logger LOG = LoggerFactory.getLogger(CheckUpdateFromErrorRFC6020.class);
 
     static CheckUpdateFromErrorRFC6020 nameError() {
         return new CheckUpdateFromErrorRFC6020("name error",
@@ -160,7 +161,6 @@ class CheckUpdateFromErrorRFC6020 {
     }
 
     void print(int order) {
-        LOG.error("order: {}, name: {}, pretext: {}, description: {}, newInformation: {}, oldInformation: {}\n",
-                  order, name, PRETEXT, description, newInformation, oldInformation);
+        LOG.error("{} {}: {}{}{}{}\n", order, name, PRETEXT, description, newInformation, oldInformation);
     }
 }

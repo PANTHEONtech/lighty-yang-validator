@@ -7,6 +7,7 @@
  */
 package io.lighty.yang.validator.formats;
 
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import java.util.Collection;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import org.opendaylight.yangtools.yang.parser.stmt.reactor.EffectiveSchemaContex
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class Analyzer extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(Analyzer.class);
@@ -36,7 +38,7 @@ public class Analyzer extends FormatPlugin {
 
     private void printOut() {
         for (Map.Entry<String, Integer> entry : new TreeMap<>(this.counter).entrySet()) {
-            LOG.info("key: {}, value: {}", entry.getKey(), entry.getValue());
+            LOG.info(String.format("%s: %d", entry.getKey(), entry.getValue()));
         }
     }
 

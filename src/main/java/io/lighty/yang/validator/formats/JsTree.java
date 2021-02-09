@@ -9,6 +9,7 @@ package io.lighty.yang.validator.formats;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import java.io.IOException;
 import java.net.URI;
@@ -41,6 +42,7 @@ import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class JsTree extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsTree.class);
@@ -56,7 +58,7 @@ public class JsTree extends FormatPlugin {
             List<Line> lines = new ArrayList<>();
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
             final String headerText = prepareHeader(module);
-            LOG.info("Header text: {}",headerText);
+            LOG.info(headerText);
             for (Module m : this.schemaContext.getModules()) {
                 if (!m.getPrefix().equals(module.getPrefix())) {
                     namespacePrefix.put(m.getNamespace(), m.getPrefix());
@@ -74,7 +76,7 @@ public class JsTree extends FormatPlugin {
             }
             for (Line l : lines) {
                 final String linesText = l.toString();
-                LOG.info("Line text: {}", linesText);
+                LOG.info(linesText);
             }
             // augmentations
             lines = new ArrayList<>();
@@ -131,7 +133,7 @@ public class JsTree extends FormatPlugin {
                 }
                 for (Line line : lines) {
                     final String linesText = line.toString();
-                    LOG.info("Line text: {}", linesText);
+                    LOG.info(linesText);
                 }
                 lines = new ArrayList<>();
             }
@@ -170,7 +172,7 @@ public class JsTree extends FormatPlugin {
             }
             for (Line line : lines) {
                 final String linesText = line.toString();
-                LOG.info("Line text: {}", linesText);
+                LOG.info(linesText);
             }
             lines = new ArrayList<>();
             // Notifications
@@ -184,12 +186,12 @@ public class JsTree extends FormatPlugin {
             }
             for (Line line : lines) {
                 final String linesText = line.toString();
-                LOG.info("Line text: {}", linesText);
+                LOG.info(linesText);
             }
         }
         LOG.info("</table>");
         LOG.info("</div>");
-        LOG.info("JSON file: {}", loadJS());
+        LOG.info(loadJS());
         LOG.info("</body>");
         LOG.info("</html>");
     }

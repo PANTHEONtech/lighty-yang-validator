@@ -7,6 +7,7 @@
  */
 package io.lighty.yang.validator.formats;
 
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.DependConfiguration;
 import java.util.Collections;
@@ -22,6 +23,7 @@ import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class Depends extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(Depends.class);
@@ -68,7 +70,7 @@ public class Depends extends FormatPlugin {
                 dependantsBuilder.append(NON_RECURSIVE);
             }
             final String dependandsText = dependantsBuilder.toString();
-            LOG.info("dependants text: {}", dependandsText);
+            LOG.info(dependandsText);
         }
     }
 
