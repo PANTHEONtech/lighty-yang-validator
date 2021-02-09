@@ -2,7 +2,7 @@
 
 This tool validates YANG modules using the YANG-Tools parser. If there are any problems parsing the module, it will show the stacktrace with the problem, linking to the corresponding module.
 
-> This makes lighty YANG Validator **a must-have tool, when using [OpenDaylight](https://github.com/opendaylight).**
+> This makes lighty YANG Validator **a must-have tool, when using [OpenDaylight](https://github.com/opendaylight) or [lighty.io](https://github.com/PANTHEONtech/lighty).**
 
 [YANG Tools](https://github.com/opendaylight/yangtools) help parse YANG modules, represent the YANG model in Java and serialize / deserialize YANG model data. However, custom YANG module can contain improper data, which would result in an application failure. To avoid these situations, [PANTHEON.tech](https://pantheon.tech) engineers created the lighty YANG Validator.
 
