@@ -90,17 +90,17 @@ public class JsTree extends FormatPlugin {
                 while (nodes.hasNext()) {
                     removeChoiceQnames.clear();
                     final DataSchemaNode node = nodes.next();
-                    final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
+                    final ArrayList<QName> qnames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
                     Collection<? extends ActionDefinition> actions = new HashSet<>();
                     RpcInputOutput inputOutputOther = RpcInputOutput.OTHER;
-                    for (int i = 1; i <= qNames.size(); i++) {
-                        List<QName> qNamesCopy = new ArrayList<>(qNames);
-                        qNamesCopy = qNamesCopy.subList(0, i);
+                    for (int i = 1; i <= qnames.size(); i++) {
+                        List<QName> qnamesCopy = new ArrayList<>(qnames);
+                        qnamesCopy = qnamesCopy.subList(0, i);
                         if (!actions.isEmpty()) {
                             for (ActionDefinition action : actions) {
                                 if (action.getQName().getLocalName()
-                                        .equals(qNamesCopy.get(qNamesCopy.size() - 1).getLocalName())) {
-                                    if (INPUT.equals(qNames.get(i).getLocalName())) {
+                                        .equals(qnamesCopy.get(qnamesCopy.size() - 1).getLocalName())) {
+                                    if (INPUT.equals(qnames.get(i).getLocalName())) {
                                         inputOutputOther = RpcInputOutput.INPUT;
                                     } else {
                                         inputOutputOther = RpcInputOutput.OUTPUT;
@@ -111,14 +111,14 @@ public class JsTree extends FormatPlugin {
                         final ListIterator<Integer> integerListIterator =
                                 removeChoiceQnames.listIterator(removeChoiceQnames.size());
                         while (integerListIterator.hasPrevious()) {
-                            qNamesCopy.remove(integerListIterator.previous().intValue());
+                            qnamesCopy.remove(integerListIterator.previous().intValue());
                         }
-                        if (!this.schemaContext.findDataTreeChild(qNamesCopy).isPresent()) {
+                        if (!this.schemaContext.findDataTreeChild(qnamesCopy).isPresent()) {
                             removeChoiceQnames.add(i - 1);
-                        } else if (this.schemaContext.findDataTreeChild(qNamesCopy).get()
+                        } else if (this.schemaContext.findDataTreeChild(qnamesCopy).get()
                                 instanceof ActionNodeContainer) {
                             final ActionNodeContainer actionSchemaNode =
-                                    (ActionNodeContainer) this.schemaContext.findDataTreeChild(qNamesCopy).get();
+                                    (ActionNodeContainer) this.schemaContext.findDataTreeChild(qnamesCopy).get();
                             actions = actionSchemaNode.getActions();
                         }
                     }

@@ -104,8 +104,8 @@ abstract class Line {
 
     private void resolveKeys(SchemaNode node) {
         if (node instanceof ListSchemaNode) {
-            for (QName qName : ((ListSchemaNode) node).getKeyDefinition()) {
-                keys.add(qName.getLocalName());
+            for (QName qname : ((ListSchemaNode) node).getKeyDefinition()) {
+                keys.add(qname.getLocalName());
             }
         }
     }

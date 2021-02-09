@@ -34,6 +34,7 @@ import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import javax.xml.stream.XMLStreamException;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.parser.api.YangParserException;
@@ -313,18 +315,19 @@ public final class Main {
                 xmlFiles = Files.list(Paths.get(simplifyDir))
                         .map(Path::toFile)
                         .collect(Collectors.toList());
-
-                for (final File xmlFile : xmlFiles) {
-                    try (FileInputStream fis = new FileInputStream(xmlFile)) {
-                        schemaSelector.addXml(fis);
-                    } catch (final Exception e) {
-                        LOG.error("Failed to fill schema from " + xmlFile.toString(), e);
-                        System.exit(1);
-                    }
-                }
             } catch (IOException e) {
                 LOG.error("Failed to open xml files.", e);
                 System.exit(1);
+                return schemaSelector.getSchemaTree();
+            }
+
+            for (final File xmlFile : xmlFiles) {
+                try (FileInputStream fis = new FileInputStream(xmlFile)) {
+                    schemaSelector.addXml(fis);
+                } catch (IOException | XMLStreamException | URISyntaxException e) {
+                    LOG.error("Failed to fill schema from " + xmlFile.toString(), e);
+                    System.exit(1);
+                }
             }
         }
         return schemaSelector.getSchemaTree();
