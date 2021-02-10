@@ -5,7 +5,7 @@
  * terms of the Eclipse Public License v1.0 which accompanies this distribution,
  * and is available at https://www.eclipse.org/legal/epl-v10.html
  */
-package io.lighty.yang.validator.check_update_from;
+package io.lighty.yang.validator.check.update.from;
 
 import static io.lighty.yang.validator.Main.runLYV;
 import static java.nio.charset.StandardCharsets.UTF_8;

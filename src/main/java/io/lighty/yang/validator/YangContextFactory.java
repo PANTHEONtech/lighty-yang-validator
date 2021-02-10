@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -152,7 +153,7 @@ final class YangContextFactory {
         } else {
             File[] files = testSourcesDir.listFiles(YANG_FILE_FILTER);
             if (files == null) {
-                return null;
+                return Collections.EMPTY_LIST;
             }
             return Arrays.asList(files);
         }

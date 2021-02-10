@@ -180,8 +180,8 @@ public final class Main {
         String classPath = clazz.getResource(className).toString();
         if (!classPath.startsWith("jar")) {
             // Class not from JAR
-            LOG.error("class not from jar file");
-            throw new RuntimeException();
+            LOG.error("class is not from jar file");
+            throw new RuntimeException("class is not from jar file");
         }
         String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1)
                 + "/META-INF/MANIFEST.MF";
@@ -277,7 +277,7 @@ public final class Main {
         } else {
             if (yangFiles.size() != 1) {
                 LOG.error("Check-update-from option may be used with single module only.");
-                throw new RuntimeException();
+                throw new RuntimeException("Check-update-from option may be used with single module only");
             }
             SchemaContext contextFrom = null;
             try {
@@ -313,18 +313,18 @@ public final class Main {
                 xmlFiles = Files.list(Paths.get(simplifyDir))
                         .map(Path::toFile)
                         .collect(Collectors.toList());
+
+                for (final File xmlFile : xmlFiles) {
+                    try (FileInputStream fis = new FileInputStream(xmlFile)) {
+                        schemaSelector.addXml(fis);
+                    } catch (IOException | XMLStreamException | URISyntaxException e) {
+                        LOG.error("Failed to fill schema from {}", xmlFile.toString(), e);
+                        throw new RuntimeException(e);
+                    }
+                }
             } catch (IOException e) {
                 LOG.error("Failed to open xml files.", e);
                 throw new RuntimeException(e);
-            }
-
-            for (final File xmlFile : xmlFiles) {
-                try (FileInputStream fis = new FileInputStream(xmlFile)) {
-                    schemaSelector.addXml(fis);
-                } catch (IOException | XMLStreamException | URISyntaxException e) {
-                    LOG.error("Failed to fill schema from {}", xmlFile.toString(), e);
-                    throw new RuntimeException(e);
-                }
             }
         }
         return schemaSelector.getSchemaTree();
