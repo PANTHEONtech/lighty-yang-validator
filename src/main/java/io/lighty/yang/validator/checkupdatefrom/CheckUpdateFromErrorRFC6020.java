@@ -7,11 +7,11 @@
  */
 package io.lighty.yang.validator.checkupdatefrom;
 
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings({"SLF4J_FORMAT_SHOULD_BE_CONST", "SLF4J_SIGN_ONLY_FORMAT"})
+@SuppressFBWarnings({"SLF4J_FORMAT_SHOULD_BE_CONST", "SLF4J_SIGN_ONLY_FORMAT"})
 class CheckUpdateFromErrorRFC6020 {
 
     private static final String PRETEXT = "According to RFC 6020 ";

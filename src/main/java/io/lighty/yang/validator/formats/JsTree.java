@@ -9,7 +9,7 @@ package io.lighty.yang.validator.formats;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import java.io.IOException;
 import java.net.URI;
@@ -42,7 +42,7 @@ import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
+@SuppressFBWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class JsTree extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsTree.class);

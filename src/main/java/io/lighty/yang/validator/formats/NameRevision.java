@@ -7,7 +7,7 @@
  */
 package io.lighty.yang.validator.formats;
 
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.Revision;
@@ -16,7 +16,7 @@ import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
+@SuppressFBWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class NameRevision extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(NameRevision.class);

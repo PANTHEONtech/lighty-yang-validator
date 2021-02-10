@@ -7,7 +7,7 @@
  */
 package io.lighty.yang.validator.formats;
 
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import java.util.Collection;
 import java.util.HashMap;
@@ -19,7 +19,7 @@ import org.opendaylight.yangtools.yang.parser.stmt.reactor.EffectiveSchemaContex
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
+@SuppressFBWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class Analyzer extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(Analyzer.class);
