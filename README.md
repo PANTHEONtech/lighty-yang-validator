@@ -10,7 +10,7 @@ This tool validates YANG modules using the YANG-Tools parser. If there are any p
 Go to the root directory `/lighty-yang-validator/` and use the command:
 
 ```
-mvn clean install -Pgenerate-distro
+mvn clean install
 ```
 
 The distribution will be stored in the **"target"** directory, as a file called *lighty-yang-validator-13.1.1-SNAPSHOT-bin.zip*
@@ -28,7 +28,7 @@ unzip lighty-yang-validator-13.1.1-SNAPSHOT-bin.zip
 3. Run the script with the command:
 
 ```
-./lyv \<options>
+./lyv.sh \<options>
 ```
 
 To parse the module, we need to: 
@@ -120,32 +120,32 @@ the simplified yang file)
 * Validate: To **validate the module only**:
 
 ```
-./lyv \<path_to_the_yang_module>
+./lyv.sh \<path_to_the_yang_module>
 ```
 
 * **Validate w/ Dependencies**: To validate a module, which has **dependencies on a different path recursively**:
 
 ```
-./lyv -r -p \<path_to_module_dependencies>
+./lyv.sh -r -p \<path_to_module_dependencies>
 \<path_to_the_yang_module>
 ```
 
 * **Format YANG Tree**: To create a **formatted YANG tree**:
 
 ```
-/lyv -f tree \<path_to_the_yang_module>
+/lyv.sh -f tree \<path_to_the_yang_module>
 ```
 
 * **YANG jstree**: To create **formatted YANG jstree**:
 
 ```
-./lyv -f jstree \<path_to_the_yang_module>
+./lyv.sh -f jstree \<path_to_the_yang_module>
 ```
 
 * **Simplify YANG**: To simplify and print the YANG file, **based on XML**:
 
 ```
-./lyv -o \<path_to_output_directory> -s
+./lyv.sh -o \<path_to_output_directory> -s
 \<path_to_xml_files> -p \<path_to_yang_modules> -f yang
 ```
 
