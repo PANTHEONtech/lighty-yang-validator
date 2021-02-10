@@ -7,6 +7,7 @@
  */
 package io.lighty.yang.validator.formats;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.DependConfiguration;
 import java.util.Collections;
@@ -19,9 +20,13 @@ import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+@SuppressFBWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class Depends extends FormatPlugin {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Depends.class);
     private static final String HELP_NAME = "depend";
     private static final String HELP_DESCRIPTION = "return all module`s dependencies";
     private static final String MODULE = "module ";
@@ -33,10 +38,6 @@ public class Depends extends FormatPlugin {
     private static final String ONLY_SUBMODULES = "(Submodules only)";
 
     private final Set<String> modules = new HashSet<>();
-
-    public Depends() {
-        super(Depends.class);
-    }
 
     @Override
     public void emitFormat() {
@@ -69,7 +70,7 @@ public class Depends extends FormatPlugin {
                 dependantsBuilder.append(NON_RECURSIVE);
             }
             final String dependandsText = dependantsBuilder.toString();
-            log.info(dependandsText);
+            LOG.info(dependandsText);
         }
     }
 

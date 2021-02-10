@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -150,13 +151,21 @@ final class YangContextFactory {
         if (recursiveSearch) {
             return iterateYangFilesRecursively(testSourcesDir);
         } else {
-            return Arrays.asList(testSourcesDir.listFiles(YANG_FILE_FILTER));
+            File[] files = testSourcesDir.listFiles(YANG_FILE_FILTER);
+            if (files == null) {
+                return Collections.EMPTY_LIST;
+            }
+            return Arrays.asList(files);
         }
     }
 
     private static List<File> iterateYangFilesRecursively(final File dir) {
         final List<File> yangFiles = new ArrayList<>();
-        for (final File file : dir.listFiles()) {
+        File[] files = dir.listFiles();
+        if (files == null) {
+            return null;
+        }
+        for (final File file : files) {
             if (file.isDirectory()) {
                 yangFiles.addAll(iterateYangFilesRecursively(file));
             } else if (file.isFile()

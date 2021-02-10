@@ -125,6 +125,7 @@ public class CheckUpdateFrom {
         return modRevArray[modRevArray.length - 1].split("@")[0];
     }
 
+    @SuppressWarnings("RegexpSinglelineJava")
     public void printErrors() {
         int order = 1;
         for (final CheckUpdateFromErrorRFC6020 err : errors) {
@@ -603,8 +604,8 @@ public class CheckUpdateFrom {
 
     private DataSchemaNode checkNodeExists(final DataSchemaNode node) {
         final List<QName> finalList = new LinkedList<>();
-        for (final QName qName : node.getPath().getPathFromRoot()) {
-            finalList.add(QName.create(newModule.getNamespace(), newModule.getRevision(), qName.getLocalName()));
+        for (final QName qname : node.getPath().getPathFromRoot()) {
+            finalList.add(QName.create(newModule.getNamespace(), newModule.getRevision(), qname.getLocalName()));
         }
 
         final Optional<DataSchemaNode> dataChildByName = newModule.findDataTreeChild(finalList);

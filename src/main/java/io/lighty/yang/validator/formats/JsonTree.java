@@ -7,6 +7,7 @@
  */
 package io.lighty.yang.validator.formats;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.simplify.SchemaTree;
@@ -48,9 +49,13 @@ import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+@SuppressFBWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class JsonTree extends FormatPlugin {
 
+    private static final Logger LOG = LoggerFactory.getLogger(JsonTree.class);
     private static final String HELP_NAME = "json-tree";
     private static final String HELP_DESCRIPTION = "return json tree with module and node metadata";
     private static final String BASETYPENAMESPACE = "urn:ietf:params:xml:ns:yang:1";
@@ -85,10 +90,6 @@ public class JsonTree extends FormatPlugin {
     private static final String COLON = ":";
 
     private final Map<String, String> prefixMap = new HashMap<>();
-
-    public JsonTree() {
-        super(JsonTree.class);
-    }
 
     @Override
     void init(final SchemaContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
@@ -191,7 +192,7 @@ public class JsonTree extends FormatPlugin {
             }
             jsonTree.put(MODULE, moduleMetadata);
             final String jsonTreeText = jsonTree.toString(4);
-            log.info(jsonTreeText);
+            LOG.info(jsonTreeText);
         }
     }
 
@@ -283,7 +284,7 @@ public class JsonTree extends FormatPlugin {
         try {
             equals = typeqName.getNamespace().compareTo(new URI(BASETYPENAMESPACE));
         } catch (URISyntaxException e) {
-            log.error("Incorrect namespace used");
+            LOG.error("Incorrect namespace used");
         }
         String type;
         if (equals == 0) {
@@ -324,7 +325,7 @@ public class JsonTree extends FormatPlugin {
         } else if (node instanceof AnydataSchemaNode) {
             return "anydata";
         } else {
-            log.warn("Node type unknown: {}", node);
+            LOG.warn("Node type unknown: {}", node);
             return UNKNOWN;
         }
     }

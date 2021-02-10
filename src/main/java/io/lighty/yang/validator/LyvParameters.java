@@ -14,6 +14,7 @@ import com.google.common.base.Preconditions;
 import io.lighty.yang.validator.checkupdatefrom.CheckUpdateFrom;
 import io.lighty.yang.validator.formats.Format;
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import net.sourceforge.argparse4j.ArgumentParsers;
@@ -33,7 +34,7 @@ public class LyvParameters {
 
     public LyvParameters(final Format formatter, final String[] args) {
         this.formatter = formatter;
-        this.args = args;
+        this.args = Arrays.copyOf(args, args.length);
     }
 
     public Namespace parseArguments() {

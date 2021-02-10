@@ -7,8 +7,10 @@
  */
 package io.lighty.yang.validator.formats.yang.printer;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 
+@SuppressFBWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 class IndentingLogger extends Indenting {
 
     private final Logger log;

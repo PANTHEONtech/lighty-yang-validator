@@ -34,19 +34,18 @@ import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.type.UnionTypeDefinition;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MultiModulePrinter extends FormatPlugin {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MultiModulePrinter.class);
     private static final String HELP_NAME = "yang";
     private static final String HELP_DESCRIPTION = "print raw yang module according to RFC7950";
 
     private final Map<QNameModule, Set<TypeDefinition>> usedImportedTypeDefs = new HashMap<>();
     private final Map<QNameModule, Set<String>> usedImports = new HashMap<>();
     private final Map<QNameModule, Set<SchemaTree>> subtrees = new HashMap<>();
-
-    public MultiModulePrinter() {
-        super(MultiModulePrinter.class);
-    }
 
     @Override
     protected void emitFormat() {
@@ -55,7 +54,7 @@ public class MultiModulePrinter extends FormatPlugin {
             try {
                 Files.createDirectories(this.output);
             } catch (IOException e) {
-                this.log.error("Can not create directory {}", this.output, e);
+                LOG.error("Can not create directory {}", this.output, e);
             }
         }
         //resolve imports by augmentations and typedefs
@@ -88,8 +87,8 @@ public class MultiModulePrinter extends FormatPlugin {
             }
             final ModulePrinter modulePrinter;
             if (this.output == null) {
-                log.info("\n\nprinting yang module {}\n", name);
-                modulePrinter = new ModulePrinter(entry.getValue(), this.schemaContext, entry.getKey(), log,
+                LOG.info("\n\nprinting yang module {}\n", name);
+                modulePrinter = new ModulePrinter(entry.getValue(), this.schemaContext, entry.getKey(), LOG,
                         this.usedImportedTypeDefs.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()),
                         this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()));
                 modulePrinter.printYang();
@@ -100,7 +99,7 @@ public class MultiModulePrinter extends FormatPlugin {
                             this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()));
                     modulePrinter.printYang();
                 } catch (IOException e) {
-                    this.log.error("Can not create file {}", this.output.resolve(name).toFile().getAbsolutePath(), e);
+                    LOG.error("Can not create file {}", this.output.resolve(name).toFile().getAbsolutePath(), e);
                 }
             }
         }

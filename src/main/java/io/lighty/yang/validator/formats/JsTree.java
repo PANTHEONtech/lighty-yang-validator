@@ -9,6 +9,7 @@ package io.lighty.yang.validator.formats;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import java.io.IOException;
 import java.net.URI;
@@ -38,18 +39,18 @@ import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+@SuppressFBWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class JsTree extends FormatPlugin {
 
+    private static final Logger LOG = LoggerFactory.getLogger(JsTree.class);
     private static final String HELP_NAME = "jstree";
     private static final String HELP_DESCRIPTION = "Prints out html, javascript tree of the modules";
     private static final String INPUT = "input";
 
     private final Map<URI, String> namespacePrefix = new HashMap<>();
-
-    public JsTree() {
-        super(Tree.class);
-    }
 
     @Override
     public void emitFormat() {
@@ -57,7 +58,7 @@ public class JsTree extends FormatPlugin {
             List<Line> lines = new ArrayList<>();
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
             final String headerText = prepareHeader(module);
-            log.info(headerText);
+            LOG.info(headerText);
             for (Module m : this.schemaContext.getModules()) {
                 if (!m.getPrefix().equals(module.getPrefix())) {
                     namespacePrefix.put(m.getNamespace(), m.getPrefix());
@@ -75,7 +76,7 @@ public class JsTree extends FormatPlugin {
             }
             for (Line l : lines) {
                 final String linesText = l.toString();
-                log.info(linesText);
+                LOG.info(linesText);
             }
             // augmentations
             lines = new ArrayList<>();
@@ -90,17 +91,17 @@ public class JsTree extends FormatPlugin {
                 while (nodes.hasNext()) {
                     removeChoiceQnames.clear();
                     final DataSchemaNode node = nodes.next();
-                    final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
+                    final ArrayList<QName> qnames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
                     Collection<? extends ActionDefinition> actions = new HashSet<>();
                     RpcInputOutput inputOutputOther = RpcInputOutput.OTHER;
-                    for (int i = 1; i <= qNames.size(); i++) {
-                        List<QName> qNamesCopy = new ArrayList<>(qNames);
-                        qNamesCopy = qNamesCopy.subList(0, i);
+                    for (int i = 1; i <= qnames.size(); i++) {
+                        List<QName> qnamesCopy = new ArrayList<>(qnames);
+                        qnamesCopy = qnamesCopy.subList(0, i);
                         if (!actions.isEmpty()) {
                             for (ActionDefinition action : actions) {
                                 if (action.getQName().getLocalName()
-                                        .equals(qNamesCopy.get(qNamesCopy.size() - 1).getLocalName())) {
-                                    if (INPUT.equals(qNames.get(i).getLocalName())) {
+                                        .equals(qnamesCopy.get(qnamesCopy.size() - 1).getLocalName())) {
+                                    if (INPUT.equals(qnames.get(i).getLocalName())) {
                                         inputOutputOther = RpcInputOutput.INPUT;
                                     } else {
                                         inputOutputOther = RpcInputOutput.OUTPUT;
@@ -111,14 +112,14 @@ public class JsTree extends FormatPlugin {
                         final ListIterator<Integer> integerListIterator =
                                 removeChoiceQnames.listIterator(removeChoiceQnames.size());
                         while (integerListIterator.hasPrevious()) {
-                            qNamesCopy.remove(integerListIterator.previous().intValue());
+                            qnamesCopy.remove(integerListIterator.previous().intValue());
                         }
-                        if (!this.schemaContext.findDataTreeChild(qNamesCopy).isPresent()) {
+                        if (!this.schemaContext.findDataTreeChild(qnamesCopy).isPresent()) {
                             removeChoiceQnames.add(i - 1);
-                        } else if (this.schemaContext.findDataTreeChild(qNamesCopy).get()
+                        } else if (this.schemaContext.findDataTreeChild(qnamesCopy).get()
                                 instanceof ActionNodeContainer) {
                             final ActionNodeContainer actionSchemaNode =
-                                    (ActionNodeContainer) this.schemaContext.findDataTreeChild(qNamesCopy).get();
+                                    (ActionNodeContainer) this.schemaContext.findDataTreeChild(qnamesCopy).get();
                             actions = actionSchemaNode.getActions();
                         }
                     }
@@ -132,7 +133,7 @@ public class JsTree extends FormatPlugin {
                 }
                 for (Line line : lines) {
                     final String linesText = line.toString();
-                    log.info(linesText);
+                    LOG.info(linesText);
                 }
                 lines = new ArrayList<>();
             }
@@ -171,7 +172,7 @@ public class JsTree extends FormatPlugin {
             }
             for (Line line : lines) {
                 final String linesText = line.toString();
-                log.info(linesText);
+                LOG.info(linesText);
             }
             lines = new ArrayList<>();
             // Notifications
@@ -185,15 +186,14 @@ public class JsTree extends FormatPlugin {
             }
             for (Line line : lines) {
                 final String linesText = line.toString();
-                log.info(linesText);
+                LOG.info(linesText);
             }
         }
-        log.info("</table>");
-        log.info("</div>");
-        final String jsText = loadJS();
-        log.info(jsText);
-        log.info("</body>");
-        log.info("</html>");
+        LOG.info("</table>");
+        LOG.info("</div>");
+        LOG.info(loadJS());
+        LOG.info("</body>");
+        LOG.info("</html>");
     }
 
     private String loadJS() {
@@ -202,7 +202,7 @@ public class JsTree extends FormatPlugin {
         try {
             text = Resources.toString(url, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            log.error("Can not load text from js file");
+            LOG.error("Can not load text from js file");
         }
 
         return text;
@@ -222,7 +222,7 @@ public class JsTree extends FormatPlugin {
             text = text.replace("<NAMESPACE>", module.getNamespace().toString());
             text = text.replace("<PREFIX>", module.getPrefix());
         } catch (IOException e) {
-            log.error("Can not load text from header file");
+            LOG.error("Can not load text from header file");
         }
 
         return text;

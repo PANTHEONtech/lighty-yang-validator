@@ -34,6 +34,7 @@ import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import javax.xml.stream.XMLStreamException;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.parser.api.YangParserException;
@@ -96,7 +98,7 @@ public final class Main {
         try {
             configurationBuilder = configurationBuilder.from(lyvParameters);
         } catch (IllegalArgumentException e) {
-            LOG.error(e.getMessage());
+            LOG.error("Exception while setting configurationBuilder", e);
             return;
         }
         Configuration configuration = configurationBuilder.build();
@@ -119,7 +121,7 @@ public final class Main {
                     yangFiles.addAll(collect);
                 }
             } catch (IOException e) {
-                LOG.error("Could not Collect files from provided ({}) directory, {}",
+                LOG.error("Could not Collect files from provided ({}) directory",
                         String.join(",", parseAllDir), e);
                 return;
             }
@@ -154,7 +156,7 @@ public final class Main {
                     }
                     final String message = messageBuilder.toString();
                     table.addRow(name, message, CompilationStatus.FAILED);
-                    LOG.error("{}: {}", name, message);
+                    LOG.error("name : {}, message: {}", name, message);
                 }
             }
             table.buildHtml();
@@ -178,8 +180,8 @@ public final class Main {
         String classPath = clazz.getResource(className).toString();
         if (!classPath.startsWith("jar")) {
             // Class not from JAR
-            LOG.error("class not from jar file");
-            System.exit(1);
+            LOG.error("class is not from jar file");
+            throw new RuntimeException("class is not from jar file");
         }
         String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1)
                 + "/META-INF/MANIFEST.MF";
@@ -188,7 +190,7 @@ public final class Main {
             manifest = new Manifest(new URL(manifestPath).openStream());
         } catch (IOException e) {
             LOG.error("Could not read manifest");
-            System.exit(1);
+            throw new RuntimeException(e);
         }
         Attributes attr = manifest.getMainAttributes();
         return attr.getValue("Bundle-Version");
@@ -256,13 +258,11 @@ public final class Main {
             if (!skip) {
                 effectiveModelContext = contextFactory.createContext(config.getSimplify() != null);
             }
-        } catch (final Exception e) {
-            if (config.getParseAll().isEmpty()) {
-                throw e;
-            } else {
+        } catch (final IOException | YangParserException e) {
+            if (!config.getParseAll().isEmpty()) {
                 LOG.error("Failed to create SchemaContext.", e);
-                System.exit(1);
             }
+            throw e;
         }
         SchemaTree schemaTree = null;
         if (config.getCheckUpdateFrom() == null) {
@@ -277,7 +277,7 @@ public final class Main {
         } else {
             if (yangFiles.size() != 1) {
                 LOG.error("Check-update-from option may be used with single module only.");
-                System.exit(1);
+                throw new RuntimeException("Check-update-from option may be used with single module only");
             }
             SchemaContext contextFrom = null;
             try {
@@ -287,9 +287,9 @@ public final class Main {
                         Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
                                 config.isRecursive());
                 contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
-            } catch (final Exception e) {
+            } catch (final IOException | YangParserException e) {
                 LOG.error("Failed to create SchemaContext.", e);
-                System.exit(1);
+                throw e;
             }
             final CheckUpdateFrom checkUpdateFrom = new CheckUpdateFrom(effectiveModelContext,
                     yangFiles.iterator().next(), contextFrom, config.getCheckUpdateFrom(),
@@ -317,14 +317,14 @@ public final class Main {
                 for (final File xmlFile : xmlFiles) {
                     try (FileInputStream fis = new FileInputStream(xmlFile)) {
                         schemaSelector.addXml(fis);
-                    } catch (final Exception e) {
-                        LOG.error("Failed to fill schema from " + xmlFile.toString(), e);
-                        System.exit(1);
+                    } catch (IOException | XMLStreamException | URISyntaxException e) {
+                        LOG.error("Failed to fill schema from {}", xmlFile.toString(), e);
+                        throw new RuntimeException(e);
                     }
                 }
             } catch (IOException e) {
                 LOG.error("Failed to open xml files.", e);
-                System.exit(1);
+                throw new RuntimeException(e);
             }
         }
         return schemaSelector.getSchemaTree();

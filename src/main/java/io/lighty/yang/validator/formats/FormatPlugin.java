@@ -16,21 +16,14 @@ import java.util.List;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class FormatPlugin {
 
-    final Logger log;
     SchemaContext schemaContext;
     List<RevisionSourceIdentifier> sources;
     SchemaTree schemaTree;
     Path output;
     Configuration configuration;
-
-    FormatPlugin(final Class<?> clazz) {
-        log = LoggerFactory.getLogger(clazz);
-    }
 
     void init(final SchemaContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
               final SchemaTree tree, final Configuration config) {
