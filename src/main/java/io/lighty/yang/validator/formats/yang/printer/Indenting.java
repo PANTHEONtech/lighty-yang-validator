@@ -26,7 +26,7 @@ abstract class Indenting {
             builder.append("    ");
         }
         if (!separately && (!name.isEmpty())) {
-                name += " ";
+            name += " ";
         }
         builder.append(name);
         if (separately) {

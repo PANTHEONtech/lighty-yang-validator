@@ -153,7 +153,7 @@ final class YangContextFactory {
         } else {
             File[] files = testSourcesDir.listFiles(YANG_FILE_FILTER);
             if (files == null) {
-                return Collections.EMPTY_LIST;
+                return Collections.emptyList();
             }
             return Arrays.asList(files);
         }
@@ -163,7 +163,7 @@ final class YangContextFactory {
         final List<File> yangFiles = new ArrayList<>();
         File[] files = dir.listFiles();
         if (files == null) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         for (final File file : files) {
             if (file.isDirectory()) {

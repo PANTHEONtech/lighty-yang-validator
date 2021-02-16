@@ -404,14 +404,15 @@ public class ModulePrinter {
         }
     }
 
-    private static boolean isSchemaNodePathEqualsToDataSchemaNodePath (final DataSchemaNode schemaNode,
-                                                                final DataSchemaNode dataSchemaNode) {
+    private static boolean isSchemaNodePathEqualsToDataSchemaNodePath(final DataSchemaNode schemaNode,
+                                                                       final DataSchemaNode dataSchemaNode) {
         return ((DerivableSchemaNode) schemaNode).getOriginal().isPresent()
                 && (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath().equals(dataSchemaNode.getPath()));
     }
 
-    private static boolean isEqualsSchemaTreeLastComponents (final SchemaTree st, final SchemaTree tree) {
-       return st.getSchemaNode().getPath().getLastComponent().equals(tree.getSchemaNode().getPath().getLastComponent());
+    private static boolean isEqualsSchemaTreeLastComponents(final SchemaTree st, final SchemaTree tree) {
+        return st.getSchemaNode().getPath().getLastComponent()
+                .equals(tree.getSchemaNode().getPath().getLastComponent());
     }
 }
 
