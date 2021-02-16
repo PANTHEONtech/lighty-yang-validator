@@ -43,7 +43,6 @@ import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
 public class JsTree extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsTree.class);
@@ -54,6 +53,8 @@ public class JsTree extends FormatPlugin {
     private final Map<URI, String> namespacePrefix = new HashMap<>();
 
     @Override
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
@@ -84,6 +85,8 @@ public class JsTree extends FormatPlugin {
         LOG.info("</html>");
     }
 
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
     private void printLines(final List<Line> lines) {
         for (Line line : lines) {
             LOG.info("{}", line.toString());
@@ -140,6 +143,8 @@ public class JsTree extends FormatPlugin {
         return lines;
     }
 
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
     private List<Line> getChildNodesLines(final SingletonListInitializer singletonListInitializer,
             final Module module, final List<Integer> removeChoiceQnames) {
         List<Line> lines = new ArrayList<>();
