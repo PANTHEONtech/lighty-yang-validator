@@ -42,12 +42,12 @@ public class Analyzer extends FormatPlugin {
         }
     }
 
-    private void analyzeSubstatement(final DeclaredStatement subStatement) {
+    private void analyzeSubstatement(final DeclaredStatement<?> subStatement) {
         String name = subStatement.statementDefinition().getStatementName().getLocalName();
         counter.compute(name, (key, val) -> (val == null) ? 1 : val + 1);
-        final Collection substatements = subStatement.declaredSubstatements();
+        final Collection<?> substatements = subStatement.declaredSubstatements();
         for (final Object nextSubstatement : substatements) {
-            analyzeSubstatement((DeclaredStatement)nextSubstatement);
+            analyzeSubstatement((DeclaredStatement<?>)nextSubstatement);
         }
     }
 

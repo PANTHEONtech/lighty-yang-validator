@@ -25,10 +25,8 @@ abstract class Indenting {
         for (int i = 0; i < level; i++) {
             builder.append("    ");
         }
-        if (!separately) {
-            if (!name.isEmpty()) {
+        if (!separately && (!name.isEmpty())) {
                 name += " ";
-            }
         }
         builder.append(name);
         if (separately) {

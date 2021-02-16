@@ -97,6 +97,7 @@ public class CheckUpdateFrom {
     private static final String DONT_EXISTS = "does not exists";
     private static final String RANGES = "\nranges: ";
     private static final String LENGTH = "\nlength: ";
+    private static final String STATUS = "\nstatus: ";
     private static final RangeSet<Integer> INTEGER_ALLOWED_RANGES =
             ImmutableRangeSet.of(Range.closed(0, Integer.MAX_VALUE));
 
@@ -321,7 +322,7 @@ public class CheckUpdateFrom {
 
 
             if (oldType instanceof LengthRestrictedTypeDefinition) {
-                checkLength(oldType, newType);
+                checkLength((LengthRestrictedTypeDefinition<?>) oldType, (LengthRestrictedTypeDefinition<?>) newType);
             }
 
             if (oldType instanceof RangeRestrictedTypeDefinition) {
@@ -329,11 +330,11 @@ public class CheckUpdateFrom {
             }
 
             if (oldType instanceof EnumTypeDefinition) {
-                checkEnumeration(oldType, newType);
+                checkEnumeration((EnumTypeDefinition) oldType, (EnumTypeDefinition) newType);
             } else if (oldType instanceof BitsTypeDefinition) {
-                checkBits(oldType, newType);
+                checkBits((BitsTypeDefinition) oldType, (BitsTypeDefinition) newType);
             } else if (oldType instanceof StringTypeDefinition) {
-                checkPattern(oldType, newType);
+                checkPattern((StringTypeDefinition) oldType, (StringTypeDefinition) newType);
             }
         }
     }
@@ -382,7 +383,7 @@ public class CheckUpdateFrom {
         }
     }
 
-    private boolean checkType(final TypeDefinition oldNode, final TypeDefinition newNode) {
+    private boolean checkType(final TypeDefinition<?> oldNode, final TypeDefinition<?> newNode) {
         final TypeDefinition<?> oldBaseType = baseTypeOf(oldNode);
         final TypeDefinition<?> newBaseType = baseTypeOf(newNode);
 
@@ -401,16 +402,16 @@ public class CheckUpdateFrom {
     private void checkStatus(final Status oldStatus, final Status newStatus, final SchemaNodeIdentifier oldPath,
                              final SchemaNodeIdentifier newPath) {
         if (oldStatus.compareTo(newStatus) > 0) {
-            errors.add(statusError().updateInformation(newPath.toString() + "\nstatus: " + newStatus,
-                    oldPath.toString() + "\nstatus: " + oldStatus));
+            errors.add(statusError().updateInformation(newPath.toString() + STATUS + newStatus,
+                    oldPath.toString() + STATUS + oldStatus));
         }
     }
 
     private void checkStatus(final Status oldStatus, final Status newStatus, final SchemaPath oldPath,
                              final SchemaPath newPath) {
         if (oldStatus.compareTo(newStatus) > 0) {
-            errors.add(statusError().updateInformation(newPath.toString() + "\nstatus: " + newStatus,
-                    oldPath.toString() + "\nstatus: " + oldStatus));
+            errors.add(statusError().updateInformation(newPath.toString() + STATUS + newStatus,
+                    oldPath.toString() + STATUS + oldStatus));
         }
     }
 
@@ -474,13 +475,11 @@ public class CheckUpdateFrom {
             errors.add(addedWhenError().updateInformation(
                     newNode.getPath().toString() + WHEN + newWhen.get().getOriginalString(),
                     oldNode.getPath().toString() + WHEN + DONT_EXISTS));
-        } else if (oldWhen.isPresent() && newWhen.isPresent()) {
-            if (!oldWhen.get().getOriginalString().equals(newWhen.get().getOriginalString())) {
-                errors.add(checkWhenWarning().updateInformation(
-                        newNode.getPath().toString() + WHEN + newWhen.get().getOriginalString(),
-                        oldNode.getPath().toString() + WHEN + oldWhen.get().getOriginalString()));
-
-            }
+        } else if (oldWhen.isPresent() && newWhen.isPresent()
+                && (!oldWhen.get().getOriginalString().equals(newWhen.get().getOriginalString()))) {
+            errors.add(checkWhenWarning().updateInformation(
+                    newNode.getPath().toString() + WHEN + newWhen.get().getOriginalString(),
+                    oldNode.getPath().toString() + WHEN + oldWhen.get().getOriginalString()));
         }
     }
 
@@ -499,7 +498,7 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkDefault(final TypeDefinition oldNode, final TypeDefinition newNode) {
+    private void checkDefault(final TypeDefinition<?> oldNode, final TypeDefinition<?> newNode) {
         final Optional<?> oldDefault = oldNode.getDefaultValue();
         final Optional<?> newDefault = newNode.getDefaultValue();
         if (oldDefault.isPresent() && (newDefault.isEmpty() || !oldDefault.get().equals(newDefault.get()))) {
@@ -508,18 +507,18 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkRange(final TypeDefinition oldNode, final TypeDefinition newNode) {
-        final Optional<RangeConstraint> oldRange =
+    private void checkRange(final TypeDefinition<?> oldNode, final TypeDefinition<?> newNode) {
+        final Optional<RangeConstraint<?>> oldRange =
                 ((RangeRestrictedTypeDefinition) oldNode).getRangeConstraint();
-        final Optional<RangeConstraint> newRange =
+        final Optional<RangeConstraint<?>> newRange =
                 ((RangeRestrictedTypeDefinition) newNode).getRangeConstraint();
         if (oldRange.isPresent()) {
             if (newRange.isEmpty()) {
                 errors.add(rangeError().updateInformation(DONT_EXISTS,
                         oldNode.getPath().toString() + RANGES + oldRange.get().toString()));
             } else {
-                final RangeConstraint oldRangeConstraint = oldRange.get();
-                final RangeConstraint newRangeConstraint = newRange.get();
+                final RangeConstraint<?> oldRangeConstraint = oldRange.get();
+                final RangeConstraint<?> newRangeConstraint = newRange.get();
                 final Set newRangeSet = newRangeConstraint.getAllowedRanges().asRanges();
                 final Set oldRangeSet = oldRangeConstraint.getAllowedRanges().asRanges();
                 if (newRangeSet.containsAll(oldRangeSet)) {
@@ -533,9 +532,10 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkLength(final TypeDefinition oldNode, final TypeDefinition newNode) {
-        final Optional<LengthConstraint> oldLengths = ((LengthRestrictedTypeDefinition) oldNode).getLengthConstraint();
-        final Optional<LengthConstraint> newLengths = ((LengthRestrictedTypeDefinition) newNode).getLengthConstraint();
+    private void checkLength(final LengthRestrictedTypeDefinition<?> oldNode,
+                             final LengthRestrictedTypeDefinition<?> newNode) {
+        final Optional<LengthConstraint> oldLengths = oldNode.getLengthConstraint();
+        final Optional<LengthConstraint> newLengths = newNode.getLengthConstraint();
 
         if (oldLengths.isPresent()) {
             if (newLengths.isEmpty()) {
@@ -560,9 +560,9 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkPattern(final TypeDefinition oldNode, final TypeDefinition newNode) {
-        final List<PatternConstraint> oldPatterns = ((StringTypeDefinition) oldNode).getPatternConstraints();
-        final List<PatternConstraint> newPatterns = ((StringTypeDefinition) newNode).getPatternConstraints();
+    private void checkPattern(final StringTypeDefinition oldNode, final StringTypeDefinition newNode) {
+        final List<PatternConstraint> oldPatterns = oldNode.getPatternConstraints();
+        final List<PatternConstraint> newPatterns = newNode.getPatternConstraints();
         if (newPatterns.containsAll(oldPatterns)) {
             for (PatternConstraint oldPattern : oldPatterns) {
                 checkReference(oldPattern.getReference(),
@@ -573,9 +573,9 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkBits(final TypeDefinition oldNode, final TypeDefinition newNode) {
-        final Collection<? extends BitsTypeDefinition.Bit> oldBits = ((BitsTypeDefinition) oldNode).getBits();
-        final Collection<? extends BitsTypeDefinition.Bit> newBits = ((BitsTypeDefinition) newNode).getBits();
+    private void checkBits(final BitsTypeDefinition oldNode, final BitsTypeDefinition newNode) {
+        final Collection<? extends BitsTypeDefinition.Bit> oldBits = oldNode.getBits();
+        final Collection<? extends BitsTypeDefinition.Bit> newBits = newNode.getBits();
         for (final BitsTypeDefinition.Bit oldBit : oldBits) {
             boolean sameBit = false;
             for (final BitsTypeDefinition.Bit newBit : newBits) {
@@ -590,9 +590,9 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkEnumeration(final TypeDefinition oldNode, final TypeDefinition newNode) {
-        final List<EnumTypeDefinition.EnumPair> oldValues = ((EnumTypeDefinition) oldNode).getValues();
-        final List<EnumTypeDefinition.EnumPair> newValues = ((EnumTypeDefinition) newNode).getValues();
+    private void checkEnumeration(final EnumTypeDefinition oldNode, final EnumTypeDefinition newNode) {
+        final List<EnumTypeDefinition.EnumPair> oldValues = oldNode.getValues();
+        final List<EnumTypeDefinition.EnumPair> newValues = newNode.getValues();
         if (newValues.containsAll(oldValues)) {
             for (final EnumTypeDefinition.EnumPair oldEnum : oldValues) {
                 checkReference(oldEnum.getReference(), newValues.get(newValues.indexOf(oldEnum)).getReference());
