@@ -175,7 +175,7 @@ public final class Main {
         MAIN_LOGGER.getLoggerContext().reset();
     }
 
-    private static String getYangtoolsVersion(Class clazz) {
+    private static String getYangtoolsVersion(Class<?> clazz) {
         String className = clazz.getSimpleName() + ".class";
         String classPath = clazz.getResource(className).toString();
         if (!classPath.startsWith("jar")) {
@@ -318,7 +318,7 @@ public final class Main {
                     try (FileInputStream fis = new FileInputStream(xmlFile)) {
                         schemaSelector.addXml(fis);
                     } catch (IOException | XMLStreamException | URISyntaxException e) {
-                        LOG.error("Failed to fill schema from {}", xmlFile.toString(), e);
+                        LOG.error("Failed to fill schema from {}", xmlFile, e);
                         throw new RuntimeException(e);
                     }
                 }

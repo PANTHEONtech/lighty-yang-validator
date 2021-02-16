@@ -113,6 +113,7 @@ public class JsTree extends FormatPlugin {
                                 removeChoiceQnames.listIterator(removeChoiceQnames.size());
                         while (integerListIterator.hasPrevious()) {
                             qnamesCopy.remove(integerListIterator.previous().intValue());
+                            i--;
                         }
                         if (!this.schemaContext.findDataTreeChild(qnamesCopy).isPresent()) {
                             removeChoiceQnames.add(i - 1);
@@ -191,7 +192,8 @@ public class JsTree extends FormatPlugin {
         }
         LOG.info("</table>");
         LOG.info("</div>");
-        LOG.info(loadJS());
+        String loadJS = loadJS();
+        LOG.info(loadJS);
         LOG.info("</body>");
         LOG.info("</html>");
     }

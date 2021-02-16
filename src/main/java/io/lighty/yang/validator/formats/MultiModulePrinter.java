@@ -43,7 +43,7 @@ public class MultiModulePrinter extends FormatPlugin {
     private static final String HELP_NAME = "yang";
     private static final String HELP_DESCRIPTION = "print raw yang module according to RFC7950";
 
-    private final Map<QNameModule, Set<TypeDefinition>> usedImportedTypeDefs = new HashMap<>();
+    private final Map<QNameModule, Set<TypeDefinition<?>>> usedImportedTypeDefs = new HashMap<>();
     private final Map<QNameModule, Set<String>> usedImports = new HashMap<>();
     private final Map<QNameModule, Set<SchemaTree>> subtrees = new HashMap<>();
 
@@ -105,8 +105,8 @@ public class MultiModulePrinter extends FormatPlugin {
         }
     }
 
-    private static TypeDefinition getRootType(final TypeDefinition typeDefinition) {
-        TypeDefinition typeDef = typeDefinition;
+    private static TypeDefinition<?> getRootType(final TypeDefinition<?> typeDefinition) {
+        TypeDefinition<?> typeDef = typeDefinition;
         while (typeDef.getBaseType() != null) {
             typeDef = typeDef.getBaseType();
         }
@@ -126,7 +126,7 @@ public class MultiModulePrinter extends FormatPlugin {
     }
 
     private void resolveType(final TypeDefinition<? extends TypeDefinition<?>> type, final Module module) {
-        final TypeDefinition rootType = getRootType(type);
+        final TypeDefinition<?> rootType = getRootType(type);
         final String rootLocalName = rootType.getQName().getLocalName();
         if (!Objects.equals(rootLocalName, type.getQName().getLocalName()) && !rootLocalName.equals("boolean")) {
             final QNameModule mod = QNameModule.create(type.getQName().getNamespace(), type.getQName().getRevision());

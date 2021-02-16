@@ -23,7 +23,7 @@ class SmartTypePrintingStrategy {
 
     private final Map<QNameModule, String> moduleToPrefix;
     private final Module module;
-    private final Set<TypeDefinition> typedefs = new TreeSet<>(Comparator.comparing(SchemaNode::getQName));
+    private final Set<TypeDefinition<?>> typedefs = new TreeSet<>(Comparator.comparing(SchemaNode::getQName));
 
     SmartTypePrintingStrategy(final Module module, final Map<QNameModule, String> moduleToPrefix) {
 
@@ -31,14 +31,14 @@ class SmartTypePrintingStrategy {
         this.moduleToPrefix = moduleToPrefix;
     }
 
-    void printTypedefs(final StatementPrinter printer, final Set<TypeDefinition> usedTypes) {
+    void printTypedefs(final StatementPrinter printer, final Set<TypeDefinition<?>> usedTypes) {
         final TypePrinter typePrinter = new TypePrinter(printer, moduleToPrefix);
         for (final TypeDefinition<?> typeDefinition : module.getTypeDefinitions()) {
             if (usedTypes.contains(typeDefinition)) {
                 typedefs.add(typeDefinition);
             }
         }
-        for (final TypeDefinition typedef : typedefs) {
+        for (final TypeDefinition<?> typedef : typedefs) {
 
             typePrinter.printTypeDef(typedef.getQName(), typedef);
         }

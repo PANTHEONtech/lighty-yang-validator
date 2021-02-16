@@ -37,7 +37,6 @@ import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.LeafrefTypeDefinition;
 import org.opendaylight.yangtools.yang.model.util.BaseTypes;
 import org.opendaylight.yangtools.yang.parser.rfc7950.stmt.AbstractDeclaredEffectiveStatement;
-import org.opendaylight.yangtools.yang.parser.rfc7950.stmt.DeclaredEffectiveStatementBase;
 
 abstract class Line {
 
@@ -86,17 +85,16 @@ abstract class Line {
     protected abstract void resolveFlag(SchemaNode node, SchemaContext context);
 
     private void resolveIfFeatures(SchemaNode node) {
-        final DeclaredStatement declared = getDeclared(node);
+        final DeclaredStatement<?> declared = getDeclared(node);
         if (declared instanceof IfFeatureAwareDeclaredStatement) {
-            final Collection ifFeature = ((IfFeatureAwareDeclaredStatement) declared).getIfFeatures();
+            final Collection<IfFeatureStatement> ifFeature
+                    = ((IfFeatureAwareDeclaredStatement) declared).getIfFeatures();
             this.ifFeatures.addAll(ifFeature);
         }
     }
 
-    private DeclaredStatement getDeclared(final SchemaNode node) {
-        if (node instanceof DeclaredEffectiveStatementBase) {
-            return ((DeclaredEffectiveStatementBase) node).getDeclared();
-        } else if (node instanceof AbstractDeclaredEffectiveStatement) {
+    private DeclaredStatement<?> getDeclared(final SchemaNode node) {
+        if (node instanceof AbstractDeclaredEffectiveStatement) {
             return ((AbstractDeclaredEffectiveStatement) node).getDeclared();
         }
         return null;

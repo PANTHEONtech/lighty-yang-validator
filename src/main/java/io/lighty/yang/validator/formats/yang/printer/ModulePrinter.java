@@ -50,7 +50,10 @@ import org.slf4j.Logger;
 
 public class ModulePrinter {
 
-    private final Set<TypeDefinition> usedTypes;
+    private static final String REFERENCE = "reference";
+    private static final String DESCRIPTION = "description";
+
+    private final Set<TypeDefinition<?>> usedTypes;
     private final Set<String> usedImports;
     private final StatementPrinter printer;
     private final Set<SchemaTree> schemaTree;
@@ -64,7 +67,7 @@ public class ModulePrinter {
 
     public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
                          final QNameModule moduleName, final OutputStream out,
-                         final Set<TypeDefinition> usedTypes, final Set<String> usedImports) {
+                         final Set<TypeDefinition<?>> usedTypes, final Set<String> usedImports) {
         this(schemaTree, schemaContext, moduleName,
              new IndentingPrinter(new PrintStream(out, false, Charset.defaultCharset())),
              usedTypes, usedImports);
@@ -72,13 +75,13 @@ public class ModulePrinter {
 
     public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
                          final QNameModule moduleName, final Logger out,
-                         final Set<TypeDefinition> usedTypes, final Set<String> usedImports) {
+                         final Set<TypeDefinition<?>> usedTypes, final Set<String> usedImports) {
         this(schemaTree, schemaContext, moduleName, new IndentingLogger(out), usedTypes, usedImports);
     }
 
     private ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
                           final QNameModule moduleName, final Indenting printer,
-                          final Set<TypeDefinition> usedTypes, final Set<String> usedImports) {
+                          final Set<TypeDefinition<?>> usedTypes, final Set<String> usedImports) {
         this.usedImports = usedImports;
         this.usedTypes = usedTypes;
         this.schemaTree = schemaTree;
@@ -161,17 +164,14 @@ public class ModulePrinter {
                 final Optional<DataSchemaNode> dataChildByName = grouping.findDataChildByName(schemaNode.getQName());
                 if (dataChildByName.isPresent()) {
                     DataSchemaNode dataSchemaNode = dataChildByName.get();
-                    if (((DerivableSchemaNode) schemaNode).getOriginal().isPresent()) {
-                        if (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath()
-                                .equals(dataSchemaNode.getPath())) {
-                            continue;
-                        }
+                    if (isSchemaNodePathEqualsToDataSchemaNodePath(schemaNode, dataSchemaNode)) {
+                        continue;
                     }
 
                     if (!(dataSchemaNode instanceof EffectiveStatement || schemaNode instanceof EffectiveStatement)) {
                         continue;
                     }
-                    final Collection collection = ((EffectiveStatement) dataSchemaNode).effectiveSubstatements();
+                    final Collection<?> collection = ((EffectiveStatement) dataSchemaNode).effectiveSubstatements();
                     if (((EffectiveStatement) schemaNode).effectiveSubstatements().size() == collection.size()) {
                         boolean allSubstatementFound = true;
                         for (Object compare : ((EffectiveStatement) schemaNode).effectiveSubstatements()) {
@@ -212,14 +212,12 @@ public class ModulePrinter {
                     if (tree.getSchemaNode() instanceof ChoiceSchemaNode) {
                         boolean extendedTree = false;
                         for (final SchemaTree st : schemaTrees) {
-                            if (st.getSchemaNode() instanceof ChoiceSchemaNode) {
-                                if (st.getSchemaNode().getPath().getLastComponent()
-                                        .equals(tree.getSchemaNode().getPath().getLastComponent())) {
-                                    extendedTree = true;
-                                    for (Map.Entry<SchemaPath, SchemaTree> entry : tree.getChildren().entrySet()) {
-                                        if (!st.getChildren().containsKey(entry.getKey())) {
-                                            st.addChild(entry.getValue());
-                                        }
+                            if (st.getSchemaNode() instanceof ChoiceSchemaNode
+                                    && isEqualsSchemaTreeLastComponents(st, tree)) {
+                                extendedTree = true;
+                                for (Map.Entry<SchemaPath, SchemaTree> entry : tree.getChildren().entrySet()) {
+                                    if (!st.getChildren().containsKey(entry.getKey())) {
+                                        st.addChild(entry.getValue());
                                     }
                                 }
                             }
@@ -307,7 +305,7 @@ public class ModulePrinter {
     private void doPrintReference(final DataSchemaNode schemaNode) {
         final Optional<String> reference = schemaNode.getReference();
         if (reference.isPresent()) {
-            printer.printSimple("reference", "\"" + reference.get() + "\"");
+            printer.printSimple(REFERENCE, "\"" + reference.get() + "\"");
             printer.printEmptyLine();
         }
     }
@@ -315,7 +313,7 @@ public class ModulePrinter {
     private void doPrintDescription(final DataSchemaNode schemaNode) {
         final Optional<String> description = schemaNode.getDescription();
         if (description.isPresent()) {
-            printer.printSimple("description", "\"" + description.get() + "\"");
+            printer.printSimple(DESCRIPTION, "\"" + description.get() + "\"");
             printer.printEmptyLine();
         }
     }
@@ -351,12 +349,12 @@ public class ModulePrinter {
         }
         final Optional<String> description = module.getDescription();
         if (description.isPresent()) {
-            printer.printSimple("description", "\"" + description.get() + "\"");
+            printer.printSimple(DESCRIPTION, "\"" + description.get() + "\"");
             printer.printEmptyLine();
         }
         final Optional<String> reference = module.getReference();
         if (reference.isPresent()) {
-            printer.printSimple("reference", "\"" + reference.get() + "\"");
+            printer.printSimple(REFERENCE, "\"" + reference.get() + "\"");
             printer.printEmptyLine();
         }
         final Optional<Revision> revision = module.getRevision();
@@ -369,12 +367,12 @@ public class ModulePrinter {
                         printer.openStatement(Statement.REVISION, rev.getDate().toString());
                         final Optional<ReferenceStatement> optReference = rev.getReference();
                         if (optReference.isPresent()) {
-                            printer.printSimpleSeparately("reference", "\""
+                            printer.printSimpleSeparately(REFERENCE, "\""
                                     + optReference.get().getText() + "\"");
                         }
                         final Optional<DescriptionStatement> optDescription = rev.getDescription();
                         if (optDescription.isPresent()) {
-                            printer.printSimpleSeparately("description", "\""
+                            printer.printSimpleSeparately(DESCRIPTION, "\""
                                     + optDescription.get().getText() + "\"");
 
                         }
@@ -404,6 +402,16 @@ public class ModulePrinter {
                 printer.printEmptyLine();
             }
         }
+    }
+
+    private static boolean isSchemaNodePathEqualsToDataSchemaNodePath (final DataSchemaNode schemaNode,
+                                                                final DataSchemaNode dataSchemaNode) {
+        return ((DerivableSchemaNode) schemaNode).getOriginal().isPresent()
+                && (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath().equals(dataSchemaNode.getPath()));
+    }
+
+    private static boolean isEqualsSchemaTreeLastComponents (final SchemaTree st, final SchemaTree tree) {
+       return st.getSchemaNode().getPath().getLastComponent().equals(tree.getSchemaNode().getPath().getLastComponent());
     }
 }
 

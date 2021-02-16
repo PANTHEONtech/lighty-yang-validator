@@ -82,10 +82,8 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
 
     static {
         final TransformerFactory fa = TransformerFactory.newInstance();
-        if (!fa.getFeature(StAXResult.FEATURE)) {
-            if (!fa.getFeature(StAXResult.FEATURE)) {
-                throw new TransformerFactoryConfigurationError("No TransformerFactory supporting StAXResult found.");
-            }
+        if ((!fa.getFeature(StAXResult.FEATURE)) && (!fa.getFeature(StAXResult.FEATURE))) {
+            throw new TransformerFactoryConfigurationError("No TransformerFactory supporting StAXResult found.");
         }
 
         TRANSFORMER_FACTORY = fa;
@@ -124,7 +122,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
             IOException {
         if (reader.hasNext()) {
             reader.nextTag();
-            final AbstractNodeDataWithSchema nodeDataWithSchema;
+            final AbstractNodeDataWithSchema<?> nodeDataWithSchema;
             if (parentNode instanceof ContainerSchemaNode) {
                 nodeDataWithSchema = new ContainerNodeDataWithSchema((ContainerSchemaNode) parentNode);
             } else if (parentNode instanceof ListSchemaNode) {
@@ -166,7 +164,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         return parse(new DOMSourceXMLStreamReader(src));
     }
 
-    private static ImmutableMap<QName, String> getElementAttributes(final XMLStreamReader in) {
+    private static ImmutableMap<QName, Object> getElementAttributes(final XMLStreamReader in) {
         checkState(in.isStartElement(), "Attributes can be extracted only from START_ELEMENT.");
         final Map<QName, String> attributes = new LinkedHashMap<>();
 
@@ -230,7 +228,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
      * @throws URISyntaxException   if the namespace URI of an XML element contains a syntax error
      */
 
-    private void read(final XMLStreamReader in, final AbstractNodeDataWithSchema parent,
+    private void read(final XMLStreamReader in, final AbstractNodeDataWithSchema<?> parent,
                       final String rootElement, SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
         if (!in.hasNext()) {
             return;
@@ -440,11 +438,11 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
      * @param nsContext namespace context of the xml node which contains the {@code value}
      */
 
-    private void setValue(final AbstractNodeDataWithSchema parent, final Object value,
+    private void setValue(final AbstractNodeDataWithSchema<?> parent, final Object value,
                           final NamespaceContext nsContext) {
         checkArgument(parent instanceof SimpleNodeDataWithSchema, "Node %s is not a simple type",
                 parent.getSchema().getQName());
-        final SimpleNodeDataWithSchema parentSimpleNode = (SimpleNodeDataWithSchema) parent;
+        final SimpleNodeDataWithSchema<?> parentSimpleNode = (SimpleNodeDataWithSchema<?>) parent;
         checkArgument(parentSimpleNode.getValue() == null, "Node '%s' has already set its value to '%s'",
                 parentSimpleNode.getSchema().getQName(), parentSimpleNode.getValue());
 
@@ -469,12 +467,12 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
 
         checkArgument(node instanceof TypedDataSchemaNode);
         checkArgument(value instanceof String);
-        final TypeAwareCodec xmlCodec = codecs.codecFor((TypedDataSchemaNode) node);
+        final TypeAwareCodec<?,NamespaceContext,?> xmlCodec = codecs.codecFor((TypedDataSchemaNode) node);
         return xmlCodec.parseValue(namespaceCtx, (String) value);
     }
 
-    private static AbstractNodeDataWithSchema newEntryNode(final AbstractNodeDataWithSchema parent) {
-        final AbstractNodeDataWithSchema newChild;
+    private static AbstractNodeDataWithSchema<?> newEntryNode(final AbstractNodeDataWithSchema<?> parent) {
+        final AbstractNodeDataWithSchema<?> newChild;
         if (parent instanceof ListNodeDataWithSchema) {
             newChild = ListEntryNodeDataWithSchema.forSchema((ListSchemaNode) parent.getSchema());
         } else {

@@ -84,10 +84,9 @@ public class Depends extends FormatPlugin {
                 if (moduleName.equals(contextModule.getName())) {
                     final Optional<Revision> importedModuleRevision = m.getRevision();
                     final Optional<Revision> contextModuleRevision = contextModule.getRevision();
-                    if (importedModuleRevision.isPresent() && contextModuleRevision.isPresent()) {
-                        if (!contextModuleRevision.get().toString().equals(importedModuleRevision.get().toString())) {
-                            continue;
-                        }
+                    if (importedModuleRevision.isPresent() && contextModuleRevision.isPresent() &&
+                            (!contextModuleRevision.get().toString().equals(importedModuleRevision.get().toString()))) {
+                        continue;
                     }
                     modules.add(contextModule.getName());
                     if (!dependConfiguration.isModuleDependentsOnly()) {

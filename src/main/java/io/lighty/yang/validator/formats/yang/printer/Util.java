@@ -15,8 +15,8 @@ final class Util {
         // NO-OP
     }
 
-    static TypeDefinition getRootType(final TypeDefinition typeDefinition) {
-        TypeDefinition typeDef = typeDefinition;
+    static TypeDefinition<?> getRootType(final TypeDefinition<?> typeDefinition) {
+        TypeDefinition<?> typeDef = typeDefinition;
         while (typeDef.getBaseType() != null) {
             typeDef = typeDef.getBaseType();
         }
