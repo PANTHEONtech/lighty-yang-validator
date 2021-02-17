@@ -58,24 +58,19 @@ public class MultiModulePrinter extends FormatPlugin {
             }
         }
         //resolve imports by augmentations and typedefs
-        for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
-            final Module module = this.schemaContext.findModule(entry.getKey()).get();
-            for (SchemaTree singleEntry : entry.getValue()) {
-                gatherUsedTypeDefs(singleEntry, module);
-            }
-            for (AugmentationSchemaNode aug : module.getAugmentations()) {
-                for (QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
-                    this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
-                            .add(this.schemaContext.findModule(pathQname.getModule()).get().getName());
-                }
-            }
-        }
+        resolveAugmentationsImports();
+
         for (final QNameModule name : this.usedImportedTypeDefs.keySet()) {
             if (!subtrees.containsKey(name)) {
                 subtrees.put(name, Collections.emptySet());
             }
         }
+
         //print each yang module
+        printEachYangModule();
+    }
+
+    private void printEachYangModule() {
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.schemaContext.findModule(entry.getKey()).get();
             final String withRev = "@" + module.getRevision().get().toString();
@@ -100,6 +95,21 @@ public class MultiModulePrinter extends FormatPlugin {
                     modulePrinter.printYang();
                 } catch (IOException e) {
                     LOG.error("Can not create file {}", this.output.resolve(name).toFile().getAbsolutePath(), e);
+                }
+            }
+        }
+    }
+
+    private void resolveAugmentationsImports() {
+        for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
+            final Module module = this.schemaContext.findModule(entry.getKey()).get();
+            for (SchemaTree singleEntry : entry.getValue()) {
+                gatherUsedTypeDefs(singleEntry, module);
+            }
+            for (AugmentationSchemaNode aug : module.getAugmentations()) {
+                for (QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
+                    this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
+                            .add(this.schemaContext.findModule(pathQname.getModule()).get().getName());
                 }
             }
         }
