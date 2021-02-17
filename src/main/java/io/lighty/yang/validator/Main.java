@@ -85,35 +85,31 @@ public final class Main {
     }
 
     public static void main(final String[] args) {
-        final List<FormatPlugin> formats = new ArrayList<>();
-        formats.add(new Depends());
-        formats.add(new NameRevision());
-        formats.add(new JsonTree());
-        formats.add(new Tree());
-        formats.add(new MultiModulePrinter());
-        formats.add(new JsTree());
-        formats.add(new Analyzer());
-        final Format formatter = new Format(formats);
-        final LyvParameters lyvParameters = new LyvParameters(formatter, args);
-        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+        Format format = getFormat();
+        final Configuration configuration;
         try {
-            configurationBuilder = configurationBuilder.from(lyvParameters);
+            configuration = getConfiguration(format, args);
         } catch (IllegalArgumentException e) {
             LOG.error("Exception while setting configurationBuilder", e);
             return;
         }
-        Configuration configuration = configurationBuilder.build();
-        if (configuration.getTreeConfiguration().isHelp()) {
-            configurationBuilder.setFormat("tree");
-            configuration = configurationBuilder.build();
-        }
-
         setMainLoggerOutput(configuration);
         final List<String> yangFiles = new ArrayList<>();
         final List<String> moduleNameValues = configuration.getModuleNames();
 
         final List<String> parseAllDir = configuration.getParseAll();
-        if (!parseAllDir.isEmpty()) {
+        if (parseAllDir.isEmpty()) {
+            if (moduleNameValues != null) {
+                yangFiles.addAll(moduleNameValues);
+            }
+            yangFiles.addAll(configuration.getYang());
+            try {
+                runLYV(yangFiles, configuration, format);
+            } catch (IOException | YangParserException e) {
+                // ERROR MESSAGE ALREADY LOGGED
+                return;
+            }
+        } else {
             for (final String dir : parseAllDir) {
                 try (Stream<Path> path = Files.list(Paths.get(dir))) {
                     final List<String> collect = path
@@ -123,11 +119,11 @@ public final class Main {
                 } catch (IOException e) {
                     LOG.error("Could not Collect files from provided ({}) directory",
                             String.join(",", parseAllDir), e);
+                    return;
                 }
             }
 
             final String yangtoolsVersion = getYangtoolsVersion(SchemaContext.class);
-
             final CompilationTable table =
                     new CompilationTable(configuration.getOutput(), parseAllDir, yangtoolsVersion);
             final CompilationTableAppender newAppender = new CompilationTableAppender();
@@ -136,43 +132,62 @@ public final class Main {
             newAppender.setCompilationTable(table);
 
             MAIN_LOGGER.addAppender(newAppender);
-
-            for (String yangFile : yangFiles) {
-                final String name = yangFile.split("/")[yangFile.split("/").length - 1];
-                try {
-                    newAppender.setYangName(name);
-                    runLYV(Collections.singletonList(yangFile), configuration, formatter);
-                    table.addRow(name, null, CompilationStatus.PASSED);
-                } catch (IOException | YangParserException e) {
-                    Throwable throwable = e;
-                    final StringBuilder messageBuilder = new StringBuilder();
-                    while (!(throwable instanceof SourceException)) {
-                        throwable = throwable.getCause();
-                    }
-                    messageBuilder.append(throwable.getMessage());
-                    while (throwable.getCause() != null) {
-                        throwable = throwable.getCause();
-                        messageBuilder.append(throwable.getMessage());
-                    }
-                    final String message = messageBuilder.toString();
-                    table.addRow(name, message, CompilationStatus.FAILED);
-                    LOG.error("name : {}, message: {}", name, message);
-                }
-            }
-            table.buildHtml();
-        } else {
-            if (moduleNameValues != null) {
-                yangFiles.addAll(moduleNameValues);
-            }
-            yangFiles.addAll(configuration.getYang());
-            try {
-                runLYV(yangFiles, configuration, formatter);
-            } catch (IOException | YangParserException e) {
-                // ERROR MESSAGE ALREADY LOGGED
-                return;
-            }
+            runLywForeachYangFile(yangFiles, configuration, newAppender, table, format);
         }
         MAIN_LOGGER.getLoggerContext().reset();
+    }
+
+    private static Configuration getConfiguration(final Format format, final String[] args) {
+        final LyvParameters lyvParameters = new LyvParameters(format, args);
+        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+        configurationBuilder = configurationBuilder.from(lyvParameters);
+        Configuration configuration = configurationBuilder.build();
+
+        if (configuration.getTreeConfiguration().isHelp()) {
+            configurationBuilder.setFormat("tree");
+            configuration = configurationBuilder.build();
+        }
+        return configuration;
+    }
+
+    private static Format getFormat() {
+        final List<FormatPlugin> formats = new ArrayList<>();
+        formats.add(new Depends());
+        formats.add(new NameRevision());
+        formats.add(new JsonTree());
+        formats.add(new Tree());
+        formats.add(new MultiModulePrinter());
+        formats.add(new JsTree());
+        formats.add(new Analyzer());
+        return new Format(formats);
+    }
+
+    private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration configuration,
+                                              final CompilationTableAppender newAppender, final CompilationTable table,
+                                              final Format formatter) {
+        for (String yangFile : yangFiles) {
+            final String name = yangFile.split("/")[yangFile.split("/").length - 1];
+            try {
+                newAppender.setYangName(name);
+                runLYV(Collections.singletonList(yangFile), configuration, formatter);
+                table.addRow(name, null, CompilationStatus.PASSED);
+            } catch (IOException | YangParserException e) {
+                Throwable throwable = e;
+                final StringBuilder messageBuilder = new StringBuilder();
+                while (!(throwable instanceof SourceException)) {
+                    throwable = throwable.getCause();
+                }
+                messageBuilder.append(throwable.getMessage());
+                while (throwable.getCause() != null) {
+                    throwable = throwable.getCause();
+                    messageBuilder.append(throwable.getMessage());
+                }
+                final String message = messageBuilder.toString();
+                table.addRow(name, message, CompilationStatus.FAILED);
+                LOG.error("name : {}, message: {}", name, message);
+            }
+        }
+        table.buildHtml();
     }
 
     private static String getYangtoolsVersion(Class clazz) {
@@ -244,18 +259,14 @@ public final class Main {
 
         EffectiveModelContext effectiveModelContext = null;
 
-        boolean skip = false;
-        if (yangFiles.isEmpty() && config.getTreeConfiguration().isHelp()) {
-            skip = true;
-        }
-
+        boolean yangFileIsNotEmptyAndHelpIsNotSet = !(yangFiles.isEmpty() && config.getTreeConfiguration().isHelp());
         final Stopwatch stopWatch = Stopwatch.createStarted();
         YangContextFactory contextFactory = null;
 
         try {
             contextFactory =
                     new YangContextFactory(yangLibDirs, yangFiles, config.getSupportedFeatures(), config.isRecursive());
-            if (!skip) {
+            if (yangFileIsNotEmptyAndHelpIsNotSet) {
                 effectiveModelContext = contextFactory.createContext(config.getSimplify() != null);
             }
         } catch (final IOException | YangParserException e) {
@@ -266,7 +277,7 @@ public final class Main {
         }
         SchemaTree schemaTree = null;
         if (config.getCheckUpdateFrom() == null) {
-            if (!skip) {
+            if (yangFileIsNotEmptyAndHelpIsNotSet) {
                 schemaTree = resolveSchemaTree(config.getSimplify(), effectiveModelContext);
             }
             if (config.getFormat() != null) {
