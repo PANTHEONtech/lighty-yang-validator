@@ -26,6 +26,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.ActionNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
@@ -56,7 +57,8 @@ public class JsTree extends FormatPlugin {
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
             List<Line> lines = new ArrayList<>();
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
+            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
+                    .orElseThrow(() -> new NullPointerException("Module "+source.getName()+" with revision "+source.getRevision()+" not found."));
             final String headerText = prepareHeader(module);
             LOG.info(headerText);
             for (Module m : this.schemaContext.getModules()) {
@@ -210,10 +212,10 @@ public class JsTree extends FormatPlugin {
 
     private String prepareHeader(final Module module) {
         final StringBuilder nameRevision = new StringBuilder(module.getName());
-        if (module.getRevision().isPresent()) {
-            nameRevision.append("@")
-                    .append(module.getRevision().get());
-        }
+        final Optional<Revision> revision = module.getRevision();
+        revision.ifPresent(value -> nameRevision.append("@")
+                .append(value));
+
         URL url = Resources.getResource("header");
         String text = "";
         try {

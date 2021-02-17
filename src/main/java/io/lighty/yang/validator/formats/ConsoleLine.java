@@ -56,13 +56,17 @@ public class ConsoleLine extends Line {
             }
             if (node instanceof ChoiceSchemaNode) {
                 qNames.remove(qNames.size() - 1);
-                if (context.findDataTreeChild(qNames).get().isConfiguration()
+                //TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
+                if (context.findDataTreeChild(qNames)
+                        .orElseThrow(() -> new NullPointerException("Data tree child "+qNames.toString()+ " not found.")).isConfiguration()
                         && ((ChoiceSchemaNode) node).isConfiguration()) {
                     this.flag = RW;
                 } else {
                     this.flag = RO;
                 }
-            } else if (context.findDataTreeChild(qNames).get().isConfiguration()) {
+                //TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
+            } else if (context.findDataTreeChild(qNames)
+                    .orElseThrow(() -> new NullPointerException("Data tree child "+qNames.toString()+ " not found.")).isConfiguration()) {
                 this.flag = RW;
             } else {
                 this.flag = RO;

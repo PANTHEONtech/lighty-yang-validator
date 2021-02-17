@@ -123,7 +123,8 @@ public final class Main {
             } catch (IOException e) {
                 LOG.error("Could not Collect files from provided ({}) directory",
                         String.join(",", parseAllDir), e);
-                return;
+            } finally {
+                parseAllDir.stream().close();
             }
 
             final String yangtoolsVersion = getYangtoolsVersion(SchemaContext.class);
@@ -284,7 +285,7 @@ public final class Main {
                 final YangContextFactory contextFactoryFrom =
                         new YangContextFactory(initYangDirsPath(
                                 config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath()),
-                        Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
+                                Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
                                 config.isRecursive());
                 contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
             } catch (final IOException | YangParserException e) {
@@ -302,14 +303,15 @@ public final class Main {
         LOG.debug("Elapsed time: {}", stopWatch);
     }
 
+
     private static SchemaTree resolveSchemaTree(final String simplifyDir,
-            final EffectiveModelContext effectiveModelContext) {
+                                                final EffectiveModelContext effectiveModelContext) {
         final SchemaSelector schemaSelector = new SchemaSelector(effectiveModelContext);
         if (simplifyDir == null) {
             schemaSelector.noXml();
         } else {
-            final List<File> xmlFiles;
-            try {
+            List<File> xmlFiles = null;
+            try{
                 xmlFiles = Files.list(Paths.get(simplifyDir))
                         .map(Path::toFile)
                         .collect(Collectors.toList());
@@ -325,6 +327,10 @@ public final class Main {
             } catch (IOException e) {
                 LOG.error("Failed to open xml files.", e);
                 throw new RuntimeException(e);
+            }
+            finally {
+                if(xmlFiles != null)
+                xmlFiles.stream().close();
             }
         }
         return schemaSelector.getSchemaTree();

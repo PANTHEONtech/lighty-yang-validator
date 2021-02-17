@@ -43,13 +43,15 @@ public class Depends extends FormatPlugin {
     public void emitFormat() {
         final DependConfiguration dependConfiguration = this.configuration.getDependConfiguration();
         for (final RevisionSourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
+
+            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
+                    .orElseThrow(() -> new NullPointerException("Module " +source.getName()+ " with revision " + source.getRevision() +  " not found."));
             final StringBuilder dependantsBuilder = new StringBuilder(MODULE);
             dependantsBuilder.append(module.getName())
                     .append(AT);
-            if (module.getRevision().isPresent()) {
-                dependantsBuilder.append(module.getRevision().get());
-            }
+            final Optional<Revision> revision = module.getRevision();
+            revision.ifPresent(dependantsBuilder::append);
+
             dependantsBuilder.append(DEPENDS_TEXT);
             if (!dependConfiguration.isModuleImportsOnly()) {
                 resolveSubmodules(module, dependConfiguration);

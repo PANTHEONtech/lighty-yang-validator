@@ -78,7 +78,8 @@ public class Tree extends FormatPlugin {
         }
         for (final RevisionSourceIdentifier source : this.sources) {
             List<Line> lines = new ArrayList<>();
-            usedModule = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
+            usedModule = this.schemaContext.findModule(source.getName(), source.getRevision())
+                    .orElseThrow(() -> new NullPointerException("Module " + source.getName() +" not found."));
             for (Module m : this.schemaContext.getModules()) {
                 if (!m.getPrefix().equals(usedModule.getPrefix())
                         || this.configuration.getTreeConfiguration().isPrefixMainModule()) {
