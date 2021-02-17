@@ -114,7 +114,7 @@ public class MultiModulePrinter extends FormatPlugin {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                             .add(this.schemaContext.findModule(pathQname.getModule())
                                     .orElseThrow(
-                                            () -> new NotFoundException("Module", pathQname.getModule().toString()))
+                                        () -> new NotFoundException("Module", pathQname.getModule().toString()))
                                     .getName());
                 }
             }
