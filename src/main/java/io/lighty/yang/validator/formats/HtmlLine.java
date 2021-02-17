@@ -45,42 +45,41 @@ public class HtmlLine extends Line {
              final Optional<AugmentationSchemaNode> augment, final boolean isKey) {
         super(node, inputOutput, removeChoiceQname, namespacePrefix, context, isKey);
         this.ids = ids;
-        if (augment.isPresent()) {
-            description = augment.get().getDescription().orElse("");
-        } else {
-            description = node.getDescription().orElse("");
-        }
-
-        if (augment.isPresent()) {
-            schema = "augment";
-        } else if (node instanceof EffectiveStatement) {
-            if (node instanceof AbstractUndeclaredEffectiveStatement) {
-                if (node instanceof CaseEffectiveStatement) {
-                    schema = "case";
-                } else if (node instanceof InputEffectiveStatement) {
-                    schema = "input";
-                } else if (node instanceof OutputEffectiveStatement) {
-                    schema = "output";
-                } else {
-                    schema = "";
-                }
-            } else {
-                schema = ((EffectiveStatement) node).getDeclared().statementDefinition().getStatementName()
-                        .getLocalName();
-            }
-        } else {
-            schema = "";
-        }
-
         Iterable<QName> pathFromRoot;
         if (augment.isPresent()) {
+            description = augment.get().getDescription().orElse("");
+            schema = "augment";
             pathFromRoot = augment.get().getTargetPath().getNodeIdentifiers();
             nodeName = augment.get().getTargetPath().asSchemaPath().getLastComponent().getLocalName();
             status = augment.get().getStatus();
             flag = "";
         } else {
+            description = node.getDescription().orElse("");
             pathFromRoot = node.getPath().getPathFromRoot();
+            if (node instanceof EffectiveStatement) {
+                if (node instanceof AbstractUndeclaredEffectiveStatement) {
+                    if (node instanceof CaseEffectiveStatement) {
+                        schema = "case";
+                    } else if (node instanceof InputEffectiveStatement) {
+                        schema = "input";
+                    } else if (node instanceof OutputEffectiveStatement) {
+                        schema = "output";
+                    } else {
+                        schema = "";
+                    }
+                } else {
+                    schema = ((EffectiveStatement) node).getDeclared().statementDefinition().getStatementName()
+                            .getLocalName();
+                }
+            } else {
+                schema = "";
+            }
         }
+        path = createPath(pathFromRoot, namespacePrefix, context);
+    }
+
+    private static String createPath(final Iterable<QName> pathFromRoot, final Map<URI, String> namespacePrefix,
+                                     final SchemaContext context) {
         final StringBuilder pathBuilder = new StringBuilder();
         for (QName path : pathFromRoot) {
             final String prefix = namespacePrefix.getOrDefault(path.getNamespace(),
@@ -91,8 +90,7 @@ public class HtmlLine extends Line {
                     .append(':')
                     .append(path.getLocalName());
         }
-        path = pathBuilder.toString();
-
+        return pathBuilder.toString();
     }
 
     @Override
@@ -123,32 +121,9 @@ public class HtmlLine extends Line {
                 .append("\">")
                 .append(nodeName)
                 .append(key);
-        if ("container".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-folder-open\"></i></span> </td>");
-        } else if ("list".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-list\"></i></span> </td>");
-        } else if ("leaf-list".equals(schema)) {
-            builder.append(" <span><i class=\"fab fa-pagelines\"></i></span> </td>");
-        } else if ("augment".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-external-link-alt\"></i></span> </td>");
-        } else if ("rpc".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-envelope\"></i></span> </td>");
-        } else if ("notification".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-bell\"></i></span> </td>");
-        } else if ("choice".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-tasks\"></i></span> </td>");
-        } else if ("case".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-check\"></i></span> </td>");
-        } else if ("input".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-share\"></i></span> </td>");
-        } else if ("output".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-reply\"></i></span> </td>");
-        } else if ("action".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-play\"></i></span> </td>");
-        }
-        else {
-            builder.append(" <span><i class=\"fas fa-leaf\"></i></span> </td>");
-        }
+
+        addHtmlSpanTagDependsOnSchemaValue(builder);
+
         final String enclosingTd = "</td>";
         builder.append("<td>")
                 .append(schema)
@@ -182,6 +157,35 @@ public class HtmlLine extends Line {
         return builder.toString();
     }
 
+    private void addHtmlSpanTagDependsOnSchemaValue(final StringBuilder builder) {
+        if ("container".equals(schema)) {
+            builder.append(" <span><i class=\"fas fa-folder-open\"></i></span> </td>");
+        } else if ("list".equals(schema)) {
+            builder.append(" <span><i class=\"fas fa-list\"></i></span> </td>");
+        } else if ("leaf-list".equals(schema)) {
+            builder.append(" <span><i class=\"fab fa-pagelines\"></i></span> </td>");
+        } else if ("augment".equals(schema)) {
+            builder.append(" <span><i class=\"fas fa-external-link-alt\"></i></span> </td>");
+        } else if ("rpc".equals(schema)) {
+            builder.append(" <span><i class=\"fas fa-envelope\"></i></span> </td>");
+        } else if ("notification".equals(schema)) {
+            builder.append(" <span><i class=\"fas fa-bell\"></i></span> </td>");
+        } else if ("choice".equals(schema)) {
+            builder.append(" <span><i class=\"fas fa-tasks\"></i></span> </td>");
+        } else if ("case".equals(schema)) {
+            builder.append(" <span><i class=\"fas fa-check\"></i></span> </td>");
+        } else if ("input".equals(schema)) {
+            builder.append(" <span><i class=\"fas fa-share\"></i></span> </td>");
+        } else if ("output".equals(schema)) {
+            builder.append(" <span><i class=\"fas fa-reply\"></i></span> </td>");
+        } else if ("action".equals(schema)) {
+            builder.append(" <span><i class=\"fas fa-play\"></i></span> </td>");
+        }
+        else {
+            builder.append(" <span><i class=\"fas fa-leaf\"></i></span> </td>");
+        }
+    }
+
     @Override
     protected void resolveFlag(SchemaNode node, SchemaContext context) {
         if (node instanceof CaseSchemaNode || node instanceof RpcDefinition || node instanceof NotificationDefinition
@@ -195,27 +199,31 @@ public class HtmlLine extends Line {
         } else if (this.inputOutput == RpcInputOutput.OUTPUT) {
             this.flag = RO;
         } else if (node instanceof DataSchemaNode) {
-            final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
-            final ListIterator<Integer> integerListIterator =
-                    this.removeChoiceQname.listIterator(this.removeChoiceQname.size());
-            while (integerListIterator.hasPrevious()) {
-                qNames.remove(integerListIterator.previous().intValue());
-            }
-            if (node instanceof ChoiceSchemaNode) {
-                qNames.remove(qNames.size() - 1);
-                if (context.findDataTreeChild(qNames).get().isConfiguration()
-                        && ((ChoiceSchemaNode) node).isConfiguration()) {
-                    this.flag = RW;
-                } else {
-                    this.flag = RO;
-                }
-            } else if (context.findDataTreeChild(qNames).get().isConfiguration()) {
+            resolveFlagForDataSchemaNode(node, context);
+        } else {
+            this.flag = RW;
+        }
+    }
+
+    private void resolveFlagForDataSchemaNode(final SchemaNode node, final SchemaContext context) {
+        final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
+        final ListIterator<Integer> integerListIterator =
+                this.removeChoiceQname.listIterator(this.removeChoiceQname.size());
+        while (integerListIterator.hasPrevious()) {
+            qNames.remove(integerListIterator.previous().intValue());
+        }
+        if (node instanceof ChoiceSchemaNode) {
+            qNames.remove(qNames.size() - 1);
+            if (context.findDataTreeChild(qNames).get().isConfiguration()
+                    && ((ChoiceSchemaNode) node).isConfiguration()) {
                 this.flag = RW;
             } else {
                 this.flag = RO;
             }
-        } else {
+        } else if (context.findDataTreeChild(qNames).get().isConfiguration()) {
             this.flag = RW;
+        } else {
+            this.flag = RO;
         }
     }
 }
