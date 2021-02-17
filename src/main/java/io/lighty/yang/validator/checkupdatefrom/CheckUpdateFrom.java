@@ -159,28 +159,7 @@ public class CheckUpdateFrom {
             for (final IdentitySchemaNode newIdentity : newIdentities) {
                 if (oldIdentity.getQName().getLocalName().equals(newIdentity.getQName().getLocalName())) {
                     identityFound = true;
-
-                    final Collection<? extends IdentitySchemaNode> oldBaseIdentities = oldIdentity.getBaseIdentities();
-                    final Collection<? extends IdentitySchemaNode> newBaseIdentities = newIdentity.getBaseIdentities();
-                    if (oldBaseIdentities.size() > newBaseIdentities.size()) {
-                        errors.add(baseIdentityError().updateInformation(newBaseIdentities.toString(),
-                                oldBaseIdentities.toString()));
-                    } else {
-                        for (final IdentitySchemaNode oldBaseIdentity : oldBaseIdentities) {
-                            boolean identityBaseFound = false;
-                            for (final IdentitySchemaNode newBaseIdentity : newBaseIdentities) {
-                                if (oldBaseIdentity.getQName().getLocalName()
-                                        .equals(newBaseIdentity.getQName().getLocalName())) {
-                                    identityBaseFound = true;
-                                    break;
-                                }
-                            }
-                            if (!identityBaseFound) {
-                                errors.add(missingBaseIdentityError()
-                                        .updateInformation(DONT_EXISTS, oldBaseIdentity.getPath().toString()));
-                            }
-                        }
-                    }
+                    verifyIfMatchChildOfOldAndNewIdentity(oldIdentity, newIdentity);
                     break;
                 }
             }
@@ -188,7 +167,31 @@ public class CheckUpdateFrom {
                 errors.add(missingIdentityError().updateInformation(DONT_EXISTS, oldIdentity.getPath().toString()));
             }
         }
+    }
 
+    private void verifyIfMatchChildOfOldAndNewIdentity(final IdentitySchemaNode oldIdentity,
+                                                       final IdentitySchemaNode newIdentity) {
+        final Collection<? extends IdentitySchemaNode> oldBaseIdentities = oldIdentity.getBaseIdentities();
+        final Collection<? extends IdentitySchemaNode> newBaseIdentities = newIdentity.getBaseIdentities();
+        if (oldBaseIdentities.size() > newBaseIdentities.size()) {
+            errors.add(baseIdentityError().updateInformation(newBaseIdentities.toString(),
+                                                             oldBaseIdentities.toString()));
+            return;
+        }
+
+        for (final IdentitySchemaNode oldBaseIdentity : oldBaseIdentities) {
+            boolean identityBaseFound = false;
+            for (final IdentitySchemaNode newBaseIdentity : newBaseIdentities) {
+                if (oldBaseIdentity.getQName().getLocalName().equals(newBaseIdentity.getQName().getLocalName())) {
+                    identityBaseFound = true;
+                    break;
+                }
+            }
+            if (!identityBaseFound) {
+                errors.add(missingBaseIdentityError()
+                                   .updateInformation(DONT_EXISTS, oldBaseIdentity.getPath().toString()));
+            }
+        }
     }
 
     private void checkTypeDefs() {
@@ -304,23 +307,11 @@ public class CheckUpdateFrom {
     private void checkTypeAware(TypeDefinition<? extends TypeDefinition<?>> oldType,
                                 TypeDefinition<? extends TypeDefinition<?>> newType) {
         final boolean isTypeError = checkType(oldType, newType);
-        checkReference(oldType.getReference(),
-                newType.getReference());
+        checkReference(oldType.getReference(), newType.getReference());
         checkDefault(oldType, newType);
         checkUnits(oldType, newType);
         if (!isTypeError) {
-            if (is7950 && oldType instanceof IdentityrefTypeDefinition) {
-                if (((IdentityrefTypeDefinition) oldType).getIdentities().isEmpty()) {
-                    errors.add(identityRefBaseError());
-                } else if (((IdentityrefTypeDefinition) oldType).getIdentities().size()
-                        < ((IdentityrefTypeDefinition) newType).getIdentities().size()) {
-                    errors.add(identityRefBaseError()
-                            .updateInformation(((IdentityrefTypeDefinition) newType).getIdentities().toString(),
-                            ((IdentityrefTypeDefinition) oldType).getIdentities().toString()));
-                }
-            }
-
-
+            checkSizeOfOldAndNewType(oldType, newType);
             if (oldType instanceof LengthRestrictedTypeDefinition) {
                 checkLength((LengthRestrictedTypeDefinition<?>) oldType, (LengthRestrictedTypeDefinition<?>) newType);
             }
@@ -335,6 +326,21 @@ public class CheckUpdateFrom {
                 checkBits((BitsTypeDefinition) oldType, (BitsTypeDefinition) newType);
             } else if (oldType instanceof StringTypeDefinition) {
                 checkPattern((StringTypeDefinition) oldType, (StringTypeDefinition) newType);
+            }
+        }
+    }
+
+    private void checkSizeOfOldAndNewType(final TypeDefinition<? extends TypeDefinition<?>> oldType,
+                                          final TypeDefinition<? extends TypeDefinition<?>> newType) {
+        if (is7950 && oldType instanceof IdentityrefTypeDefinition) {
+            if (((IdentityrefTypeDefinition) oldType).getIdentities().isEmpty()) {
+                errors.add(identityRefBaseError());
+            } else if (((IdentityrefTypeDefinition) oldType).getIdentities().size()
+                    < ((IdentityrefTypeDefinition) newType).getIdentities().size()) {
+                errors.add(identityRefBaseError()
+                                   .updateInformation(((IdentityrefTypeDefinition) newType).getIdentities().toString(),
+                                                      ((IdentityrefTypeDefinition) oldType).getIdentities()
+                                                              .toString()));
             }
         }
     }
@@ -442,28 +448,30 @@ public class CheckUpdateFrom {
     }
 
     private void checkMust(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        if (newNode instanceof MustConstraintAware) {
-            final Collection<? extends MustDefinition> newMust = ((MustConstraintAware) newNode).getMustConstraints();
-            if (oldNode instanceof MustConstraintAware) {
-                final Collection<? extends MustDefinition> oldMust =
-                        ((MustConstraintAware) oldNode).getMustConstraints();
-                if (oldMust.size() < newMust.size()) {
-                    errors.add(addedMustError().updateInformation(
-                            newNode.getPath().toString() + MUST + new ArrayList<>(newMust).toString(),
-                            oldNode.getPath().toString() + MUST + new ArrayList<>(oldMust).toString()));
-                } else {
-                    for (MustDefinition newMustDefinition : newMust) {
-                        if (!oldMust.contains(newMustDefinition)) {
-                            errors.add(checkMustWarning().updateInformation(
-                                    newNode.getPath().toString() + MUST + newMustDefinition.toString(),
-                                    oldNode.getPath().toString() + MUST + new ArrayList<>(oldMust).toString()));
-                        }
-                    }
-                }
-            } else {
-                errors.add(addedMustError().updateInformation(
-                        newNode.getPath().toString() + MUST + new ArrayList<>(newMust).toString(),
-                        DONT_EXISTS));
+        if (!(newNode instanceof MustConstraintAware)) {
+            return;
+        }
+
+        final Collection<? extends MustDefinition> newMust = ((MustConstraintAware) newNode).getMustConstraints();
+        if (!(oldNode instanceof MustConstraintAware)) {
+            errors.add(addedMustError().updateInformation(
+                    newNode.getPath().toString() + MUST + new ArrayList<>(newMust).toString(), DONT_EXISTS));
+            return;
+        }
+
+        final Collection<? extends MustDefinition> oldMust = ((MustConstraintAware) oldNode).getMustConstraints();
+        if (oldMust.size() < newMust.size()) {
+            errors.add(addedMustError().updateInformation(
+                    newNode.getPath().toString() + MUST + new ArrayList<>(newMust).toString(),
+                    oldNode.getPath().toString() + MUST + new ArrayList<>(oldMust).toString()));
+            return;
+        }
+
+        for (MustDefinition newMustDefinition : newMust) {
+            if (!oldMust.contains(newMustDefinition)) {
+                errors.add(checkMustWarning().updateInformation(
+                        newNode.getPath().toString() + MUST + newMustDefinition.toString(),
+                        oldNode.getPath().toString() + MUST + new ArrayList<>(oldMust).toString()));
             }
         }
     }
