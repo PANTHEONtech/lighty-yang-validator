@@ -56,147 +56,186 @@ public class JsTree extends FormatPlugin {
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
-            List<Line> lines = new ArrayList<>();
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
-            final String headerText = prepareHeader(module);
-            LOG.info("{}", headerText);
-            for (Module m : this.schemaContext.getModules()) {
-                if (!m.getPrefix().equals(module.getPrefix())) {
-                    namespacePrefix.put(m.getNamespace(), m.getPrefix());
-                }
-            }
             final List<Integer> removeChoiceQnames = new ArrayList<>();
-            int id = 1;
-            for (DataSchemaNode node : module.getChildNodes()) {
-                final ArrayList<Integer> ids = new ArrayList<>(Collections.singletonList(id++));
-                HtmlLine htmlLine = new HtmlLine(ids, node, RpcInputOutput.OTHER, this.schemaContext,
-                        removeChoiceQnames, namespacePrefix, Optional.empty(), false);
-                lines.add(htmlLine);
-                resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
-                        Collections.emptyList());
-            }
-            for (Line l : lines) {
-                final String linesText = l.toString();
-                LOG.info("{}", linesText);
-            }
-            // augmentations
-            lines = new ArrayList<>();
+            SingletonListInitializer singletonListInitializer = new SingletonListInitializer(1);
+
+            // Nodes
+            printLines(getChildNodesLines(singletonListInitializer, module, removeChoiceQnames));
+
+            // Augmentations
             for (AugmentationSchemaNode augNode : module.getAugmentations()) {
-                final ArrayList<Integer> ids = new ArrayList<>(Collections.singletonList(id++));
-                HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), augNode.getChildNodes().iterator().next(),
-                        RpcInputOutput.OTHER, this.schemaContext, removeChoiceQnames, namespacePrefix,
-                        Optional.of(augNode), false);
-                lines.add(htmlLine);
-                final Iterator<? extends DataSchemaNode> nodes = augNode.getChildNodes().iterator();
-                int modelAugmentationNumber = 1;
-                while (nodes.hasNext()) {
-                    removeChoiceQnames.clear();
-                    final DataSchemaNode node = nodes.next();
-                    final ArrayList<QName> qnames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
-                    Collection<? extends ActionDefinition> actions = new HashSet<>();
-                    RpcInputOutput inputOutputOther = RpcInputOutput.OTHER;
-                    for (int i = 1; i <= qnames.size(); i++) {
-                        List<QName> qnamesCopy = new ArrayList<>(qnames);
-                        qnamesCopy = qnamesCopy.subList(0, i);
-                        if (!actions.isEmpty()) {
-                            for (ActionDefinition action : actions) {
-                                if (action.getQName().getLocalName()
-                                        .equals(qnamesCopy.get(qnamesCopy.size() - 1).getLocalName())) {
-                                    if (INPUT.equals(qnames.get(i).getLocalName())) {
-                                        inputOutputOther = RpcInputOutput.INPUT;
-                                    } else {
-                                        inputOutputOther = RpcInputOutput.OUTPUT;
-                                    }
-                                }
-                            }
-                        }
-                        final ListIterator<Integer> integerListIterator =
-                                removeChoiceQnames.listIterator(removeChoiceQnames.size());
-                        while (integerListIterator.hasPrevious()) {
-                            qnamesCopy.remove(integerListIterator.previous().intValue());
-                            i--;
-                        }
-                        if (!this.schemaContext.findDataTreeChild(qnamesCopy).isPresent()) {
-                            removeChoiceQnames.add(i - 1);
-                        } else if (this.schemaContext.findDataTreeChild(qnamesCopy).get()
-                                instanceof ActionNodeContainer) {
-                            final ActionNodeContainer actionSchemaNode =
-                                    (ActionNodeContainer) this.schemaContext.findDataTreeChild(qnamesCopy).get();
-                            actions = actionSchemaNode.getActions();
-                        }
-                    }
-                    ids.add(modelAugmentationNumber++);
-                    HtmlLine line = new HtmlLine(new ArrayList<>(ids), node, inputOutputOther, this.schemaContext,
-                            removeChoiceQnames, namespacePrefix, Optional.empty(), false);
-                    lines.add(line);
-                    resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
-                            Collections.emptyList());
-                    ids.remove(ids.size() - 1);
-                }
-                for (Line line : lines) {
-                    final String linesText = line.toString();
-                    LOG.info("{}", linesText);
-                }
-                lines = new ArrayList<>();
+                printLines(getAugmentationNodesLines(singletonListInitializer.getSingletonListWithIncreasedValue(),
+                                                     augNode, removeChoiceQnames));
             }
-            // rpcs
-            for (RpcDefinition node : module.getRpcs()) {
-                final ArrayList<Integer> rpcId = new ArrayList<>(Collections.singletonList(id++));
-                HtmlLine htmlLine = new HtmlLine(rpcId, node, RpcInputOutput.OTHER, this.schemaContext,
-                        removeChoiceQnames, namespacePrefix, Optional.empty(), false);
-                lines.add(htmlLine);
-                final boolean inputExists = !node.getInput().getChildNodes().isEmpty();
-                final boolean outputExists = !node.getOutput().getChildNodes().isEmpty();
-                ArrayList<Integer> ids = new ArrayList<>(rpcId);
-                if (inputExists) {
-                    ids.add(1);
-                    htmlLine = new HtmlLine(new ArrayList<>(ids), node.getInput(), RpcInputOutput.INPUT,
-                            this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(),
-                            false);
-                    lines.add(htmlLine);
-                    resolveChildNodes(lines, new ArrayList<>(ids), node.getInput(), RpcInputOutput.INPUT,
-                            removeChoiceQnames, Collections.emptyList());
-                }
-                ids = new ArrayList<>(rpcId);
-                if (outputExists) {
-                    if (!inputExists) {
-                        ids.add(1);
-                    } else {
-                        ids.add(2);
-                    }
-                    htmlLine = new HtmlLine(new ArrayList<>(ids), node.getOutput(), RpcInputOutput.OUTPUT,
-                            this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(),
-                            false);
-                    lines.add(htmlLine);
-                    resolveChildNodes(lines, new ArrayList<>(ids), node.getOutput(), RpcInputOutput.OUTPUT,
-                            removeChoiceQnames, Collections.emptyList());
-                }
-            }
-            for (Line line : lines) {
-                final String linesText = line.toString();
-                LOG.info("{}", linesText);
-            }
-            lines = new ArrayList<>();
+
+            // Rpcs
+            printLines(getRpcsLines(singletonListInitializer, module, removeChoiceQnames));
+
             // Notifications
-            for (NotificationDefinition node : module.getNotifications()) {
-                final ArrayList<Integer> ids = new ArrayList<>(Collections.singletonList(id++));
-                HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), node, RpcInputOutput.OTHER, this.schemaContext,
-                        removeChoiceQnames, namespacePrefix, Optional.empty(), false);
-                lines.add(htmlLine);
-                resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
-                        Collections.emptyList());
-            }
-            for (Line line : lines) {
-                final String linesText = line.toString();
-                LOG.info("{}", linesText);
-            }
+            printLines(getNotificationsLines(singletonListInitializer, module, removeChoiceQnames));
         }
+
         LOG.info("</table>");
         LOG.info("</div>");
         String loadJS = loadJS();
         LOG.info("{}", loadJS);
         LOG.info("</body>");
         LOG.info("</html>");
+    }
+
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
+    private void printLines(final List<Line> lines) {
+        for (Line line : lines) {
+            final String linesText = line.toString();
+            LOG.info("{}", linesText);
+        }
+    }
+
+    private List<Line> getNotificationsLines(final SingletonListInitializer singletonListInitializer,
+                                             final Module module, final List<Integer> removeChoiceQnames) {
+        List<Line> lines = new ArrayList<>();
+        for (NotificationDefinition node : module.getNotifications()) {
+            final ArrayList<Integer> ids = singletonListInitializer.getSingletonListWithIncreasedValue();
+            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), node, RpcInputOutput.OTHER, this.schemaContext,
+                                             removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+            lines.add(htmlLine);
+            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
+                              Collections.emptyList());
+        }
+        return lines;
+    }
+
+    private List<Line> getRpcsLines(final SingletonListInitializer singletonListInitializer,
+                                    final Module module, final List<Integer> removeChoiceQnames) {
+        List<Line> lines = new ArrayList<>();
+        for (RpcDefinition node : module.getRpcs()) {
+            final ArrayList<Integer> rpcId = singletonListInitializer.getSingletonListWithIncreasedValue();
+            HtmlLine htmlLine = new HtmlLine(rpcId, node, RpcInputOutput.OTHER, this.schemaContext,
+                                             removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+            lines.add(htmlLine);
+            final boolean inputExists = !node.getInput().getChildNodes().isEmpty();
+            final boolean outputExists = !node.getOutput().getChildNodes().isEmpty();
+            ArrayList<Integer> ids = new ArrayList<>(rpcId);
+            if (inputExists) {
+                ids.add(1);
+                htmlLine = new HtmlLine(new ArrayList<>(ids), node.getInput(), RpcInputOutput.INPUT,
+                                        this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(),
+                                        false);
+                lines.add(htmlLine);
+                resolveChildNodes(lines, new ArrayList<>(ids), node.getInput(), RpcInputOutput.INPUT,
+                                  removeChoiceQnames, Collections.emptyList());
+            }
+            ids = new ArrayList<>(rpcId);
+            if (outputExists) {
+                if (!inputExists) {
+                    ids.add(1);
+                } else {
+                    ids.add(2);
+                }
+                htmlLine = new HtmlLine(new ArrayList<>(ids), node.getOutput(), RpcInputOutput.OUTPUT,
+                                        this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(),
+                                        false);
+                lines.add(htmlLine);
+                resolveChildNodes(lines, new ArrayList<>(ids), node.getOutput(), RpcInputOutput.OUTPUT,
+                                  removeChoiceQnames, Collections.emptyList());
+            }
+        }
+        return lines;
+    }
+
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
+    private List<Line> getChildNodesLines(final SingletonListInitializer singletonListInitializer,
+                                          final Module module, final List<Integer> removeChoiceQnames) {
+        List<Line> lines = new ArrayList<>();
+        final String headerText = prepareHeader(module);
+        LOG.info("{}", headerText);
+        for (Module m : this.schemaContext.getModules()) {
+            if (!m.getPrefix().equals(module.getPrefix())) {
+                namespacePrefix.put(m.getNamespace(), m.getPrefix());
+            }
+        }
+        for (DataSchemaNode node : module.getChildNodes()) {
+            final ArrayList<Integer> ids = singletonListInitializer.getSingletonListWithIncreasedValue();
+            HtmlLine htmlLine = new HtmlLine(ids, node, RpcInputOutput.OTHER, this.schemaContext,
+                                             removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+            lines.add(htmlLine);
+            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
+                              Collections.emptyList());
+        }
+        return lines;
+    }
+
+    private List<Line> getAugmentationNodesLines(final ArrayList<Integer> ids, final AugmentationSchemaNode augNode,
+                                                 final List<Integer> removeChoiceQnames) {
+        List<Line> lines = new ArrayList<>();
+        HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), augNode.getChildNodes().iterator().next(),
+                                         RpcInputOutput.OTHER, this.schemaContext, removeChoiceQnames, namespacePrefix,
+                                         Optional.of(augNode), false);
+        lines.add(htmlLine);
+        final Iterator<? extends DataSchemaNode> nodes = augNode.getChildNodes().iterator();
+        int modelAugmentationNumber = 1;
+        while (nodes.hasNext()) {
+            removeChoiceQnames.clear();
+            final DataSchemaNode node = nodes.next();
+            final ArrayList<QName> qnames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
+            RpcInputOutput inputOutputOther = getAugmentationRpcInputOutput(removeChoiceQnames, qnames);
+            ids.add(modelAugmentationNumber++);
+            HtmlLine line = new HtmlLine(new ArrayList<>(ids), node, inputOutputOther, this.schemaContext,
+                                         removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+            lines.add(line);
+            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
+                              Collections.emptyList());
+            ids.remove(ids.size() - 1);
+        }
+        return lines;
+    }
+
+    private RpcInputOutput getAugmentationRpcInputOutput(final List<Integer> removeChoiceQnames,
+                                                         final ArrayList<QName> qnames) {
+        Collection<? extends ActionDefinition> actions = new HashSet<>();
+        RpcInputOutput inputOutputOther = RpcInputOutput.OTHER;
+        for (int i = 1; i <= qnames.size(); i++) {
+            List<QName> qnamesCopy = new ArrayList<>(qnames);
+            qnamesCopy = qnamesCopy.subList(0, i);
+            inputOutputOther = getRpcInputOutput(qnames, actions, inputOutputOther, i, qnamesCopy);
+
+            final ListIterator<Integer> integerListIterator =
+                    removeChoiceQnames.listIterator(removeChoiceQnames.size());
+            while (integerListIterator.hasPrevious()) {
+                qnamesCopy.remove(integerListIterator.previous().intValue());
+                i--;
+            }
+            if (!this.schemaContext.findDataTreeChild(qnamesCopy).isPresent()) {
+                removeChoiceQnames.add(i - 1);
+            } else if (this.schemaContext.findDataTreeChild(qnamesCopy).get() instanceof ActionNodeContainer) {
+                final ActionNodeContainer actionSchemaNode =
+                        (ActionNodeContainer) this.schemaContext.findDataTreeChild(qnamesCopy).get();
+                actions = actionSchemaNode.getActions();
+            }
+        }
+        return inputOutputOther;
+    }
+
+    private RpcInputOutput getRpcInputOutput(final ArrayList<QName> qnames,
+                                             final Collection<? extends ActionDefinition> actions,
+                                             final RpcInputOutput inputOutputOther, final int iteration,
+                                             final List<QName> qnamesCopy) {
+        if (actions.isEmpty()) {
+            return inputOutputOther;
+        }
+        for (ActionDefinition action : actions) {
+            if (action.getQName().getLocalName().equals(qnamesCopy.get(qnamesCopy.size() - 1).getLocalName())) {
+                if (INPUT.equals(qnames.get(iteration).getLocalName())) {
+                    return RpcInputOutput.INPUT;
+                } else {
+                    return RpcInputOutput.OUTPUT;
+                }
+            }
+        }
+        return inputOutputOther;
     }
 
     private String loadJS() {
@@ -235,79 +274,103 @@ public class JsTree extends FormatPlugin {
                                    RpcInputOutput inputOutput, List<Integer> removeChoiceQnames,
                                    List<QName> keys) {
         if (node instanceof DataNodeContainer) {
-            int id = 1;
             final Iterator<? extends DataSchemaNode> childNodes = ((DataNodeContainer) node).getChildNodes().iterator();
-            connections.add(0);
-            while (childNodes.hasNext()) {
-                final DataSchemaNode child = childNodes.next();
-                connections.set(connections.size() - 1, id++);
-                HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), child, inputOutput, this.schemaContext,
-                        removeChoiceQnames, namespacePrefix, Optional.empty(), keys.contains(child.getQName()));
-                lines.add(htmlLine);
-                List<QName> keyDefinitions = Collections.emptyList();
-                if (child instanceof ListSchemaNode) {
-                    keyDefinitions = ((ListSchemaNode) child).getKeyDefinition();
-                }
-                resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, removeChoiceQnames,
-                        keyDefinitions);
-            }
-            // remove last only if the conatiner is not root container
-            if (connections.size() > 1) {
-                connections.remove(connections.size() - 1);
-            }
+            resolveDataNodeContainer(childNodes, lines, connections, inputOutput, removeChoiceQnames, keys);
+
         } else if (node instanceof ChoiceSchemaNode) {
-            int id = 1;
             connections.add(0);
             final Collection<? extends CaseSchemaNode> cases = ((ChoiceSchemaNode) node).getCases();
             final Iterator<? extends CaseSchemaNode> iterator = cases.iterator();
-            removeChoiceQnames.add(((List) node.getPath().getPathFromRoot()).size() - 1);
-            while (iterator.hasNext()) {
-                final DataSchemaNode child = iterator.next();
-                removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
-                connections.set(connections.size() - 1, id++);
-                HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), child, inputOutput, this.schemaContext,
-                        removeChoiceQnames, namespacePrefix, Optional.empty(), false);
-                lines.add(htmlLine);
-                resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, removeChoiceQnames,
-                        Collections.emptyList());
-                removeChoiceQnames.remove(Integer.valueOf(((List) child.getPath().getPathFromRoot()).size() - 1));
-            }
-            removeChoiceQnames.remove(Integer.valueOf(((List) node.getPath().getPathFromRoot()).size() - 1));
-            // remove last
-            connections.remove(connections.size() - 1);
+            resolveChoiceSchemaNode(iterator, lines, connections, node, inputOutput, removeChoiceQnames);
+
         }
         // If action is in container or list
         if (node instanceof ActionNodeContainer) {
+            resolveActionNodeContainer(lines, connections, node, removeChoiceQnames);
+        }
+    }
 
-            for (ActionDefinition action : ((ActionNodeContainer) node).getActions()) {
-                int id = 1;
-                connections.add(0);
-                connections.set(connections.size() - 1, id);
-                HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), action, RpcInputOutput.OTHER,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+    private void resolveActionNodeContainer(final List<Line> lines, final List<Integer> connections,
+                                            final SchemaNode node, final List<Integer> removeChoiceQnames) {
+        for (ActionDefinition action : ((ActionNodeContainer) node).getActions()) {
+            int id = 1;
+            connections.add(0);
+            connections.set(connections.size() - 1, id);
+            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), action, RpcInputOutput.OTHER,
+                                             this.schemaContext, removeChoiceQnames, namespacePrefix,
+                                             Optional.empty(), false);
+            lines.add(htmlLine);
+            final boolean inputExists = !action.getInput().getChildNodes().isEmpty();
+            final boolean outputExists = !action.getOutput().getChildNodes().isEmpty();
+            if (inputExists) {
+                connections.add(1);
+                htmlLine = new HtmlLine(new ArrayList<>(connections), action.getInput(), RpcInputOutput.INPUT,
+                                        this.schemaContext, removeChoiceQnames, namespacePrefix,
+                                        Optional.empty(), false);
                 lines.add(htmlLine);
-                final boolean inputExists = !action.getInput().getChildNodes().isEmpty();
-                final boolean outputExists = !action.getOutput().getChildNodes().isEmpty();
-                if (inputExists) {
-                    connections.add(1);
-                    htmlLine = new HtmlLine(new ArrayList<>(connections), action.getInput(), RpcInputOutput.INPUT,
-                            this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(), false);
-                    lines.add(htmlLine);
-                    resolveChildNodes(lines, new ArrayList<>(connections), action.getInput(), RpcInputOutput.INPUT,
-                            removeChoiceQnames, Collections.emptyList());
-                    connections.remove(connections.size() - 1);
-                }
-                if (outputExists) {
-                    connections.add(1);
-                    htmlLine = new HtmlLine(new ArrayList<>(connections), action.getOutput(), RpcInputOutput.OUTPUT,
-                            this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(), false);
-                    lines.add(htmlLine);
-                    resolveChildNodes(lines, new ArrayList<>(connections), action.getOutput(), RpcInputOutput.OUTPUT,
-                            removeChoiceQnames, Collections.emptyList());
-                    connections.remove(connections.size() - 1);
-                }
+                resolveChildNodes(lines, new ArrayList<>(connections), action.getInput(), RpcInputOutput.INPUT,
+                                  removeChoiceQnames, Collections.emptyList());
                 connections.remove(connections.size() - 1);
             }
+            if (outputExists) {
+                connections.add(1);
+                htmlLine = new HtmlLine(new ArrayList<>(connections), action.getOutput(), RpcInputOutput.OUTPUT,
+                                        this.schemaContext, removeChoiceQnames, namespacePrefix,
+                                        Optional.empty(), false);
+                lines.add(htmlLine);
+                resolveChildNodes(lines, new ArrayList<>(connections), action.getOutput(), RpcInputOutput.OUTPUT,
+                                  removeChoiceQnames, Collections.emptyList());
+                connections.remove(connections.size() - 1);
+            }
+            connections.remove(connections.size() - 1);
+        }
+    }
+
+    private void resolveChoiceSchemaNode(final Iterator<? extends CaseSchemaNode> iterator,
+                                         final List<Line> lines, final List<Integer> connections,
+                                         final SchemaNode node, final RpcInputOutput inputOutput,
+                                         final List<Integer> removeChoiceQnames) {
+        int id = 1;
+        removeChoiceQnames.add(((List) node.getPath().getPathFromRoot()).size() - 1);
+        while (iterator.hasNext()) {
+            final DataSchemaNode child = iterator.next();
+            removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
+            connections.set(connections.size() - 1, id++);
+            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), child, inputOutput, this.schemaContext,
+                                             removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+            lines.add(htmlLine);
+            resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, removeChoiceQnames,
+                              Collections.emptyList());
+            removeChoiceQnames.remove(Integer.valueOf(((List) child.getPath().getPathFromRoot()).size() - 1));
+        }
+        removeChoiceQnames.remove(Integer.valueOf(((List) node.getPath().getPathFromRoot()).size() - 1));
+        // remove last
+        connections.remove(connections.size() - 1);
+    }
+
+    private void resolveDataNodeContainer(final Iterator<? extends DataSchemaNode> childNodes,
+                                          final List<Line> lines, final List<Integer> connections,
+                                          final RpcInputOutput inputOutput, final List<Integer> removeChoiceQnames,
+                                          final List<QName> keys) {
+        int id = 1;
+        connections.add(0);
+        while (childNodes.hasNext()) {
+            final DataSchemaNode child = childNodes.next();
+            connections.set(connections.size() - 1, id++);
+            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), child, inputOutput, this.schemaContext,
+                                             removeChoiceQnames, namespacePrefix,
+                                             Optional.empty(), keys.contains(child.getQName()));
+            lines.add(htmlLine);
+            List<QName> keyDefinitions = Collections.emptyList();
+            if (child instanceof ListSchemaNode) {
+                keyDefinitions = ((ListSchemaNode) child).getKeyDefinition();
+            }
+            resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, removeChoiceQnames,
+                              keyDefinitions);
+        }
+        // remove last only if the conatiner is not root container
+        if (connections.size() > 1) {
+            connections.remove(connections.size() - 1);
         }
     }
 
@@ -319,5 +382,18 @@ public class JsTree extends FormatPlugin {
     @Override
     public Optional<GroupArguments> getGroupArguments() {
         return Optional.empty();
+    }
+
+    private static class SingletonListInitializer {
+
+        private int id;
+
+        SingletonListInitializer(int initialValue) {
+            this.id = initialValue;
+        }
+
+        ArrayList<Integer> getSingletonListWithIncreasedValue() {
+            return new ArrayList<>(Collections.singletonList(this.id++));
+        }
     }
 }
