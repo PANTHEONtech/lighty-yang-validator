@@ -10,6 +10,7 @@ package io.lighty.yang.validator.formats;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.DependConfiguration;
+import io.lighty.yang.validator.exceptions.ModuleNotFoundException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -43,13 +44,15 @@ public class Depends extends FormatPlugin {
     public void emitFormat() {
         final DependConfiguration dependConfiguration = this.configuration.getDependConfiguration();
         for (final RevisionSourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
+
+            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
+                    .orElseThrow(() -> new ModuleNotFoundException("Module " + source.getName() + " with revision "
+                            + source.getRevision() + " not found."));
             final StringBuilder dependantsBuilder = new StringBuilder(MODULE);
             dependantsBuilder.append(module.getName())
                     .append(AT);
-            if (module.getRevision().isPresent()) {
-                dependantsBuilder.append(module.getRevision().get());
-            }
+            module.getRevision().ifPresent(dependantsBuilder::append);
+
             dependantsBuilder.append(DEPENDS_TEXT);
             if (!dependConfiguration.isModuleImportsOnly()) {
                 resolveSubmodules(module, dependConfiguration);

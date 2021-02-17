@@ -8,6 +8,8 @@
 package io.lighty.yang.validator.formats;
 
 import com.google.common.collect.Lists;
+import io.lighty.yang.validator.exceptions.DataTreeChildNotFoundException;
+import io.lighty.yang.validator.exceptions.ModuleNotFoundException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +86,9 @@ public class HtmlLine extends Line {
         final StringBuilder pathBuilder = new StringBuilder();
         for (QName path : pathFromRoot) {
             final String prefix = namespacePrefix.getOrDefault(path.getNamespace(),
-                    context.findModule(path.getModule()).get().getPrefix());
+                    context.findModule(path.getModule())
+                            .orElseThrow(() -> new ModuleNotFoundException("Module " + path.getModule().toString()
+                                    + " not found.")).getPrefix());
 
             pathBuilder.append('/')
                     .append(prefix)
@@ -92,7 +96,6 @@ public class HtmlLine extends Line {
                     .append(path.getLocalName());
         }
         path = pathBuilder.toString();
-
     }
 
     @Override
@@ -145,8 +148,7 @@ public class HtmlLine extends Line {
             builder.append(" <span><i class=\"fas fa-reply\"></i></span> </td>");
         } else if ("action".equals(schema)) {
             builder.append(" <span><i class=\"fas fa-play\"></i></span> </td>");
-        }
-        else {
+        } else {
             builder.append(" <span><i class=\"fas fa-leaf\"></i></span> </td>");
         }
         final String enclosingTd = "</td>";
@@ -203,13 +205,17 @@ public class HtmlLine extends Line {
             }
             if (node instanceof ChoiceSchemaNode) {
                 qNames.remove(qNames.size() - 1);
-                if (context.findDataTreeChild(qNames).get().isConfiguration()
+                if (context.findDataTreeChild(qNames)
+                        .orElseThrow(() -> new ModuleNotFoundException("Data tree child " + qNames.toString()
+                                + " not found.")).isConfiguration()
                         && ((ChoiceSchemaNode) node).isConfiguration()) {
                     this.flag = RW;
                 } else {
                     this.flag = RO;
                 }
-            } else if (context.findDataTreeChild(qNames).get().isConfiguration()) {
+            } else if (context.findDataTreeChild(qNames)
+                    .orElseThrow(() -> new DataTreeChildNotFoundException("Data tree child " + qNames.toString()
+                            + " not found.")).isConfiguration()) {
                 this.flag = RW;
             } else {
                 this.flag = RO;

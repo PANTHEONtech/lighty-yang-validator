@@ -7,6 +7,7 @@
  */
 package io.lighty.yang.validator.formats.yang.printer;
 
+import io.lighty.yang.validator.exceptions.ModuleNotFoundException;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -38,6 +39,7 @@ import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.RevisionAwareXPath;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
+import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
@@ -66,8 +68,8 @@ public class ModulePrinter {
                          final QNameModule moduleName, final OutputStream out,
                          final Set<TypeDefinition> usedTypes, final Set<String> usedImports) {
         this(schemaTree, schemaContext, moduleName,
-             new IndentingPrinter(new PrintStream(out, false, Charset.defaultCharset())),
-             usedTypes, usedImports);
+                new IndentingPrinter(new PrintStream(out, false, Charset.defaultCharset())),
+                usedTypes, usedImports);
     }
 
     public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
@@ -84,7 +86,8 @@ public class ModulePrinter {
         this.schemaTree = schemaTree;
         this.moduleName = moduleName;
         this.printer = new StatementPrinter(printer);
-        module = schemaContext.findModule(moduleName).get();
+        module = schemaContext.findModule(moduleName)
+                .orElseThrow(() -> new ModuleNotFoundException("Module " + moduleName + " not found."));
         moduleToPrefix = module.getImports().stream()
                 .collect(Collectors.toMap(i -> schemaContext
                                 .findModules(i.getModuleName()).iterator().next().getQNameModule(),
@@ -161,8 +164,9 @@ public class ModulePrinter {
                 final Optional<DataSchemaNode> dataChildByName = grouping.findDataChildByName(schemaNode.getQName());
                 if (dataChildByName.isPresent()) {
                     DataSchemaNode dataSchemaNode = dataChildByName.get();
-                    if (((DerivableSchemaNode) schemaNode).getOriginal().isPresent()) {
-                        if (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath()
+                    final Optional<? extends SchemaNode> original = ((DerivableSchemaNode) schemaNode).getOriginal();
+                    if (original.isPresent()) {
+                        if (!original.get().getPath()
                                 .equals(dataSchemaNode.getPath())) {
                             continue;
                         }

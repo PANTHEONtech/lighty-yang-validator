@@ -9,6 +9,7 @@ package io.lighty.yang.validator.formats;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
+import io.lighty.yang.validator.exceptions.ModuleNotFoundException;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.Module;
@@ -27,7 +28,8 @@ public class NameRevision extends FormatPlugin {
     @Override
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
+            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
+                    .orElseThrow(() -> new ModuleNotFoundException("Module " + source.getName() + " not found."));
             final Optional<Revision> revision = module.getRevision();
             String moduleName = module.getName();
             if (revision.isPresent()) {
