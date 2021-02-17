@@ -118,34 +118,11 @@ public class JsonTree extends FormatPlugin {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
             final JSONObject moduleMetadata = resolveModuleMetadata(module);
             final JSONObject jsonTree = new JSONObject();
-            for (final DataSchemaNode node : module.getChildNodes()) {
-                jsonTree.append(CHILDREN, resolveChildMetadata(node, Optional.empty()));
-            }
-            for (final NotificationDefinition notification : module.getNotifications()) {
-                final JSONObject jsonNotification = new JSONObject();
-                for (final DataSchemaNode node : notification.getChildNodes()) {
-                    jsonNotification.append(CHILDREN, resolveChildMetadata(node, Optional.of(false)));
-                }
-                jsonNotification.put(NAME, notification.getQName().getLocalName());
-                jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
-                jsonNotification.put(STATUS, notification.getStatus().name());
-                jsonNotification.put(TYPE_INFO, new JSONObject());
-                jsonNotification.put(CLASS, NOTIFICATION);
-                jsonNotification.put(PATH, notification.getPath());
-                jsonTree.append(NOTIFICATIONS, jsonNotification);
-            }
-            for (final RpcDefinition rpc : module.getRpcs()) {
-                final JSONObject jsonRpc = new JSONObject();
-                jsonRpc.put(NAME, rpc.getQName().getLocalName());
-                jsonRpc.put(DESCRIPTION, rpc.getDescription().orElse(EMPTY));
-                jsonRpc.put(STATUS, rpc.getStatus().name());
-                jsonRpc.put(TYPE_INFO, new JSONObject());
-                jsonRpc.put(CLASS, RPC);
-                jsonRpc.put(PATH, resolvePath(rpc.getPath()));
-                jsonRpc.append(CHILDREN, resolveChildMetadata(rpc.getInput(), Optional.empty()));
-                jsonRpc.append(CHILDREN, resolveChildMetadata(rpc.getOutput(), Optional.of(false)));
-                jsonTree.append(RPCS, jsonRpc);
-            }
+
+            appendChildNodesToJsonTree(module, jsonTree);
+            appendNotificationsToJsonTree(module, jsonTree);
+            appendRpcsToJsonTree(module, jsonTree);
+
             for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
                 final JSONObject augmentationJson = new JSONObject();
                 final boolean isConfig = isAugmentConfig(augmentation);
@@ -164,36 +141,82 @@ public class JsonTree extends FormatPlugin {
                         augmentationJson.append(CHILDREN, resolveChildMetadata(child, Optional.of(false)));
                     }
                 }
-                for (final ActionDefinition child : augmentation.getActions()) {
-                    final JSONObject jsonModuleChildAction = new JSONObject();
-                    jsonModuleChildAction.put(NAME, child.getQName().getLocalName());
-                    jsonModuleChildAction.put(DESCRIPTION, child.getDescription().orElse(EMPTY));
-                    jsonModuleChildAction.put(STATUS, child.getStatus().name());
-                    jsonModuleChildAction.put(TYPE_INFO, new JSONObject());
-                    jsonModuleChildAction.put(CLASS, ACTION);
-                    jsonModuleChildAction.put(PATH, resolvePath(child.getPath()));
-                    jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getInput(), Optional.empty()));
-                    jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getOutput(), Optional.of(false)));
-                    augmentationJson.append(CHILDREN, jsonModuleChildAction);
-                }
-                for (final NotificationDefinition notification : module.getNotifications()) {
-                    final JSONObject jsonNotification = new JSONObject();
-                    for (final DataSchemaNode node : notification.getChildNodes()) {
-                        jsonNotification.append(CHILDREN, resolveChildMetadata(node, Optional.of(false)));
-                    }
-                    jsonNotification.put(NAME, notification.getQName().getLocalName());
-                    jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
-                    jsonNotification.put(STATUS, notification.getStatus().name());
-                    jsonNotification.put(TYPE_INFO, new JSONObject());
-                    jsonNotification.put(CLASS, NOTIFICATION);
-                    jsonNotification.put(PATH, notification.getPath());
-                    augmentationJson.append(NOTIFICATIONS, jsonNotification);
-                }
+
+                appendActionsToAugmentationJson(augmentation, augmentationJson);
+                appendNotificationsToAugmentationJson(module, augmentationJson);
                 jsonTree.append(AUGMENTS, augmentationJson);
             }
             jsonTree.put(MODULE, moduleMetadata);
             final String jsonTreeText = jsonTree.toString(4);
             LOG.info("{}", jsonTreeText);
+        }
+    }
+
+    private void appendNotificationsToAugmentationJson(Module module, JSONObject augmentationJson) {
+        for (final NotificationDefinition notification : module.getNotifications()) {
+            final JSONObject jsonNotification = new JSONObject();
+            for (final DataSchemaNode node : notification.getChildNodes()) {
+                jsonNotification.append(CHILDREN, resolveChildMetadata(node, Optional.of(false)));
+            }
+            jsonNotification.put(NAME, notification.getQName().getLocalName());
+            jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
+            jsonNotification.put(STATUS, notification.getStatus().name());
+            jsonNotification.put(TYPE_INFO, new JSONObject());
+            jsonNotification.put(CLASS, NOTIFICATION);
+            jsonNotification.put(PATH, notification.getPath());
+            augmentationJson.append(NOTIFICATIONS, jsonNotification);
+        }
+    }
+
+    private void appendActionsToAugmentationJson(AugmentationSchemaNode augmentation, JSONObject augmentationJson) {
+        for (final ActionDefinition child : augmentation.getActions()) {
+            final JSONObject jsonModuleChildAction = new JSONObject();
+            jsonModuleChildAction.put(NAME, child.getQName().getLocalName());
+            jsonModuleChildAction.put(DESCRIPTION, child.getDescription().orElse(EMPTY));
+            jsonModuleChildAction.put(STATUS, child.getStatus().name());
+            jsonModuleChildAction.put(TYPE_INFO, new JSONObject());
+            jsonModuleChildAction.put(CLASS, ACTION);
+            jsonModuleChildAction.put(PATH, resolvePath(child.getPath()));
+            jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getInput(), Optional.empty()));
+            jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getOutput(), Optional.of(false)));
+            augmentationJson.append(CHILDREN, jsonModuleChildAction);
+        }
+    }
+
+    private void appendRpcsToJsonTree(Module module, JSONObject jsonTree) {
+        for (final RpcDefinition rpc : module.getRpcs()) {
+            final JSONObject jsonRpc = new JSONObject();
+            jsonRpc.put(NAME, rpc.getQName().getLocalName());
+            jsonRpc.put(DESCRIPTION, rpc.getDescription().orElse(EMPTY));
+            jsonRpc.put(STATUS, rpc.getStatus().name());
+            jsonRpc.put(TYPE_INFO, new JSONObject());
+            jsonRpc.put(CLASS, RPC);
+            jsonRpc.put(PATH, resolvePath(rpc.getPath()));
+            jsonRpc.append(CHILDREN, resolveChildMetadata(rpc.getInput(), Optional.empty()));
+            jsonRpc.append(CHILDREN, resolveChildMetadata(rpc.getOutput(), Optional.of(false)));
+            jsonTree.append(RPCS, jsonRpc);
+        }
+    }
+
+    private void appendNotificationsToJsonTree(Module module, JSONObject jsonTree) {
+        for (final NotificationDefinition notification : module.getNotifications()) {
+            final JSONObject jsonNotification = new JSONObject();
+            for (final DataSchemaNode node : notification.getChildNodes()) {
+                jsonNotification.append(CHILDREN, resolveChildMetadata(node, Optional.of(false)));
+            }
+            jsonNotification.put(NAME, notification.getQName().getLocalName());
+            jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
+            jsonNotification.put(STATUS, notification.getStatus().name());
+            jsonNotification.put(TYPE_INFO, new JSONObject());
+            jsonNotification.put(CLASS, NOTIFICATION);
+            jsonNotification.put(PATH, notification.getPath());
+            jsonTree.append(NOTIFICATIONS, jsonNotification);
+        }
+    }
+
+    private void appendChildNodesToJsonTree(Module module, JSONObject jsonTree) {
+        for (final DataSchemaNode node : module.getChildNodes()) {
+            jsonTree.append(CHILDREN, resolveChildMetadata(node, Optional.empty()));
         }
     }
 
