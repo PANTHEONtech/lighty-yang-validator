@@ -24,8 +24,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.sourceforge.argparse4j.impl.choice.CollectionArgumentChoice;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
@@ -45,7 +47,7 @@ import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressFBWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
+@SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
 public class Tree extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(Tree.class);
@@ -78,146 +80,183 @@ public class Tree extends FormatPlugin {
             printHelp();
         }
         for (final RevisionSourceIdentifier source : this.sources) {
-            List<Line> lines = new ArrayList<>();
             usedModule = this.schemaContext.findModule(source.getName(), source.getRevision())
                     .orElseThrow(() -> new NotFoundException("Module", source.getName()));
-            for (Module m : this.schemaContext.getModules()) {
-                if (!m.getPrefix().equals(usedModule.getPrefix())
-                        || this.configuration.getTreeConfiguration().isPrefixMainModule()) {
-                    if (this.configuration.getTreeConfiguration().isModulePrefix()) {
-                        namespacePrefix.put(m.getNamespace(), m.getName());
-                    } else {
-                        namespacePrefix.put(m.getNamespace(), m.getPrefix());
-                    }
-                }
-            }
             final String firstLine = MODULE + usedModule.getName();
-            LOG.info(firstLine.substring(0, min(firstLine.length(), lineLength)));
+            String firstLineSubstring = firstLine.substring(0, min(firstLine.length(), lineLength));
+            LOG.info("{}", firstLineSubstring);
+
+            putSchemaContextModuleMatchedWithUsedModuleToNamespacePrefix();
+
+            AtomicInteger rootNodes = new AtomicInteger(0);
+            for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
+                if (st.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())
+                        && !st.getValue().isAugmenting()) {
+                    rootNodes.incrementAndGet();
+                }
+            }
             final List<Integer> removeChoiceQnames = new ArrayList<>();
-            int rootNodes = 0;
-            for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
-                if (st.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())
-                        && !st.getValue().isAugmenting()) {
-                    rootNodes++;
-                }
-            }
-            for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
-                if (st.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())
-                        && !st.getValue().isAugmenting()) {
-                    DataSchemaNode node = st.getValue().getSchemaNode();
-                    ConsoleLine consoleLine =
-                            new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER, this.schemaContext,
-                            removeChoiceQnames, namespacePrefix, false);
-                    lines.add(consoleLine);
-                    List<QName> keyDefinitions = Collections.emptyList();
-                    if (node instanceof ListSchemaNode) {
-                        keyDefinitions = ((ListSchemaNode) node).getKeyDefinition();
-                    }
-                    resolveChildNodes(lines, new ArrayList<>(), st.getValue(), --rootNodes > 0,
-                            RpcInputOutput.OTHER, removeChoiceQnames, keyDefinitions);
-                    this.treeDepth++;
-                }
-            }
-            printLines(lines);
 
-            // augmentations
-            final Map<List<QName>, Set<SchemaTree>> augments = new LinkedHashMap<>();
-            for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
-                if (st.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())
-                        && st.getValue().isAugmenting()) {
-                    final Iterator<QName> iterator = st.getKey().getPathFromRoot().iterator();
-                    List<QName> qnames = new ArrayList<>();
-                    while (iterator.hasNext()) {
-                        final QName next = iterator.next();
-                        if (iterator.hasNext()) {
-                            qnames.add(next);
-                        }
-                    }
-                    if (augments.get(qnames) == null || augments.get(qnames).isEmpty()) {
-                        augments.put(qnames, new LinkedHashSet<>());
-                    }
-                    augments.get(qnames).add(st.getValue());
-                }
-            }
+            // Nodes
+            printLines(getSchemaNodeLines(rootNodes, removeChoiceQnames));
 
-            lines = new ArrayList<>();
+            // Augmentations
+            final Map<List<QName>, Set<SchemaTree>> augments = getAugmentationMap();
             for (Map.Entry<List<QName>, Set<SchemaTree>> st : augments.entrySet()) {
-                final StringBuilder pathBuilder = new StringBuilder();
-                for (QName qname : st.getKey()) {
-                    pathBuilder.append(SLASH);
-                    if (this.configuration.getTreeConfiguration().isPrefixMainModule()
-                            || namespacePrefix.containsKey(qname.getNamespace())) {
-                        pathBuilder.append(namespacePrefix.get(qname.getNamespace()))
-                                .append(COLON);
-                    }
-                    pathBuilder.append(qname.getLocalName());
-                }
-                final String augmentText = AUGMENT + pathBuilder.append(COLON).toString();
-                LOG.info(augmentText.substring(0, min(augmentText.length(), lineLength)));
-                int augmentationNodes = st.getValue().size();
-                for (final SchemaTree value : st.getValue()) {
-                    DataSchemaNode node = value.getSchemaNode();
-                    ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER,
-                            this.schemaContext, removeChoiceQnames, namespacePrefix, false);
-                    lines.add(consoleLine);
-                    resolveChildNodes(lines, new ArrayList<>(), value, --augmentationNodes > 0,
-                            RpcInputOutput.OTHER, removeChoiceQnames, Collections.emptyList());
-                    this.treeDepth++;
-                }
-
-                printLines(lines);
-                lines = new ArrayList<>();
+                printLines(getAugmentedLines(st, removeChoiceQnames));
             }
-            // rpcs
+
+            // Rpcs
             final Iterator<? extends RpcDefinition> rpcs = usedModule.getRpcs().iterator();
             if (rpcs.hasNext()) {
-                LOG.info(RPCS.substring(0, min(RPCS.length(), lineLength)));
+                String rpcsSubstring = RPCS.substring(0, min(RPCS.length(), lineLength));
+                LOG.info("{}", rpcsSubstring);
             }
-            while (rpcs.hasNext()) {
-                final RpcDefinition node = rpcs.next();
-                ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, false);
-                lines.add(consoleLine);
-                final boolean inputExists = !node.getInput().getChildNodes().isEmpty();
-                final boolean outputExists = !node.getOutput().getChildNodes().isEmpty();
-                if (inputExists) {
-                    consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), node.getInput(),
-                            RpcInputOutput.INPUT, this.schemaContext, removeChoiceQnames, namespacePrefix, false);
-                    lines.add(consoleLine);
-                    final ArrayList<Boolean> isNextRpc = new ArrayList<>(Collections.singleton(rpcs.hasNext()));
-                    resolveChildNodes(lines, isNextRpc, node.getInput(), outputExists, RpcInputOutput.INPUT,
-                            removeChoiceQnames, Collections.emptyList());
-                    this.treeDepth++;
-                }
-                if (outputExists) {
-                    consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), node.getOutput(),
-                            RpcInputOutput.OUTPUT, this.schemaContext, removeChoiceQnames, namespacePrefix, false);
-                    lines.add(consoleLine);
-                    final ArrayList<Boolean> isNextRpc = new ArrayList<>(Collections.singleton(rpcs.hasNext()));
-                    resolveChildNodes(lines, isNextRpc, node.getOutput(), false, RpcInputOutput.OUTPUT,
-                            removeChoiceQnames, Collections.emptyList());
-                    this.treeDepth++;
-                }
-            }
+            printLines(getRpcsLines(rpcs, removeChoiceQnames));
 
-            printLines(lines);
-            lines = new ArrayList<>();
             // Notifications
             final Iterator<? extends NotificationDefinition> notifications = usedModule.getNotifications().iterator();
             if (notifications.hasNext()) {
-                LOG.info(NOTIFICATION.substring(0, min(NOTIFICATION.length(), lineLength)));
+                String notificationSubstring = NOTIFICATION.substring(0, min(NOTIFICATION.length(), lineLength));
+                LOG.info("{}", notificationSubstring);
             }
-            while (notifications.hasNext()) {
-                final NotificationDefinition node = notifications.next();
-                ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            printLines(getNotificationLines(notifications, removeChoiceQnames));
+        }
+    }
+
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
+    private List<Line> getAugmentedLines(Entry<List<QName>, Set<SchemaTree>> st, List<Integer> removeChoiceQnames) {
+        List<Line> lines = new ArrayList<>();
+        final StringBuilder pathBuilder = new StringBuilder();
+        for (QName qname : st.getKey()) {
+            pathBuilder.append(SLASH);
+            if (this.configuration.getTreeConfiguration().isPrefixMainModule()
+                    || namespacePrefix.containsKey(qname.getNamespace())) {
+                pathBuilder.append(namespacePrefix.get(qname.getNamespace()))
+                        .append(COLON);
+            }
+            pathBuilder.append(qname.getLocalName());
+        }
+        final String augmentText = AUGMENT + pathBuilder.append(COLON).toString();
+        String augmentationSubstring = augmentText.substring(0, min(augmentText.length(), lineLength));
+        LOG.info("{}", augmentationSubstring);
+        int augmentationNodes = st.getValue().size();
+        for (final SchemaTree value : st.getValue()) {
+            DataSchemaNode node = value.getSchemaNode();
+            ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER,
+                                                      this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            lines.add(consoleLine);
+            resolveChildNodes(lines, new ArrayList<>(), value, --augmentationNodes > 0,
+                              RpcInputOutput.OTHER, removeChoiceQnames, Collections.emptyList());
+            this.treeDepth++;
+        }
+        return lines;
+    }
+
+    private List<Line> getSchemaNodeLines(AtomicInteger rootNodes, List<Integer> removeChoiceQnames) {
+        List<Line> lines = new ArrayList<>();
+        for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
+            if (st.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())
+                    && !st.getValue().isAugmenting()) {
+                DataSchemaNode node = st.getValue().getSchemaNode();
+                ConsoleLine consoleLine =
+                        new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER, this.schemaContext,
+                                        removeChoiceQnames, namespacePrefix, false);
                 lines.add(consoleLine);
-                resolveChildNodes(lines, new ArrayList<>(), node, false, RpcInputOutput.OTHER,
-                        removeChoiceQnames, Collections.emptyList());
+                List<QName> keyDefinitions = Collections.emptyList();
+                if (node instanceof ListSchemaNode) {
+                    keyDefinitions = ((ListSchemaNode) node).getKeyDefinition();
+                }
+                resolveChildNodes(lines, new ArrayList<>(), st.getValue(), rootNodes.decrementAndGet() > 0,
+                                  RpcInputOutput.OTHER, removeChoiceQnames, keyDefinitions);
                 this.treeDepth++;
             }
-            printLines(lines);
         }
+        return lines;
+    }
+
+    private void putSchemaContextModuleMatchedWithUsedModuleToNamespacePrefix() {
+        for (Module m : this.schemaContext.getModules()) {
+            if (!m.getPrefix().equals(usedModule.getPrefix())
+                    || this.configuration.getTreeConfiguration().isPrefixMainModule()) {
+                if (this.configuration.getTreeConfiguration().isModulePrefix()) {
+                    namespacePrefix.put(m.getNamespace(), m.getName());
+                } else {
+                    namespacePrefix.put(m.getNamespace(), m.getPrefix());
+                }
+            }
+        }
+    }
+
+    private List<Line> getNotificationLines(final Iterator<? extends NotificationDefinition> notifications,
+                                            final List<Integer> removeChoiceQnames) {
+        List<Line> lines = new ArrayList<>();
+        while (notifications.hasNext()) {
+            final NotificationDefinition node = notifications.next();
+            ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER,
+                                                      this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            lines.add(consoleLine);
+            resolveChildNodes(lines, new ArrayList<>(), node, false, RpcInputOutput.OTHER,
+                              removeChoiceQnames, Collections.emptyList());
+            this.treeDepth++;
+        }
+        return lines;
+    }
+
+    private List<Line> getRpcsLines(Iterator<? extends RpcDefinition> rpcs, final List<Integer> removeChoiceQnames) {
+        List<Line> lines = new ArrayList<>();
+        while (rpcs.hasNext()) {
+            final RpcDefinition node = rpcs.next();
+            ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER,
+                                                      this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            lines.add(consoleLine);
+            final boolean inputExists = !node.getInput().getChildNodes().isEmpty();
+            final boolean outputExists = !node.getOutput().getChildNodes().isEmpty();
+            if (inputExists) {
+                consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), node.getInput(),
+                                              RpcInputOutput.INPUT, this.schemaContext, removeChoiceQnames,
+                                              namespacePrefix, false);
+                lines.add(consoleLine);
+                final ArrayList<Boolean> isNextRpc = new ArrayList<>(Collections.singleton(rpcs.hasNext()));
+                resolveChildNodes(lines, isNextRpc, node.getInput(), outputExists, RpcInputOutput.INPUT,
+                                  removeChoiceQnames, Collections.emptyList());
+                this.treeDepth++;
+            }
+            if (outputExists) {
+                consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), node.getOutput(),
+                                              RpcInputOutput.OUTPUT, this.schemaContext, removeChoiceQnames,
+                                              namespacePrefix, false);
+                lines.add(consoleLine);
+                final ArrayList<Boolean> isNextRpc = new ArrayList<>(Collections.singleton(rpcs.hasNext()));
+                resolveChildNodes(lines, isNextRpc, node.getOutput(), false, RpcInputOutput.OUTPUT,
+                                  removeChoiceQnames, Collections.emptyList());
+                this.treeDepth++;
+            }
+        }
+        return lines;
+    }
+
+    private Map<List<QName>, Set<SchemaTree>> getAugmentationMap() {
+        final Map<List<QName>, Set<SchemaTree>> augments = new LinkedHashMap<>();
+        for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
+            if (st.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())
+                    && st.getValue().isAugmenting()) {
+                final Iterator<QName> iterator = st.getKey().getPathFromRoot().iterator();
+                List<QName> qnames = new ArrayList<>();
+                while (iterator.hasNext()) {
+                    final QName next = iterator.next();
+                    if (iterator.hasNext()) {
+                        qnames.add(next);
+                    }
+                }
+                if (augments.get(qnames) == null || augments.get(qnames).isEmpty()) {
+                    augments.put(qnames, new LinkedHashSet<>());
+                }
+                augments.get(qnames).add(st.getValue());
+            }
+        }
+        return augments;
     }
 
     private void resolveChildNodes(List<Line> lines, List<Boolean> isConnected, SchemaTree st, boolean hasNext,
@@ -232,47 +271,11 @@ public class Tree extends FormatPlugin {
         }
         if (node instanceof DataNodeContainer) {
             isConnected.add(hasNext);
-            final Iterator<Map.Entry<SchemaPath, SchemaTree>> childNodes =
-                    st.getDataSchemaNodeChildren().entrySet().iterator();
-            while (childNodes.hasNext()) {
-                final Map.Entry<SchemaPath, SchemaTree> nextST = childNodes.next();
-                if (nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
-                    final SchemaTree childSchemaTree = nextST.getValue();
-                    final DataSchemaNode child = childSchemaTree.getSchemaNode();
-                    ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
-                            this.schemaContext, removeChoiceQnames, namespacePrefix, keys.contains(child.getQName()));
-                    lines.add(consoleLine);
-                    List<QName> keyDefinitions = Collections.emptyList();
-                    if (child instanceof ListSchemaNode) {
-                        keyDefinitions = ((ListSchemaNode) child).getKeyDefinition();
-                    }
-                    resolveChildNodes(lines, isConnected, childSchemaTree, childNodes.hasNext()
-                            || actionExists, inputOutput, removeChoiceQnames, keyDefinitions);
-                    this.treeDepth++;
-                }
-            }
+            resolveDataNodeContainer(lines, isConnected, st, inputOutput, removeChoiceQnames, keys, actionExists);
             isConnected.remove(isConnected.size() - 1);
         } else if (node instanceof ChoiceSchemaNode) {
             isConnected.add(hasNext);
-            final Iterator<Map.Entry<SchemaPath, SchemaTree>> caseNodes =
-                    st.getDataSchemaNodeChildren().entrySet().iterator();
-            removeChoiceQnames.add(((List) node.getPath().getPathFromRoot()).size() - 1);
-            while (caseNodes.hasNext()) {
-                final Map.Entry<SchemaPath, SchemaTree> nextST = caseNodes.next();
-                if (nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
-                    final SchemaTree caseValue = nextST.getValue();
-                    final DataSchemaNode child = caseValue.getSchemaNode();
-                    removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
-                    ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
-                            this.schemaContext, removeChoiceQnames, namespacePrefix, false);
-                    lines.add(consoleLine);
-                    resolveChildNodes(lines, isConnected, caseValue, caseNodes.hasNext()
-                                    || actionExists, inputOutput, removeChoiceQnames, Collections.emptyList());
-                    this.treeDepth++;
-                    removeChoiceQnames.remove(Integer.valueOf(((List) child.getPath().getPathFromRoot()).size() - 1));
-                }
-            }
-            removeChoiceQnames.remove(Integer.valueOf(((List) node.getPath().getPathFromRoot()).size() - 1));
+            resolveChoiceSchemaNode(lines, isConnected, st, inputOutput, removeChoiceQnames, actionExists, node);
             isConnected.remove(isConnected.size() - 1);
         }
         // If action is in container or list
@@ -281,49 +284,7 @@ public class Tree extends FormatPlugin {
             final Iterator<Map.Entry<SchemaPath, SchemaTree>> actions =
                     st.getActionDefinitionChildren().entrySet().iterator();
             while (actions.hasNext()) {
-                final Map.Entry<SchemaPath, SchemaTree> nextST = actions.next();
-                if (nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
-                    final SchemaTree actionSchemaTree = nextST.getValue();
-                    final ActionDefinition action = actionSchemaTree.getActionNode();
-                    ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action,
-                            RpcInputOutput.OTHER, this.schemaContext, removeChoiceQnames, namespacePrefix, false);
-                    lines.add(consoleLine);
-                    boolean inputExists = false;
-                    boolean outputExists = false;
-                    SchemaTree inValue = null;
-                    SchemaTree outValue = null;
-                    for (Map.Entry<SchemaPath, SchemaTree> inOut : actionSchemaTree.getChildren().entrySet()) {
-                        if ("input".equals(inOut.getKey().getLastComponent().getLocalName())
-                                && !inOut.getValue().getChildren().isEmpty()) {
-                            inputExists = true;
-                            inValue = inOut.getValue();
-                        } else if ("output".equals(inOut.getKey().getLastComponent().getLocalName())
-                                && !inOut.getValue().getChildren().isEmpty()) {
-                            outputExists = true;
-                            outValue = inOut.getValue();
-                        }
-                    }
-                    if (inputExists) {
-                        isConnected.add(actions.hasNext() || hasNext);
-                        consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getInput(),
-                                RpcInputOutput.INPUT, this.schemaContext, removeChoiceQnames, namespacePrefix, false);
-                        lines.add(consoleLine);
-                        resolveChildNodes(lines, isConnected, inValue, outputExists, RpcInputOutput.INPUT,
-                                removeChoiceQnames, Collections.emptyList());
-                        this.treeDepth++;
-                        isConnected.remove(isConnected.size() - 1);
-                    }
-                    if (outputExists) {
-                        isConnected.add(actions.hasNext() || hasNext);
-                        consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getOutput(),
-                                RpcInputOutput.OUTPUT, this.schemaContext, removeChoiceQnames, namespacePrefix, false);
-                        lines.add(consoleLine);
-                        resolveChildNodes(lines, isConnected, outValue, false, RpcInputOutput.OUTPUT,
-                                removeChoiceQnames, Collections.emptyList());
-                        this.treeDepth++;
-                        isConnected.remove(isConnected.size() - 1);
-                    }
-                }
+                resolveActions(lines, isConnected, hasNext, removeChoiceQnames, actions);
                 isConnected.remove(isConnected.size() - 1);
             }
         }
@@ -341,39 +302,12 @@ public class Tree extends FormatPlugin {
         }
         if (node instanceof DataNodeContainer) {
             isConnected.add(hasNext);
-            final Iterator<? extends DataSchemaNode> childNodes = ((DataNodeContainer) node).getChildNodes().iterator();
-            while (childNodes.hasNext()) {
-                final DataSchemaNode child = childNodes.next();
-                ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, keys.contains(child.getQName()));
-                lines.add(consoleLine);
-                List<QName> keyDefinitions = Collections.emptyList();
-                if (child instanceof ListSchemaNode) {
-                    keyDefinitions = ((ListSchemaNode) child).getKeyDefinition();
-                }
-                resolveChildNodes(lines, isConnected, child, childNodes.hasNext() || actionExists, inputOutput,
-                        removeChoiceQnames, keyDefinitions);
-                this.treeDepth++;
-            }
+            resolveDataNodeContainer(lines, isConnected, node, inputOutput, removeChoiceQnames, keys, actionExists);
             // remove last
             isConnected.remove(isConnected.size() - 1);
         } else if (node instanceof ChoiceSchemaNode) {
             isConnected.add(hasNext);
-            final Collection<? extends CaseSchemaNode> cases = ((ChoiceSchemaNode) node).getCases();
-            final Iterator<? extends CaseSchemaNode> iterator = cases.iterator();
-            removeChoiceQnames.add(((List) node.getPath().getPathFromRoot()).size() - 1);
-            while (iterator.hasNext()) {
-                final DataSchemaNode child = iterator.next();
-                removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
-                ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, false);
-                lines.add(consoleLine);
-                resolveChildNodes(lines, isConnected, child, iterator.hasNext() || actionExists, inputOutput,
-                        removeChoiceQnames, Collections.emptyList());
-                this.treeDepth++;
-                removeChoiceQnames.remove(Integer.valueOf(((List) child.getPath().getPathFromRoot()).size() - 1));
-            }
-            removeChoiceQnames.remove(Integer.valueOf(((List) node.getPath().getPathFromRoot()).size() - 1));
+            resolveChoiceSchemaNode(lines, isConnected, node, inputOutput, removeChoiceQnames, actionExists);
             // remove last
             isConnected.remove(isConnected.size() - 1);
         }
@@ -413,10 +347,154 @@ public class Tree extends FormatPlugin {
         }
     }
 
+    private void resolveActions(final List<Line> lines, final List<Boolean> isConnected, boolean hasNext,
+                                final List<Integer> removeChoiceQnames,
+                                final Iterator<Map.Entry<SchemaPath, SchemaTree>> actions) {
+        final Map.Entry<SchemaPath, SchemaTree> nextST = actions.next();
+        if (!nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
+            return;
+        }
+        final SchemaTree actionSchemaTree = nextST.getValue();
+        final ActionDefinition action = actionSchemaTree.getActionNode();
+        ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action, RpcInputOutput.OTHER,
+                                                  this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+        lines.add(consoleLine);
+        boolean inputExists = false;
+        boolean outputExists = false;
+        SchemaTree inValue = null;
+        SchemaTree outValue = null;
+        for (Map.Entry<SchemaPath, SchemaTree> inOut : actionSchemaTree.getChildren().entrySet()) {
+            if ("input".equals(inOut.getKey().getLastComponent().getLocalName())
+                    && !inOut.getValue().getChildren().isEmpty()) {
+                inputExists = true;
+                inValue = inOut.getValue();
+            } else if ("output".equals(inOut.getKey().getLastComponent().getLocalName())
+                    && !inOut.getValue().getChildren().isEmpty()) {
+                outputExists = true;
+                outValue = inOut.getValue();
+            }
+        }
+        if (inputExists) {
+            isConnected.add(actions.hasNext() || hasNext);
+            consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getInput(),
+                                          RpcInputOutput.INPUT, this.schemaContext, removeChoiceQnames,
+                                          namespacePrefix, false);
+            lines.add(consoleLine);
+            resolveChildNodes(lines, isConnected, inValue, outputExists, RpcInputOutput.INPUT,
+                              removeChoiceQnames, Collections.emptyList());
+            this.treeDepth++;
+            isConnected.remove(isConnected.size() - 1);
+        }
+        if (outputExists) {
+            isConnected.add(actions.hasNext() || hasNext);
+            consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getOutput(),
+                                          RpcInputOutput.OUTPUT, this.schemaContext, removeChoiceQnames,
+                                          namespacePrefix, false);
+            lines.add(consoleLine);
+            resolveChildNodes(lines, isConnected, outValue, false, RpcInputOutput.OUTPUT,
+                              removeChoiceQnames, Collections.emptyList());
+            this.treeDepth++;
+            isConnected.remove(isConnected.size() - 1);
+        }
+    }
+
+    private void resolveChoiceSchemaNode(final List<Line> lines, final List<Boolean> isConnected, final SchemaTree st,
+                                         final RpcInputOutput inputOutput, final List<Integer> removeChoiceQnames,
+                                         final boolean actionExists, final DataSchemaNode node) {
+        final Iterator<Map.Entry<SchemaPath, SchemaTree>> caseNodes =
+                st.getDataSchemaNodeChildren().entrySet().iterator();
+        removeChoiceQnames.add(((List) node.getPath().getPathFromRoot()).size() - 1);
+        while (caseNodes.hasNext()) {
+            final Map.Entry<SchemaPath, SchemaTree> nextST = caseNodes.next();
+            if (nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
+                final SchemaTree caseValue = nextST.getValue();
+                final DataSchemaNode child = caseValue.getSchemaNode();
+                removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
+                ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
+                                                          this.schemaContext, removeChoiceQnames, namespacePrefix,
+                                                          false);
+                lines.add(consoleLine);
+                resolveChildNodes(lines, isConnected, caseValue, caseNodes.hasNext()
+                        || actionExists, inputOutput, removeChoiceQnames, Collections.emptyList());
+                this.treeDepth++;
+                removeChoiceQnames.remove(Integer.valueOf(((List) child.getPath().getPathFromRoot()).size() - 1));
+            }
+        }
+        removeChoiceQnames.remove(Integer.valueOf(((List) node.getPath().getPathFromRoot()).size() - 1));
+    }
+
+    private void resolveChoiceSchemaNode(final List<Line> lines, final List<Boolean> isConnected, final SchemaNode node,
+                                         final RpcInputOutput inputOutput, final List<Integer> removeChoiceQnames,
+                                         final boolean actionExists) {
+        final Collection<? extends CaseSchemaNode> cases = ((ChoiceSchemaNode) node).getCases();
+        final Iterator<? extends CaseSchemaNode> iterator = cases.iterator();
+        removeChoiceQnames.add(((List) node.getPath().getPathFromRoot()).size() - 1);
+        while (iterator.hasNext()) {
+            final DataSchemaNode child = iterator.next();
+            removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
+            ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
+                                                      this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            lines.add(consoleLine);
+            resolveChildNodes(lines, isConnected, child, iterator.hasNext() || actionExists, inputOutput,
+                              removeChoiceQnames, Collections.emptyList());
+            this.treeDepth++;
+            removeChoiceQnames.remove(Integer.valueOf(((List) child.getPath().getPathFromRoot()).size() - 1));
+        }
+        removeChoiceQnames.remove(Integer.valueOf(((List) node.getPath().getPathFromRoot()).size() - 1));
+    }
+
+
+    private void resolveDataNodeContainer(final List<Line> lines, final List<Boolean> isConnected, final SchemaTree st,
+                                          final RpcInputOutput inputOutput, final List<Integer> removeChoiceQnames,
+                                          final List<QName> keys, final boolean actionExists) {
+        final Iterator<Map.Entry<SchemaPath, SchemaTree>> childNodes =
+                st.getDataSchemaNodeChildren().entrySet().iterator();
+        while (childNodes.hasNext()) {
+            final Map.Entry<SchemaPath, SchemaTree> nextST = childNodes.next();
+            if (nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
+                final SchemaTree childSchemaTree = nextST.getValue();
+                final DataSchemaNode child = childSchemaTree.getSchemaNode();
+                ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
+                                                          this.schemaContext, removeChoiceQnames, namespacePrefix,
+                                                          keys.contains(child.getQName()));
+                lines.add(consoleLine);
+                List<QName> keyDefinitions = Collections.emptyList();
+                if (child instanceof ListSchemaNode) {
+                    keyDefinitions = ((ListSchemaNode) child).getKeyDefinition();
+                }
+                resolveChildNodes(lines, isConnected, childSchemaTree, childNodes.hasNext()
+                        || actionExists, inputOutput, removeChoiceQnames, keyDefinitions);
+                this.treeDepth++;
+            }
+        }
+    }
+
+    private void resolveDataNodeContainer(final List<Line> lines, final List<Boolean> isConnected,
+                                          final SchemaNode node,
+                                          final RpcInputOutput inputOutput, final List<Integer> removeChoiceQnames,
+                                          final List<QName> keys, final boolean actionExists) {
+        final Iterator<? extends DataSchemaNode> childNodes = ((DataNodeContainer) node).getChildNodes().iterator();
+        while (childNodes.hasNext()) {
+            final DataSchemaNode child = childNodes.next();
+            ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
+                                                      this.schemaContext, removeChoiceQnames, namespacePrefix,
+                                                      keys.contains(child.getQName()));
+            lines.add(consoleLine);
+            List<QName> keyDefinitions = Collections.emptyList();
+            if (child instanceof ListSchemaNode) {
+                keyDefinitions = ((ListSchemaNode) child).getKeyDefinition();
+            }
+            resolveChildNodes(lines, isConnected, child, childNodes.hasNext() || actionExists, inputOutput,
+                              removeChoiceQnames, keyDefinitions);
+            this.treeDepth++;
+        }
+    }
+
     private void printLines(final List<Line> lines) {
         for (Line l : lines) {
             final String linesText = l.toString();
-            LOG.info(linesText.substring(0, min(linesText.length(), lineLength)));
+            String linesSubstring = linesText.substring(0, min(linesText.length(), lineLength));
+            LOG.info("{}", linesSubstring);
         }
     }
 
