@@ -158,12 +158,7 @@ public class JsonTree extends FormatPlugin {
             for (final DataSchemaNode node : notification.getChildNodes()) {
                 jsonNotification.append(CHILDREN, resolveChildMetadata(node, Optional.of(false)));
             }
-            jsonNotification.put(NAME, notification.getQName().getLocalName());
-            jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
-            jsonNotification.put(STATUS, notification.getStatus().name());
-            jsonNotification.put(TYPE_INFO, new JSONObject());
-            jsonNotification.put(CLASS, NOTIFICATION);
-            jsonNotification.put(PATH, notification.getPath());
+            putNotificationDataToJsonNotification(notification, jsonNotification);
             augmentationJson.append(NOTIFICATIONS, jsonNotification);
         }
     }
@@ -204,14 +199,19 @@ public class JsonTree extends FormatPlugin {
             for (final DataSchemaNode node : notification.getChildNodes()) {
                 jsonNotification.append(CHILDREN, resolveChildMetadata(node, Optional.of(false)));
             }
-            jsonNotification.put(NAME, notification.getQName().getLocalName());
-            jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
-            jsonNotification.put(STATUS, notification.getStatus().name());
-            jsonNotification.put(TYPE_INFO, new JSONObject());
-            jsonNotification.put(CLASS, NOTIFICATION);
-            jsonNotification.put(PATH, notification.getPath());
+            putNotificationDataToJsonNotification(notification, jsonNotification);
             jsonTree.append(NOTIFICATIONS, jsonNotification);
         }
+    }
+
+    private void putNotificationDataToJsonNotification(final NotificationDefinition notification,
+                                                       final JSONObject jsonNotification) {
+        jsonNotification.put(NAME, notification.getQName().getLocalName());
+        jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
+        jsonNotification.put(STATUS, notification.getStatus().name());
+        jsonNotification.put(TYPE_INFO, new JSONObject());
+        jsonNotification.put(CLASS, NOTIFICATION);
+        jsonNotification.put(PATH, notification.getPath());
     }
 
     private void appendChildNodesToJsonTree(Module module, JSONObject jsonTree) {

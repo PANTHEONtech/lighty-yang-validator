@@ -7,11 +7,8 @@
  */
 package io.lighty.yang.validator.formats;
 
-import com.google.common.collect.Lists;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -19,7 +16,6 @@ import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
@@ -33,8 +29,8 @@ import org.opendaylight.yangtools.yang.parser.rfc7950.stmt.AbstractUndeclaredEff
 
 public class HtmlLine extends Line {
 
-    private static final String RW = "config";
-    private static final String RO = "no config";
+    private static final String CONFIG = "config";
+    private static final String NO_CONFIG = "no config";
 
     private final String description;
     private final List<Integer> ids;
@@ -193,37 +189,15 @@ public class HtmlLine extends Line {
             // do not emit the "config/no config" for rpc/action/notification/case SchemaNode
             this.flag = "";
         } else if (context.findNotification(node.getPath().getPathFromRoot().iterator().next()).isPresent()) {
-            this.flag = RO;
+            this.flag = NO_CONFIG;
         } else if (this.inputOutput == RpcInputOutput.INPUT) {
-            this.flag = RW;
+            this.flag = CONFIG;
         } else if (this.inputOutput == RpcInputOutput.OUTPUT) {
-            this.flag = RO;
+            this.flag = NO_CONFIG;
         } else if (node instanceof DataSchemaNode) {
-            resolveFlagForDataSchemaNode(node, context);
+            resolveFlagForDataSchemaNode(node, context, CONFIG, NO_CONFIG);
         } else {
-            this.flag = RW;
-        }
-    }
-
-    private void resolveFlagForDataSchemaNode(final SchemaNode node, final SchemaContext context) {
-        final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
-        final ListIterator<Integer> integerListIterator =
-                this.removeChoiceQname.listIterator(this.removeChoiceQname.size());
-        while (integerListIterator.hasPrevious()) {
-            qNames.remove(integerListIterator.previous().intValue());
-        }
-        if (node instanceof ChoiceSchemaNode) {
-            qNames.remove(qNames.size() - 1);
-            if (context.findDataTreeChild(qNames).get().isConfiguration()
-                    && ((ChoiceSchemaNode) node).isConfiguration()) {
-                this.flag = RW;
-            } else {
-                this.flag = RO;
-            }
-        } else if (context.findDataTreeChild(qNames).get().isConfiguration()) {
-            this.flag = RW;
-        } else {
-            this.flag = RO;
+            this.flag = CONFIG;
         }
     }
 }

@@ -82,7 +82,8 @@ public class Tree extends FormatPlugin {
         for (final RevisionSourceIdentifier source : this.sources) {
             usedModule = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
             final String firstLine = MODULE + usedModule.getName();
-            LOG.info("{}", firstLine.substring(0, min(firstLine.length(), lineLength)));
+            String firstLineSubstring = firstLine.substring(0, min(firstLine.length(), lineLength));
+            LOG.info("{}", firstLineSubstring);
 
             putSchemaContextModuleMatchedWithUsedModuleToNamespacePrefix();
 
@@ -107,14 +108,16 @@ public class Tree extends FormatPlugin {
             // Rpcs
             final Iterator<? extends RpcDefinition> rpcs = usedModule.getRpcs().iterator();
             if (rpcs.hasNext()) {
-                LOG.info("{}", RPCS.substring(0, min(RPCS.length(), lineLength)));
+                String rpcsSubstring = RPCS.substring(0, min(RPCS.length(), lineLength));
+                LOG.info("{}", rpcsSubstring);
             }
             printLines(getRpcsLines(rpcs, removeChoiceQnames));
 
             // Notifications
             final Iterator<? extends NotificationDefinition> notifications = usedModule.getNotifications().iterator();
             if (notifications.hasNext()) {
-                LOG.info("{}", NOTIFICATION.substring(0, min(NOTIFICATION.length(), lineLength)));
+                String notificationSubstring = NOTIFICATION.substring(0, min(NOTIFICATION.length(), lineLength));
+                LOG.info("{}", notificationSubstring);
             }
             printLines(getNotificationLines(notifications, removeChoiceQnames));
         }
@@ -135,7 +138,8 @@ public class Tree extends FormatPlugin {
             pathBuilder.append(qname.getLocalName());
         }
         final String augmentText = AUGMENT + pathBuilder.append(COLON).toString();
-        LOG.info("{}", augmentText.substring(0, min(augmentText.length(), lineLength)));
+        String augmentationSubstring = augmentText.substring(0, min(augmentText.length(), lineLength));
+        LOG.info("{}", augmentationSubstring);
         int augmentationNodes = st.getValue().size();
         for (final SchemaTree value : st.getValue()) {
             DataSchemaNode node = value.getSchemaNode();
@@ -490,7 +494,8 @@ public class Tree extends FormatPlugin {
     private void printLines(final List<Line> lines) {
         for (Line l : lines) {
             final String linesText = l.toString();
-            LOG.info("{}", linesText.substring(0, min(linesText.length(), lineLength)));
+            String linesSubstring = linesText.substring(0, min(linesText.length(), lineLength));
+            LOG.info("{}", linesSubstring);
         }
     }
 

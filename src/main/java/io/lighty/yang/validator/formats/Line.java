@@ -7,10 +7,12 @@
  */
 package io.lighty.yang.validator.formats;
 
+import com.google.common.collect.Lists;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
@@ -83,6 +85,29 @@ abstract class Line {
     }
 
     protected abstract void resolveFlag(SchemaNode node, SchemaContext context);
+
+    protected void resolveFlagForDataSchemaNode(final SchemaNode node, final SchemaContext context,
+                                                final String config, final String noConfig) {
+        final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
+        final ListIterator<Integer> integerListIterator
+                = this.removeChoiceQname.listIterator(this.removeChoiceQname.size());
+        while (integerListIterator.hasPrevious()) {
+            qNames.remove(integerListIterator.previous().intValue());
+        }
+        if (node instanceof ChoiceSchemaNode) {
+            qNames.remove(qNames.size() - 1);
+            if (context.findDataTreeChild(qNames).get().isConfiguration()
+                    && ((ChoiceSchemaNode) node).isConfiguration()) {
+                this.flag = config;
+            } else {
+                this.flag = noConfig;
+            }
+        } else if (context.findDataTreeChild(qNames).get().isConfiguration()) {
+            this.flag = config;
+        } else {
+            this.flag = noConfig;
+        }
+    }
 
     private void resolveIfFeatures(SchemaNode node) {
         final DeclaredStatement<?> declared = getDeclared(node);

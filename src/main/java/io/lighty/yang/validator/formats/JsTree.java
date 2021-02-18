@@ -206,7 +206,6 @@ public class JsTree extends FormatPlugin {
                     removeChoiceQnames.listIterator(removeChoiceQnames.size());
             while (integerListIterator.hasPrevious()) {
                 qnamesCopy.remove(integerListIterator.previous().intValue());
-                i--;
             }
             if (!this.schemaContext.findDataTreeChild(qnamesCopy).isPresent()) {
                 removeChoiceQnames.add(i - 1);
