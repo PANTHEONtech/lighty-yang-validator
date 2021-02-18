@@ -49,56 +49,81 @@ class TypePrinter {
     void printType(final TypeDefinition type) {
         final String rootName = Util.getRootType(type).getQName().getLocalName();
         if (type instanceof EnumTypeDefinition) {
-            printer.openStatement(Statement.TYPE, "enumeration");
             final EnumTypeDefinition enumTypeDefinition = (EnumTypeDefinition) type;
-            for (final EnumTypeDefinition.EnumPair enumPair : enumTypeDefinition.getValues()) {
-                printEnum(enumPair);
-            }
-            printer.closeStatement();
+            printEnumType(enumTypeDefinition);
         } else if (type instanceof UnionTypeDefinition) {
             final UnionTypeDefinition unionTypeDefinition = (UnionTypeDefinition) type;
-            printer.openStatement(Statement.TYPE, "union");
-            for (final TypeDefinition<?> unionType : unionTypeDefinition.getTypes()) {
-                printUnion(unionType);
-            }
-            printer.closeStatement();
+            printUnionType(unionTypeDefinition);
         } else if (type instanceof DecimalTypeDefinition) {
-            printer.openStatement(Statement.TYPE, rootName);
             final DecimalTypeDefinition decimalTypeDefinition = ((DecimalTypeDefinition) type);
-            printer.printSimple("fraction-digits", Integer.toString(decimalTypeDefinition.getFractionDigits()));
-            final Optional<RangeConstraint<BigDecimal>> rangeConstraint = decimalTypeDefinition.getRangeConstraint();
-            if (rangeConstraint.isPresent()) {
-                printer.printSimple("range", "\"" + rangeToString(rangeConstraint.get().getAllowedRanges()) + "\"");
-            }
-            printer.closeStatement();
+            printDecimalType(rootName, decimalTypeDefinition);
         } else if (type instanceof StringTypeDefinition) {
             final StringTypeDefinition stringType = (StringTypeDefinition) type;
-            if (stringType.getLengthConstraint().isPresent() || !stringType.getPatternConstraints().isEmpty()) {
-                printer.openStatement(Statement.TYPE, rootName);
-                if (stringType.getLengthConstraint().isPresent()
-                        && isRestricted(stringType.getLengthConstraint().get())) {
-                    printer.printSimple("length", "\""
-                            + rangeToString(stringType.getLengthConstraint().get().getAllowedRanges()) + "\"");
-                }
-                for (final PatternConstraint patternConstraint : stringType.getPatternConstraints()) {
-                    printer.printSimple("pattern", "\"" + patternConstraint.getRegularExpressionString() + "\"");
-                }
-                printer.closeStatement();
-            } else {
-                printer.printSimple("type", rootName);
-            }
+            printStringType(rootName, stringType);
         } else if (type instanceof RangeRestrictedTypeDefinition) {
+            final RangeRestrictedTypeDefinition<?,?> rangeRestrictedTypeDefinition
+                    = ((RangeRestrictedTypeDefinition<?,?>) type);
+            printRangeRestictedType(rootName, rangeRestrictedTypeDefinition);
+        } else {
+            printer.printSimple("type", rootName);
+        }
+    }
+
+    private void printRangeRestictedType(final String rootName,
+                                         final RangeRestrictedTypeDefinition<?, ?> rangeRestrictedTypeDefinition) {
+        printer.openStatement(Statement.TYPE, rootName);
+        final Optional<? extends RangeConstraint<?>> rangeConstraint
+                = rangeRestrictedTypeDefinition.getRangeConstraint();
+        if (rangeConstraint.isPresent()) {
+            printer.printSimple("range", "\""
+                    + rangeToString(rangeConstraint.get().getAllowedRanges()) + "\"");
+        }
+        printer.closeStatement();
+    }
+
+    private void printStringType(final String rootName,
+                                 final StringTypeDefinition stringType) {
+        if (stringType.getLengthConstraint().isPresent() || !stringType.getPatternConstraints().isEmpty()) {
             printer.openStatement(Statement.TYPE, rootName);
-            final RangeRestrictedTypeDefinition rangeRestrictedTypeDefinition = ((RangeRestrictedTypeDefinition) type);
-            final Optional<RangeConstraint> rangeConstraint = rangeRestrictedTypeDefinition.getRangeConstraint();
-            if (rangeConstraint.isPresent()) {
-                printer.printSimple("range", "\""
-                        + rangeToString(rangeConstraint.get().getAllowedRanges()) + "\"");
+            if (stringType.getLengthConstraint().isPresent()
+                    && isRestricted(stringType.getLengthConstraint().get())) {
+                printer.printSimple("length", "\""
+                        + rangeToString(stringType.getLengthConstraint().get().getAllowedRanges()) + "\"");
+            }
+            for (final PatternConstraint patternConstraint : stringType.getPatternConstraints()) {
+                printer.printSimple("pattern", "\"" + patternConstraint.getRegularExpressionString() + "\"");
             }
             printer.closeStatement();
         } else {
             printer.printSimple("type", rootName);
         }
+    }
+
+    private void printDecimalType(final String rootName,
+                                  final DecimalTypeDefinition decimalTypeDefinition) {
+        printer.openStatement(Statement.TYPE, rootName);
+        printer.printSimple("fraction-digits", Integer.toString(decimalTypeDefinition.getFractionDigits()));
+        final Optional<RangeConstraint<BigDecimal>> rangeConstraint = decimalTypeDefinition.getRangeConstraint();
+        if (rangeConstraint.isPresent()) {
+            printer.printSimple("range", "\"" + rangeToString(rangeConstraint.get().getAllowedRanges()) + "\"");
+        }
+        printer.closeStatement();
+    }
+
+    private void printUnionType(final UnionTypeDefinition unionTypeDefinition) {
+        printer.openStatement(Statement.TYPE, "union");
+        for (final TypeDefinition<?> unionType : unionTypeDefinition.getTypes()) {
+            printUnion(unionType);
+        }
+        printer.closeStatement();
+    }
+
+    private void printEnumType(final EnumTypeDefinition enumTypeDefinition) {
+        printer.openStatement(Statement.TYPE, "enumeration");
+        for (final EnumTypeDefinition.EnumPair enumPair : enumTypeDefinition.getValues()) {
+            printEnum(enumPair);
+        }
+        printer.closeStatement();
     }
 
     private boolean isRestricted(final LengthConstraint lengthConstraint) {
