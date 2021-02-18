@@ -7,16 +7,20 @@
  */
 package io.lighty.yang.validator.formats;
 
+import com.google.common.collect.Lists;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
@@ -85,6 +89,36 @@ abstract class Line {
 
     protected abstract void resolveFlag(SchemaNode node, SchemaContext context);
 
+    protected void resolveFlagForDataSchemaNode(final SchemaNode node, final SchemaContext context,
+                                                final String config, final String noConfig) {
+        final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
+        final ListIterator<Integer> integerListIterator
+                = this.removeChoiceQname.listIterator(this.removeChoiceQname.size());
+        while (integerListIterator.hasPrevious()) {
+            qNames.remove(integerListIterator.previous().intValue());
+        }
+        if (node instanceof ChoiceSchemaNode) {
+            qNames.remove(qNames.size() - 1);
+            // TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
+            // https://jira.pantheon.sk/browse/PTDL-1471
+            DataSchemaNode dataSchemaNode = context.findDataTreeChild(qNames)
+                    .orElseThrow(() -> new NotFoundException("Data tree child", qNames.toString()));
+            if (dataSchemaNode.isConfiguration() && ((ChoiceSchemaNode) node).isConfiguration()) {
+                this.flag = config;
+            } else {
+                this.flag = noConfig;
+            }
+            // TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
+            // https://jira.pantheon.sk/browse/PTDL-1471
+        } else if (context.findDataTreeChild(qNames)
+                .orElseThrow(() -> new NotFoundException("Data tree child", qNames.toString()))
+                .isConfiguration()) {
+            this.flag = config;
+        } else {
+            this.flag = noConfig;
+        }
+    }
+
     private void resolveIfFeatures(SchemaNode node) {
         final DeclaredStatement declared = getDeclared(node);
         if (declared instanceof IfFeatureAwareDeclaredStatement) {
@@ -113,29 +147,7 @@ abstract class Line {
     private void resolvePathAndType(SchemaNode node) {
         if (node instanceof TypedDataSchemaNode) {
             TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).getType();
-            if (type instanceof IdentityrefTypeDefinition) {
-                typeName = IDENTITYREF;
-            } else if (type instanceof BooleanTypeDefinition) {
-                typeName = BOOLEAN;
-            } else if (type.getBaseType() == null) {
-                typeName = type.getQName().getLocalName();
-            } else {
-                if (nodeName.equals(type.getQName().getLocalName())) {
-                    type = type.getBaseType();
-                }
-                String prefix = namespacePrefix.get(type.getQName().getNamespace());
-                if (prefix == null
-                        || BaseTypes.isYangBuildInType(type.getPath().getLastComponent().getLocalName())) {
-                    typeName = type.getQName().getLocalName();
-                } else {
-                    typeName = prefix + ":" + type.getQName().getLocalName();
-                }
-            }
-            if (type instanceof LeafrefTypeDefinition) {
-                path = ((LeafrefTypeDefinition) type).getPathStatement().toString();
-            } else {
-                path = null;
-            }
+            resolvePathAndTypeForDataSchemaNode(type);
         } else if (node instanceof AnydataEffectiveStatement) {
             typeName = ANYDATA;
             path = null;
@@ -144,6 +156,32 @@ abstract class Line {
             path = null;
         } else {
             typeName = null;
+            path = null;
+        }
+    }
+
+    private void resolvePathAndTypeForDataSchemaNode(TypeDefinition<? extends TypeDefinition<?>> type) {
+        if (type instanceof IdentityrefTypeDefinition) {
+            typeName = IDENTITYREF;
+        } else if (type instanceof BooleanTypeDefinition) {
+            typeName = BOOLEAN;
+        } else if (type.getBaseType() == null) {
+            typeName = type.getQName().getLocalName();
+        } else {
+            if (nodeName.equals(type.getQName().getLocalName())) {
+                type = type.getBaseType();
+            }
+            String prefix = namespacePrefix.get(type.getQName().getNamespace());
+            if (prefix == null
+                    || BaseTypes.isYangBuildInType(type.getPath().getLastComponent().getLocalName())) {
+                typeName = type.getQName().getLocalName();
+            } else {
+                typeName = prefix + ":" + type.getQName().getLocalName();
+            }
+        }
+        if (type instanceof LeafrefTypeDefinition) {
+            path = ((LeafrefTypeDefinition) type).getPathStatement().toString();
+        } else {
             path = null;
         }
     }
