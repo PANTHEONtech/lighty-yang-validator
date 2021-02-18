@@ -111,29 +111,7 @@ abstract class Line {
     private void resolvePathAndType(SchemaNode node) {
         if (node instanceof TypedDataSchemaNode) {
             TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).getType();
-            if (type instanceof IdentityrefTypeDefinition) {
-                typeName = IDENTITYREF;
-            } else if (type instanceof BooleanTypeDefinition) {
-                typeName = BOOLEAN;
-            } else if (type.getBaseType() == null) {
-                typeName = type.getQName().getLocalName();
-            } else {
-                if (nodeName.equals(type.getQName().getLocalName())) {
-                    type = type.getBaseType();
-                }
-                String prefix = namespacePrefix.get(type.getQName().getNamespace());
-                if (prefix == null
-                        || BaseTypes.isYangBuildInType(type.getPath().getLastComponent().getLocalName())) {
-                    typeName = type.getQName().getLocalName();
-                } else {
-                    typeName = prefix + ":" + type.getQName().getLocalName();
-                }
-            }
-            if (type instanceof LeafrefTypeDefinition) {
-                path = ((LeafrefTypeDefinition) type).getPathStatement().toString();
-            } else {
-                path = null;
-            }
+            resolvePathAndTypeForDataSchemaNode(type);
         } else if (node instanceof AnydataEffectiveStatement) {
             typeName = ANYDATA;
             path = null;
@@ -142,6 +120,32 @@ abstract class Line {
             path = null;
         } else {
             typeName = null;
+            path = null;
+        }
+    }
+
+    private void resolvePathAndTypeForDataSchemaNode(TypeDefinition<? extends TypeDefinition<?>> type) {
+        if (type instanceof IdentityrefTypeDefinition) {
+            typeName = IDENTITYREF;
+        } else if (type instanceof BooleanTypeDefinition) {
+            typeName = BOOLEAN;
+        } else if (type.getBaseType() == null) {
+            typeName = type.getQName().getLocalName();
+        } else {
+            if (nodeName.equals(type.getQName().getLocalName())) {
+                type = type.getBaseType();
+            }
+            String prefix = namespacePrefix.get(type.getQName().getNamespace());
+            if (prefix == null
+                    || BaseTypes.isYangBuildInType(type.getPath().getLastComponent().getLocalName())) {
+                typeName = type.getQName().getLocalName();
+            } else {
+                typeName = prefix + ":" + type.getQName().getLocalName();
+            }
+        }
+        if (type instanceof LeafrefTypeDefinition) {
+            path = ((LeafrefTypeDefinition) type).getPathStatement().toString();
+        } else {
             path = null;
         }
     }
