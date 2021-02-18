@@ -48,27 +48,31 @@ public class ConsoleLine extends Line {
         } else if (this.inputOutput == RpcInputOutput.OUTPUT) {
             this.flag = RO;
         } else if (node instanceof DataSchemaNode) {
-            final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
-            final ListIterator<Integer> integerListIterator =
-                    this.removeChoiceQname.listIterator(this.removeChoiceQname.size());
-            while (integerListIterator.hasPrevious()) {
-                qNames.remove(integerListIterator.previous().intValue());
-            }
-            if (node instanceof ChoiceSchemaNode) {
-                qNames.remove(qNames.size() - 1);
-                if (context.findDataTreeChild(qNames).get().isConfiguration()
-                        && ((ChoiceSchemaNode) node).isConfiguration()) {
-                    this.flag = RW;
-                } else {
-                    this.flag = RO;
-                }
-            } else if (context.findDataTreeChild(qNames).get().isConfiguration()) {
+            resolveFlagForDataSchemaNode(node, context);
+        } else {
+            this.flag = "-x";
+        }
+    }
+
+    private void resolveFlagForDataSchemaNode(final SchemaNode node, final SchemaContext context) {
+        final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
+        final ListIterator<Integer> integerListIterator
+                = this.removeChoiceQname.listIterator(this.removeChoiceQname.size());
+        while (integerListIterator.hasPrevious()) {
+            qNames.remove(integerListIterator.previous().intValue());
+        }
+        if (node instanceof ChoiceSchemaNode) {
+            qNames.remove(qNames.size() - 1);
+            if (context.findDataTreeChild(qNames).get().isConfiguration()
+                    && ((ChoiceSchemaNode) node).isConfiguration()) {
                 this.flag = RW;
             } else {
                 this.flag = RO;
             }
+        } else if (context.findDataTreeChild(qNames).get().isConfiguration()) {
+            this.flag = RW;
         } else {
-            this.flag = "-x";
+            this.flag = RO;
         }
     }
 
@@ -76,15 +80,66 @@ public class ConsoleLine extends Line {
     public String toString() {
         final StringBuilder builder = new StringBuilder();
         builder.append("  ");
-
-        for (boolean connection : isConnected) {
-            if (connection) {
-                builder.append('|');
-            } else {
-                builder.append(" ");
-            }
-            builder.append("  ");
+        builder.append(getConnectionStringBuilder());
+        builder.append(getStatusStringBuilder());
+        builder.append("--").append(flag);
+        builder.append(" ");
+        if (isChoice) {
+            builder.append('(').append(nodeName).append(')');
+        } else if (isCase) {
+            builder.append(":(").append(nodeName).append(')');
+        } else {
+            builder.append(nodeName);
         }
+        if (isListOrLeafList) {
+            builder.append(getStringBuilderWithListOrLeafList());
+        } else if (!isMandatory) {
+            builder.append('?');
+        }
+        if (path != null) {
+            builder.append("    -> ").append(path);
+        } else if (typeName != null) {
+            builder.append("       ").append(typeName);
+        }
+        final Iterator<IfFeatureStatement> ifFeaturesIterator = ifFeatures.iterator();
+        if (ifFeaturesIterator.hasNext()) {
+            builder.append(getBuilderWithRestOfTheFeature(ifFeaturesIterator));
+        }
+        return builder.toString();
+    }
+
+    private StringBuilder getBuilderWithRestOfTheFeature(final Iterator<IfFeatureStatement> ifFeaturesIterator) {
+        final StringBuilder builder = new StringBuilder();
+        builder.append(" {");
+        while (ifFeaturesIterator.hasNext()) {
+            builder.append(ifFeaturesIterator.next().rawArgument());
+            if (ifFeaturesIterator.hasNext()) {
+                builder.append(", ");
+            }
+        }
+        builder.append("}?");
+        return builder;
+    }
+
+    private StringBuilder getStringBuilderWithListOrLeafList() {
+        final StringBuilder builder = new StringBuilder();
+        builder.append('*');
+        if (!keys.isEmpty()) {
+            builder.append(" [");
+            final Iterator<String> iterator = keys.iterator();
+            while (iterator.hasNext()) {
+                builder.append(iterator.next());
+                if (iterator.hasNext()) {
+                    builder.append(", ");
+                }
+            }
+            builder.append(']');
+        }
+        return builder;
+    }
+
+    private StringBuilder getStatusStringBuilder() {
+        final StringBuilder builder = new StringBuilder();
         switch (status) {
             case CURRENT:
                 builder.append('+');
@@ -98,47 +153,19 @@ public class ConsoleLine extends Line {
             default:
                 break;
         }
-        builder.append("--").append(flag);
-        builder.append(" ");
-        if (isChoice) {
-            builder.append('(').append(nodeName).append(')');
-        } else if (isCase) {
-            builder.append(":(").append(nodeName).append(')');
-        } else {
-            builder.append(nodeName);
-        }
-        if (isListOrLeafList) {
-            builder.append('*');
-            if (!keys.isEmpty()) {
-                builder.append(" [");
-                final Iterator<String> iterator = keys.iterator();
-                while (iterator.hasNext()) {
-                    builder.append(iterator.next());
-                    if (iterator.hasNext()) {
-                        builder.append(", ");
-                    }
-                }
-                builder.append(']');
+        return builder;
+    }
+
+    private StringBuilder getConnectionStringBuilder() {
+        final StringBuilder builder = new StringBuilder();
+        for (boolean connection : isConnected) {
+            if (connection) {
+                builder.append('|');
+            } else {
+                builder.append(" ");
             }
-        } else if (!isMandatory) {
-            builder.append('?');
+            builder.append("  ");
         }
-        if (path != null) {
-            builder.append("    -> ").append(path);
-        } else if (typeName != null) {
-            builder.append("       ").append(typeName);
-        }
-        final Iterator<IfFeatureStatement> ifFeaturesIterator = ifFeatures.iterator();
-        if (ifFeaturesIterator.hasNext()) {
-            builder.append(" {");
-            while (ifFeaturesIterator.hasNext()) {
-                builder.append(ifFeaturesIterator.next().rawArgument());
-                if (ifFeaturesIterator.hasNext()) {
-                    builder.append(", ");
-                }
-            }
-            builder.append("}?");
-        }
-        return builder.toString();
+        return builder;
     }
 }
