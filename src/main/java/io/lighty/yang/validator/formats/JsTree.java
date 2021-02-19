@@ -201,12 +201,8 @@ public class JsTree extends FormatPlugin {
             List<QName> qnamesCopy = new ArrayList<>(qnames);
             qnamesCopy = qnamesCopy.subList(0, i);
             inputOutputOther = getRpcInputOutput(qnames, actions, inputOutputOther, i, qnamesCopy);
+            removeQnameCopiesForAllPreviousChoiceQnames(removeChoiceQnames, qnamesCopy);
 
-            final ListIterator<Integer> integerListIterator =
-                    removeChoiceQnames.listIterator(removeChoiceQnames.size());
-            while (integerListIterator.hasPrevious()) {
-                qnamesCopy.remove(integerListIterator.previous().intValue());
-            }
             if (!this.schemaContext.findDataTreeChild(qnamesCopy).isPresent()) {
                 removeChoiceQnames.add(i - 1);
             } else if (this.schemaContext.findDataTreeChild(qnamesCopy).get() instanceof ActionNodeContainer) {
@@ -216,6 +212,15 @@ public class JsTree extends FormatPlugin {
             }
         }
         return inputOutputOther;
+    }
+
+    private void removeQnameCopiesForAllPreviousChoiceQnames(final List<Integer> removeChoiceQnames,
+                                                             final List<QName> qnamesCopy) {
+        final ListIterator<Integer> integerListIterator =
+                removeChoiceQnames.listIterator(removeChoiceQnames.size());
+        while (integerListIterator.hasPrevious()) {
+            qnamesCopy.remove(integerListIterator.previous().intValue());
+        }
     }
 
     private RpcInputOutput getRpcInputOutput(final ArrayList<QName> qnames,
