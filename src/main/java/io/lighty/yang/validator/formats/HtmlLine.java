@@ -7,6 +7,7 @@
  */
 package io.lighty.yang.validator.formats;
 
+import io.lighty.yang.validator.formats.utility.SchemaHtmlEnum;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,7 @@ public class HtmlLine extends Line {
 
     private final String description;
     private final List<Integer> ids;
-    private final String schema;
+    private final SchemaHtmlEnum schema;
 
     HtmlLine(final List<Integer> ids, final SchemaNode node, final RpcInputOutput inputOutput,
              final SchemaContext context, final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix,
@@ -44,7 +45,7 @@ public class HtmlLine extends Line {
         Iterable<QName> pathFromRoot;
         if (augment.isPresent()) {
             description = augment.get().getDescription().orElse("");
-            schema = "augment";
+            schema = SchemaHtmlEnum.AUGMENT;
             pathFromRoot = augment.get().getTargetPath().getNodeIdentifiers();
             nodeName = augment.get().getTargetPath().asSchemaPath().getLastComponent().getLocalName();
             status = augment.get().getStatus();
@@ -55,20 +56,21 @@ public class HtmlLine extends Line {
             if (node instanceof EffectiveStatement) {
                 if (node instanceof AbstractUndeclaredEffectiveStatement) {
                     if (node instanceof CaseEffectiveStatement) {
-                        schema = "case";
+                        schema = SchemaHtmlEnum.CASE;
                     } else if (node instanceof InputEffectiveStatement) {
-                        schema = "input";
+                        schema = SchemaHtmlEnum.INPUT;
                     } else if (node instanceof OutputEffectiveStatement) {
-                        schema = "output";
+                        schema = SchemaHtmlEnum.OUTPUT;
                     } else {
-                        schema = "";
+                        schema = SchemaHtmlEnum.EMPTY;
                     }
                 } else {
-                    schema = ((EffectiveStatement) node).getDeclared().statementDefinition().getStatementName()
-                            .getLocalName();
+                    schema = SchemaHtmlEnum.getSchemaHtmlEnumByName(
+                            ((EffectiveStatement) node).getDeclared().statementDefinition().getStatementName()
+                            .getLocalName());
                 }
             } else {
-                schema = "";
+                schema = SchemaHtmlEnum.EMPTY;
             }
         }
         path = createPath(pathFromRoot, namespacePrefix, context);
@@ -118,11 +120,11 @@ public class HtmlLine extends Line {
                 .append(nodeName)
                 .append(key);
 
-        addHtmlSpanTagDependsOnSchemaValue(builder);
+        builder.append(schema.getHtmlValue());
 
         final String enclosingTd = "</td>";
         builder.append("<td>")
-                .append(schema)
+                .append(schema.getSchemaName())
                 .append(enclosingTd)
                 .append("<td>")
                 .append(typeName)
@@ -151,35 +153,6 @@ public class HtmlLine extends Line {
                 .append("</tr>");
 
         return builder.toString();
-    }
-
-    private void addHtmlSpanTagDependsOnSchemaValue(final StringBuilder builder) {
-        if ("container".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-folder-open\"></i></span> </td>");
-        } else if ("list".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-list\"></i></span> </td>");
-        } else if ("leaf-list".equals(schema)) {
-            builder.append(" <span><i class=\"fab fa-pagelines\"></i></span> </td>");
-        } else if ("augment".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-external-link-alt\"></i></span> </td>");
-        } else if ("rpc".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-envelope\"></i></span> </td>");
-        } else if ("notification".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-bell\"></i></span> </td>");
-        } else if ("choice".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-tasks\"></i></span> </td>");
-        } else if ("case".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-check\"></i></span> </td>");
-        } else if ("input".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-share\"></i></span> </td>");
-        } else if ("output".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-reply\"></i></span> </td>");
-        } else if ("action".equals(schema)) {
-            builder.append(" <span><i class=\"fas fa-play\"></i></span> </td>");
-        }
-        else {
-            builder.append(" <span><i class=\"fas fa-leaf\"></i></span> </td>");
-        }
     }
 
     @Override
