@@ -32,7 +32,7 @@
             <directory>${project.build.directory}/assembly/resources</directory>
             <outputDirectory></outputDirectory>
             <includes>
-                <include>*.sh</include>
+                <include>lyv</include>
             </includes>
             <fileMode>0755</fileMode>
         </fileSet>
