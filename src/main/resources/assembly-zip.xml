@@ -28,8 +28,6 @@
             <excludes>
                 <!-- Do not include sources in the created application. -->
                 <exclude>*-sources.jar</exclude>
-                <!-- Do not javadoc sources in the created application. -->
-                <exclude>*-javadoc.jar</exclude>
             </excludes>
         </fileSet>
 
