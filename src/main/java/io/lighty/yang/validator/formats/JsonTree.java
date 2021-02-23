@@ -10,7 +10,7 @@ package io.lighty.yang.validator.formats;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.Configuration;
-import io.lighty.yang.validator.exceptions.ModuleNotFoundException;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -98,7 +98,7 @@ public class JsonTree extends FormatPlugin {
         super.init(context, testFilesSchemaSources, schemaTree, config);
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new ModuleNotFoundException("Module " + source.getName() + " with revision "
+                    .orElseThrow(() -> new NotFoundException("Module " + source.getName() + " with revision "
                             + source.getRevision() + " not found."));
             prefixMap.put(module.getName(), module.getPrefix());
             setImportPrefixes(module.getImports());
@@ -118,7 +118,7 @@ public class JsonTree extends FormatPlugin {
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new ModuleNotFoundException("Module " + source.getName() + " with revision "
+                    .orElseThrow(() -> new NotFoundException("Module " + source.getName() + " with revision "
                             + source.getRevision() + " not found."));
             final JSONObject moduleMetadata = resolveModuleMetadata(module);
             final JSONObject jsonTree = new JSONObject();
@@ -301,7 +301,7 @@ public class JsonTree extends FormatPlugin {
             }
         } else {
             final String prefix = schemaContext.findModule(typeqName.getNamespace(), typeqName.getRevision())
-                    .orElseThrow(() -> new ModuleNotFoundException("Module " + typeqName.getNamespace()
+                    .orElseThrow(() -> new NotFoundException("Module " + typeqName.getNamespace()
                             + " with revision " + typeqName.getRevision() + " not found."))
                     .getPrefix();
             type = prefix + COLON + typeqName.getLocalName();

@@ -8,8 +8,7 @@
 package io.lighty.yang.validator.formats;
 
 import com.google.common.collect.Lists;
-import io.lighty.yang.validator.exceptions.DataTreeChildNotFoundException;
-import io.lighty.yang.validator.exceptions.ModuleNotFoundException;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,7 +86,7 @@ public class HtmlLine extends Line {
         for (QName path : pathFromRoot) {
             final String prefix = namespacePrefix.getOrDefault(path.getNamespace(),
                     context.findModule(path.getModule())
-                            .orElseThrow(() -> new ModuleNotFoundException("Module " + path.getModule().toString()
+                            .orElseThrow(() -> new NotFoundException("Module " + path.getModule().toString()
                                     + " not found.")).getPrefix());
 
             pathBuilder.append('/')
@@ -206,7 +205,7 @@ public class HtmlLine extends Line {
             if (node instanceof ChoiceSchemaNode) {
                 qNames.remove(qNames.size() - 1);
                 if (context.findDataTreeChild(qNames)
-                        .orElseThrow(() -> new ModuleNotFoundException("Data tree child " + qNames.toString()
+                        .orElseThrow(() -> new NotFoundException("Data tree child " + qNames.toString()
                                 + " not found.")).isConfiguration()
                         && ((ChoiceSchemaNode) node).isConfiguration()) {
                     this.flag = RW;
@@ -214,7 +213,7 @@ public class HtmlLine extends Line {
                     this.flag = RO;
                 }
             } else if (context.findDataTreeChild(qNames)
-                    .orElseThrow(() -> new DataTreeChildNotFoundException("Data tree child " + qNames.toString()
+                    .orElseThrow(() -> new NotFoundException("Data tree child " + qNames.toString()
                             + " not found.")).isConfiguration()) {
                 this.flag = RW;
             } else {

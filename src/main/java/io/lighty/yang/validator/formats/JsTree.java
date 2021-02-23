@@ -11,7 +11,6 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
-import io.lighty.yang.validator.exceptions.ModuleNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -26,6 +25,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
@@ -59,7 +59,7 @@ public class JsTree extends FormatPlugin {
         for (final RevisionSourceIdentifier source : this.sources) {
             List<Line> lines = new ArrayList<>();
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new ModuleNotFoundException("Module " + source.getName()
+                    .orElseThrow(() -> new NotFoundException("Module " + source.getName()
                             + " with revision " + source.getRevision() + " not found."));
             final String headerText = prepareHeader(module);
             LOG.info(headerText);

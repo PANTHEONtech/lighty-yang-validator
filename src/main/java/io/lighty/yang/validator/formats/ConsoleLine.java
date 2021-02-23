@@ -8,7 +8,7 @@
 package io.lighty.yang.validator.formats;
 
 import com.google.common.collect.Lists;
-import io.lighty.yang.validator.exceptions.DataTreeChildNotFoundException;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -59,7 +59,7 @@ public class ConsoleLine extends Line {
                 qNames.remove(qNames.size() - 1);
                 //TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
                 DataSchemaNode dataSchemaNode = context.findDataTreeChild(qNames)
-                        .orElseThrow(() -> new DataTreeChildNotFoundException("Data tree child " + qNames.toString()
+                        .orElseThrow(() -> new NotFoundException("Data tree child " + qNames.toString()
                         + " not found."));
                 if (dataSchemaNode.isConfiguration() && ((ChoiceSchemaNode) node).isConfiguration()) {
                     this.flag = RW;
@@ -68,7 +68,7 @@ public class ConsoleLine extends Line {
                 }
                 //TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
             } else if (context.findDataTreeChild(qNames)
-                    .orElseThrow(() -> new DataTreeChildNotFoundException("Data tree child " + qNames.toString()
+                    .orElseThrow(() -> new NotFoundException("Data tree child " + qNames.toString()
                             + " not found.")).isConfiguration()) {
                 this.flag = RW;
             } else {

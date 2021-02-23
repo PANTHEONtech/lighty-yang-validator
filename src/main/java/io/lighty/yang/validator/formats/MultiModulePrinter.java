@@ -8,8 +8,7 @@
 package io.lighty.yang.validator.formats;
 
 import io.lighty.yang.validator.GroupArguments;
-import io.lighty.yang.validator.exceptions.ModuleNotFoundException;
-import io.lighty.yang.validator.exceptions.RevisionNotFoundException;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.yang.printer.ModulePrinter;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.FileOutputStream;
@@ -62,7 +61,7 @@ public class MultiModulePrinter extends FormatPlugin {
         //resolve imports by augmentations and typedefs
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.schemaContext.findModule(entry.getKey())
-                    .orElseThrow(() -> new ModuleNotFoundException("Module " + entry.getKey()
+                    .orElseThrow(() -> new NotFoundException("Module " + entry.getKey()
                             .toString() + " not found."));
             for (SchemaTree singleEntry : entry.getValue()) {
                 gatherUsedTypeDefs(singleEntry, module);
@@ -71,7 +70,7 @@ public class MultiModulePrinter extends FormatPlugin {
                 for (QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                             .add(this.schemaContext.findModule(pathQname.getModule())
-                                    .orElseThrow(() -> new ModuleNotFoundException("Module " + pathQname.getModule()
+                                    .orElseThrow(() -> new NotFoundException("Module " + pathQname.getModule()
                                             .toString() + " not found.")).getName());
                 }
             }
@@ -84,10 +83,10 @@ public class MultiModulePrinter extends FormatPlugin {
         //print each yang module
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.schemaContext.findModule(entry.getKey())
-                    .orElseThrow(() -> new ModuleNotFoundException("Module " + entry.getKey()
+                    .orElseThrow(() -> new NotFoundException("Module " + entry.getKey()
                             .toString() + " not found."));
             final String withRev = "@" + module.getRevision()
-                    .orElseThrow(() -> new RevisionNotFoundException("Revision of module "
+                    .orElseThrow(() -> new NotFoundException("Revision of module "
                             + module.getName() + " not found.")).toString();
             final String suffix = module.getRevision().isPresent() ? withRev + ".yang" : ".yang";
             final String name = module.getName() + suffix;
@@ -144,7 +143,7 @@ public class MultiModulePrinter extends FormatPlugin {
                     .add(type);
             usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                     .add(this.schemaContext.findModule(mod)
-                            .orElseThrow(() -> new ModuleNotFoundException("Module " + mod.toString() + " not found."))
+                            .orElseThrow(() -> new NotFoundException("Module " + mod.toString() + " not found."))
                             .getName());
 
         }

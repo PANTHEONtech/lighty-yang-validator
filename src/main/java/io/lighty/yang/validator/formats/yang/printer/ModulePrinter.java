@@ -7,7 +7,7 @@
  */
 package io.lighty.yang.validator.formats.yang.printer;
 
-import io.lighty.yang.validator.exceptions.ModuleNotFoundException;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -87,7 +87,7 @@ public class ModulePrinter {
         this.moduleName = moduleName;
         this.printer = new StatementPrinter(printer);
         module = schemaContext.findModule(moduleName)
-                .orElseThrow(() -> new ModuleNotFoundException("Module " + moduleName + " not found."));
+                .orElseThrow(() -> new NotFoundException("Module " + moduleName + " not found."));
         moduleToPrefix = module.getImports().stream()
                 .collect(Collectors.toMap(i -> schemaContext
                                 .findModules(i.getModuleName()).iterator().next().getQNameModule(),

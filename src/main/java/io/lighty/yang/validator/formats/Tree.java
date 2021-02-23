@@ -12,7 +12,7 @@ import static java.lang.Math.min;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.Configuration;
-import io.lighty.yang.validator.exceptions.ModuleNotFoundException;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.net.URI;
 import java.util.ArrayList;
@@ -80,7 +80,7 @@ public class Tree extends FormatPlugin {
         for (final RevisionSourceIdentifier source : this.sources) {
             List<Line> lines = new ArrayList<>();
             usedModule = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new ModuleNotFoundException("Module " + source.getName() + " not found."));
+                    .orElseThrow(() -> new NotFoundException("Module " + source.getName() + " not found."));
             for (Module m : this.schemaContext.getModules()) {
                 if (!m.getPrefix().equals(usedModule.getPrefix())
                         || this.configuration.getTreeConfiguration().isPrefixMainModule()) {
