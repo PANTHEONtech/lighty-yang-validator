@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright (c) 2021 Pantheon Technologies s.r.o. All Rights Reserved.
+
+  This program and the accompanying materials are made available under the
+  terms of the Eclipse Public License v1.0 which accompanies this distribution,
+  and is available at https://www.eclipse.org/legal/epl-v10.html
+-->
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+    <id>bin</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+
+    <fileSets>
+        <!--
+            Add the jar file of our example application to the root directory
+            of the created zip package.
+        -->
+        <fileSet>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+            <excludes>
+                <!-- Do not include sources in the created application. -->
+                <exclude>*-sources.jar</exclude>
+                <!-- Do not javadoc sources in the created application. -->
+                <exclude>*-javadoc.jar</exclude>
+            </excludes>
+        </fileSet>
+
+        <!-- Add .sh resources from build directory with executable permissions -->
+        <fileSet>
+            <directory>${project.build.directory}/assembly/resources</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+
+        <!-- Add other resources from build directory, usually copied from elsewhere during build. -->
+        <fileSet>
+            <directory>${project.build.directory}/assembly/resources</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+
+        <!-- Add Readme file to zip directory -->
+        <fileSet>
+            <directory>${basedir}</directory>
+            <includes>
+                <include>README.md</include>
+            </includes>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>

@@ -12,7 +12,7 @@
 
     <parent>
         <groupId>io.lighty.core</groupId>
-        <artifactId>lighty-app-parent</artifactId>
+        <artifactId>lighty-parent</artifactId>
         <version>13.1.0</version>
     </parent>
 
@@ -147,27 +147,65 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <artifactId>maven-resources-plugin</artifactId>
                 <executions>
+                    <!-- Copy files from "src/main/assembly/resources" and move it to build target directory -->
                     <execution>
-                        <id>unpack-singlenode-configuration</id>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
+                        <id>copy-script</id>
                         <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
                         <configuration>
-                            <skip>true</skip>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/assembly/resources</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                            <outputDirectory>${project.build.directory}/assembly/resources</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <!-- Create fat jar and override previous jar file without dependencies -->
+                    <execution>
+                        <id>jar-with-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                            <archive>
+                                <manifest>
+                                    <addClasspath>true</addClasspath>
+                                    <mainClass>${application.main.class}</mainClass>
+                                </manifest>
+                            </archive>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>unpack-start-script</id>
+                        <!-- Create a zip file from the files that are set in assembly-zip.xml -->
+                        <id>make-assembly</id>
+                        <phase>package</phase>
                         <goals>
-                            <goal>unpack-dependencies</goal>
+                            <goal>single</goal>
                         </goals>
-                        <phase>prepare-package</phase>
                         <configuration>
-                            <skip>true</skip>
+                            <descriptors>
+                                <descriptor>src/main/resources/assembly-zip.xml</descriptor>
+                            </descriptors>
+                            <attach>${application.attach.zip}</attach>
                         </configuration>
                     </execution>
                 </executions>
