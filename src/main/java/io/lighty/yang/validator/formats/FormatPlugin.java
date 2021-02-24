@@ -46,7 +46,7 @@ public abstract class FormatPlugin {
 
     /**
      * This serves to generate help about current plugin,
-     * in case that user will use --help option with lyv.sh.
+     * in case that user will use --help option with `lyv` command.
      *
      * @return instance of Help object that will contain name of the format with its description
      */
