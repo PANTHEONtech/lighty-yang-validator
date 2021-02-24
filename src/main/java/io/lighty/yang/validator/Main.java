@@ -120,8 +120,7 @@ public final class Main {
                             .map(Path::toString)
                             .collect(Collectors.toList());
                     yangFiles.addAll(collect);
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     LOG.error("Could not Collect files from provided ({}) directory",
                             String.join(",", parseAllDir), e);
                 }
@@ -304,7 +303,7 @@ public final class Main {
     }
 
     private static SchemaTree resolveSchemaTree(final String simplifyDir,
-                                                final EffectiveModelContext effectiveModelContext) {
+            final EffectiveModelContext effectiveModelContext) {
         final SchemaSelector schemaSelector = new SchemaSelector(effectiveModelContext);
         if (simplifyDir == null) {
             schemaSelector.noXml();

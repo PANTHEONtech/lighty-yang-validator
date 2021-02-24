@@ -75,12 +75,10 @@ class TypePrinter {
             final StringTypeDefinition stringType = (StringTypeDefinition) type;
             if (stringType.getLengthConstraint().isPresent() || !stringType.getPatternConstraints().isEmpty()) {
                 printer.openStatement(Statement.TYPE, rootName);
-                final Optional<LengthConstraint> lengthConstraint = stringType.getLengthConstraint();
-                if (lengthConstraint.isPresent()) {
-                    if (isRestricted(lengthConstraint.get())) {
-                        printer.printSimple("length", "\""
-                                + rangeToString(lengthConstraint.get().getAllowedRanges()) + "\"");
-                    }
+                if (stringType.getLengthConstraint().isPresent()
+                        && isRestricted(stringType.getLengthConstraint().get())) {
+                    printer.printSimple("length", "\""
+                            + rangeToString(stringType.getLengthConstraint().get().getAllowedRanges()) + "\"");
                 }
                 for (final PatternConstraint patternConstraint : stringType.getPatternConstraints()) {
                     printer.printSimple("pattern", "\"" + patternConstraint.getRegularExpressionString() + "\"");

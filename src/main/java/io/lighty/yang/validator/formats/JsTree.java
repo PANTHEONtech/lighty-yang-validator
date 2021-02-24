@@ -59,8 +59,7 @@ public class JsTree extends FormatPlugin {
         for (final RevisionSourceIdentifier source : this.sources) {
             List<Line> lines = new ArrayList<>();
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module " + source.getName()
-                            + " with revision " + source.getRevision() + " not found."));
+                    .orElseThrow(() -> new NotFoundException("Module ", source.getName()));
             final String headerText = prepareHeader(module);
             LOG.info(headerText);
             for (Module m : this.schemaContext.getModules()) {
@@ -214,11 +213,7 @@ public class JsTree extends FormatPlugin {
 
     private String prepareHeader(final Module module) {
         final StringBuilder nameRevision = new StringBuilder(module.getName());
-        final Optional<Revision> revision = module.getRevision();
-        if (revision.isPresent()) {
-            nameRevision.append("@")
-                    .append(revision.get());
-        }
+        module.getRevision().ifPresent(value -> nameRevision.append("@").append(value));
         URL url = Resources.getResource("header");
         String text = "";
         try {

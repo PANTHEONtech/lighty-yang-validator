@@ -39,7 +39,6 @@ import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.RevisionAwareXPath;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
-import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
@@ -87,7 +86,7 @@ public class ModulePrinter {
         this.moduleName = moduleName;
         this.printer = new StatementPrinter(printer);
         module = schemaContext.findModule(moduleName)
-                .orElseThrow(() -> new NotFoundException("Module " + moduleName + " not found."));
+                .orElseThrow(() -> new NotFoundException("Module ", moduleName.toString()));
         moduleToPrefix = module.getImports().stream()
                 .collect(Collectors.toMap(i -> schemaContext
                                 .findModules(i.getModuleName()).iterator().next().getQNameModule(),
@@ -164,14 +163,12 @@ public class ModulePrinter {
                 final Optional<DataSchemaNode> dataChildByName = grouping.findDataChildByName(schemaNode.getQName());
                 if (dataChildByName.isPresent()) {
                     DataSchemaNode dataSchemaNode = dataChildByName.get();
-                    final Optional<? extends SchemaNode> original = ((DerivableSchemaNode) schemaNode).getOriginal();
-                    if (original.isPresent()) {
-                        if (!original.get().getPath()
+                    if (((DerivableSchemaNode) schemaNode).getOriginal().isPresent()) {
+                        if (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath()
                                 .equals(dataSchemaNode.getPath())) {
                             continue;
                         }
                     }
-
                     if (!(dataSchemaNode instanceof EffectiveStatement || schemaNode instanceof EffectiveStatement)) {
                         continue;
                     }
