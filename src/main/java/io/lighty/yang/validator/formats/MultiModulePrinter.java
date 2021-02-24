@@ -69,7 +69,8 @@ public class MultiModulePrinter extends FormatPlugin {
                 for (QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                             .add(this.schemaContext.findModule(pathQname.getModule())
-                                    .orElseThrow(() -> new NotFoundException("Module ", pathQname.getModule().toString()))
+                                    .orElseThrow(
+                                            () -> new NotFoundException("Module ", pathQname.getModule().toString()))
                                     .getName());
                 }
             }
