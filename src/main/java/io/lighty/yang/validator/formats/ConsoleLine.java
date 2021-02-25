@@ -59,7 +59,7 @@ public class ConsoleLine extends Line {
                 qNames.remove(qNames.size() - 1);
                 //TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
                 DataSchemaNode dataSchemaNode = context.findDataTreeChild(qNames)
-                        .orElseThrow(() -> new NotFoundException("Data tree child ", qNames.toString()));
+                        .orElseThrow(() -> new NotFoundException("Data tree child", qNames.toString()));
                 if (dataSchemaNode.isConfiguration() && ((ChoiceSchemaNode) node).isConfiguration()) {
                     this.flag = RW;
                 } else {
@@ -67,7 +67,7 @@ public class ConsoleLine extends Line {
                 }
                 //TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
             } else if (context.findDataTreeChild(qNames)
-                    .orElseThrow(() -> new NotFoundException("Data tree child ", qNames.toString()))
+                    .orElseThrow(() -> new NotFoundException("Data tree child", qNames.toString()))
                     .isConfiguration()) {
                 this.flag = RW;
             } else {

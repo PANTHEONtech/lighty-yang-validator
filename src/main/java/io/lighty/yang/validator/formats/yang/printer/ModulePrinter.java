@@ -163,11 +163,10 @@ public class ModulePrinter {
                 final Optional<DataSchemaNode> dataChildByName = grouping.findDataChildByName(schemaNode.getQName());
                 if (dataChildByName.isPresent()) {
                     DataSchemaNode dataSchemaNode = dataChildByName.get();
-                    if (((DerivableSchemaNode) schemaNode).getOriginal().isPresent()) {
-                        if (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath()
-                                .equals(dataSchemaNode.getPath())) {
-                            continue;
-                        }
+                    if (((DerivableSchemaNode) schemaNode).getOriginal().isPresent()
+                            && !((DerivableSchemaNode) schemaNode).getOriginal().get().getPath()
+                            .equals(dataSchemaNode.getPath())) {
+                        continue;
                     }
                     if (!(dataSchemaNode instanceof EffectiveStatement || schemaNode instanceof EffectiveStatement)) {
                         continue;

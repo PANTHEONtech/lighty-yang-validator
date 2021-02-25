@@ -98,7 +98,7 @@ public class JsonTree extends FormatPlugin {
         super.init(context, testFilesSchemaSources, schemaTree, config);
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module ", source.getName()));
+                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
             prefixMap.put(module.getName(), module.getPrefix());
             setImportPrefixes(module.getImports());
         }
@@ -117,7 +117,7 @@ public class JsonTree extends FormatPlugin {
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module ", source.getName()));
+                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
             final JSONObject moduleMetadata = resolveModuleMetadata(module);
             final JSONObject jsonTree = new JSONObject();
             for (final DataSchemaNode node : module.getChildNodes()) {
@@ -299,7 +299,7 @@ public class JsonTree extends FormatPlugin {
             }
         } else {
             final String prefix = schemaContext.findModule(typeqName.getNamespace(), typeqName.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module ", typeqName.getNamespace().toString()))
+                    .orElseThrow(() -> new NotFoundException("Module", typeqName.getNamespace().toString()))
                     .getPrefix();
             type = prefix + COLON + typeqName.getLocalName();
         }

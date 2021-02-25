@@ -61,7 +61,7 @@ public class MultiModulePrinter extends FormatPlugin {
         //resolve imports by augmentations and typedefs
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.schemaContext.findModule(entry.getKey())
-                    .orElseThrow(() -> new NotFoundException("Module ", entry.getKey().toString()));
+                    .orElseThrow(() -> new NotFoundException("Module", entry.getKey().toString()));
             for (SchemaTree singleEntry : entry.getValue()) {
                 gatherUsedTypeDefs(singleEntry, module);
             }
@@ -70,7 +70,7 @@ public class MultiModulePrinter extends FormatPlugin {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                             .add(this.schemaContext.findModule(pathQname.getModule())
                                     .orElseThrow(
-                                        () -> new NotFoundException("Module ", pathQname.getModule().toString()))
+                                        () -> new NotFoundException("Module", pathQname.getModule().toString()))
                                     .getName());
                 }
             }
@@ -83,9 +83,9 @@ public class MultiModulePrinter extends FormatPlugin {
         //print each yang module
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.schemaContext.findModule(entry.getKey())
-                    .orElseThrow(() -> new NotFoundException("Module ", entry.getKey().toString()));
+                    .orElseThrow(() -> new NotFoundException("Module", entry.getKey().toString()));
             final String withRev = "@" + module.getRevision()
-                    .orElseThrow(() -> new NotFoundException("Revision of module ", module.getName()));
+                    .orElseThrow(() -> new NotFoundException("Revision of module", module.getName()));
             final String suffix = module.getRevision().isPresent() ? withRev + ".yang" : ".yang";
             final String name = module.getName() + suffix;
             if (!this.sources.contains(RevisionSourceIdentifier.create(module.getName(), module.getRevision()))
@@ -141,7 +141,7 @@ public class MultiModulePrinter extends FormatPlugin {
                     .add(type);
             usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                     .add(this.schemaContext.findModule(mod)
-                            .orElseThrow(() -> new NotFoundException("Module ", mod.toString()))
+                            .orElseThrow(() -> new NotFoundException("Module", mod.toString()))
                             .getName());
 
         }

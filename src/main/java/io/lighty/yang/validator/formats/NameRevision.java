@@ -29,7 +29,7 @@ public class NameRevision extends FormatPlugin {
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module ", source.getName()));
+                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
             final Optional<Revision> revision = module.getRevision();
             String moduleName = module.getName();
             if (revision.isPresent()) {

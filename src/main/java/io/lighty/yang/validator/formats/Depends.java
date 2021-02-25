@@ -45,7 +45,7 @@ public class Depends extends FormatPlugin {
         final DependConfiguration dependConfiguration = this.configuration.getDependConfiguration();
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module ", source.getName()));
+                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
             final StringBuilder dependantsBuilder = new StringBuilder(MODULE);
             dependantsBuilder.append(module.getName())
                     .append(AT);

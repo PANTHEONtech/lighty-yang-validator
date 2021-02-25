@@ -58,7 +58,7 @@ public class JsTree extends FormatPlugin {
         for (final RevisionSourceIdentifier source : this.sources) {
             List<Line> lines = new ArrayList<>();
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module ", source.getName()));
+                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
             final String headerText = prepareHeader(module);
             LOG.info(headerText);
             for (Module m : this.schemaContext.getModules()) {

@@ -86,7 +86,7 @@ public class HtmlLine extends Line {
         for (QName path : pathFromRoot) {
             final String prefix = namespacePrefix.getOrDefault(path.getNamespace(),
                     context.findModule(path.getModule())
-                            .orElseThrow(() -> new NotFoundException("Module ", path.getModule().toString()))
+                            .orElseThrow(() -> new NotFoundException("Module", path.getModule().toString()))
                             .getPrefix());
 
             pathBuilder.append('/')
@@ -205,7 +205,7 @@ public class HtmlLine extends Line {
             if (node instanceof ChoiceSchemaNode) {
                 qNames.remove(qNames.size() - 1);
                 if (context.findDataTreeChild(qNames)
-                        .orElseThrow(() -> new NotFoundException("Data tree child ", qNames.toString()))
+                        .orElseThrow(() -> new NotFoundException("Data tree child", qNames.toString()))
                         .isConfiguration()
                         && ((ChoiceSchemaNode) node).isConfiguration()) {
                     this.flag = RW;
