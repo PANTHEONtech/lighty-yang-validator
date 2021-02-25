@@ -70,7 +70,7 @@ class TypePrinter {
     }
 
     private void printRangeRestictedType(final String rootName,
-                                         final RangeRestrictedTypeDefinition<?, ?> rangeRestrictedTypeDefinition) {
+            final RangeRestrictedTypeDefinition<?, ?> rangeRestrictedTypeDefinition) {
         printer.openStatement(Statement.TYPE, rootName);
         final Optional<? extends RangeConstraint<?>> rangeConstraint
                 = rangeRestrictedTypeDefinition.getRangeConstraint();
@@ -81,8 +81,7 @@ class TypePrinter {
         printer.closeStatement();
     }
 
-    private void printStringType(final String rootName,
-                                 final StringTypeDefinition stringType) {
+    private void printStringType(final String rootName, final StringTypeDefinition stringType) {
         if (stringType.getLengthConstraint().isPresent() || !stringType.getPatternConstraints().isEmpty()) {
             printer.openStatement(Statement.TYPE, rootName);
             if (stringType.getLengthConstraint().isPresent()
@@ -99,8 +98,7 @@ class TypePrinter {
         }
     }
 
-    private void printDecimalType(final String rootName,
-                                  final DecimalTypeDefinition decimalTypeDefinition) {
+    private void printDecimalType(final String rootName, final DecimalTypeDefinition decimalTypeDefinition) {
         printer.openStatement(Statement.TYPE, rootName);
         printer.printSimple("fraction-digits", Integer.toString(decimalTypeDefinition.getFractionDigits()));
         final Optional<RangeConstraint<BigDecimal>> rangeConstraint = decimalTypeDefinition.getRangeConstraint();

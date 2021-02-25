@@ -66,9 +66,8 @@ abstract class Line {
     String path;
     String typeName;
 
-    Line(final SchemaNode node, final RpcInputOutput inputOutput,
-         final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix, final SchemaContext context,
-         final boolean isKey) {
+    Line(final SchemaNode node, final RpcInputOutput inputOutput, final List<Integer> removeChoiceQname,
+            final Map<URI, String> namespacePrefix, final SchemaContext context, final boolean isKey) {
         this.status = node.getStatus();
         this.isMandatory = (node instanceof MandatoryAware && ((MandatoryAware) node).isMandatory())
                 || node instanceof ContainerSchemaNode || node instanceof CaseSchemaNode
@@ -90,7 +89,7 @@ abstract class Line {
     protected abstract void resolveFlag(SchemaNode node, SchemaContext context);
 
     protected void resolveFlagForDataSchemaNode(final SchemaNode node, final SchemaContext context,
-                                                final String config, final String noConfig) {
+            final String config, final String noConfig) {
         final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
         final ListIterator<Integer> integerListIterator
                 = this.removeChoiceQname.listIterator(this.removeChoiceQname.size());

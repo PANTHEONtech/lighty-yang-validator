@@ -86,7 +86,7 @@ public class Depends extends FormatPlugin {
     }
 
     private void resolveImportsInSchemaContextModules(final DependConfiguration dependConfiguration,
-                                                      final ModuleImport moduleImport, final String moduleName) {
+            final ModuleImport moduleImport, final String moduleName) {
         for (Module contextModule : this.schemaContext.getModules()) {
             if (!moduleName.equals(contextModule.getName())) {
                 continue;
@@ -106,8 +106,7 @@ public class Depends extends FormatPlugin {
         }
     }
 
-    private boolean isRevisionsNotEquals(final Revision importedModuleRevision,
-                                         final Revision contextModuleRevision) {
+    private boolean isRevisionsNotEquals(final Revision importedModuleRevision, final Revision contextModuleRevision) {
         return importedModuleRevision != null && contextModuleRevision != null
                 && (!contextModuleRevision.toString().equals(importedModuleRevision.toString()));
     }

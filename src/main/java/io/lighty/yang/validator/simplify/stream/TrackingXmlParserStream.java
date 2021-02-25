@@ -100,8 +100,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     private final SchemaTree tree;
 
     public TrackingXmlParserStream(final NormalizedNodeStreamWriter writer, final XmlCodecFactory codecs,
-                                   final DataSchemaNode parentNode, final boolean strictParsing,
-                                   final SchemaTree tree) {
+            final DataSchemaNode parentNode, final boolean strictParsing, final SchemaTree tree) {
         this.writer = requireNonNull(writer);
         this.codecs = requireNonNull(codecs);
         this.parentNode = parentNode;
@@ -140,7 +139,6 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
             } else {
                 throw new IllegalStateException("Unsupported schema node type " + parentNode.getClass() + ".");
             }
-
 
             read(reader, nodeDataWithSchema, reader.getLocalName(), tree);
             nodeDataWithSchema.write(writer);
@@ -231,7 +229,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
      */
 
     private void read(final XMLStreamReader in, final AbstractNodeDataWithSchema parent,
-                      final String rootElement, SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
+            final String rootElement, SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
         if (!in.hasNext()) {
             return;
         }
@@ -270,7 +268,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     private void readLeafData(XMLStreamReader in, AbstractNodeDataWithSchema<?> parent, String rootElement,
-                              SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
+            SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
         String xmlElementName = in.getLocalName();
         while (xmlElementName.equals(parent.getSchema().getQName().getLocalName())) {
             read(in, newEntryNode(parent), rootElement, schemaTree);
@@ -283,7 +281,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     private void readTaggedData(XMLStreamReader in, AbstractNodeDataWithSchema<?> parent, String rootElement,
-                                SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
+            SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
         switch (in.nextTag()) {
             case XMLStreamConstants.START_ELEMENT:
                 /*
@@ -315,8 +313,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     private void readDataWithStartedElementTag(final XMLStreamReader in, final AbstractNodeDataWithSchema<?> parent,
-                                               final String rootElement, SchemaTree schemaTree)
-            throws XMLStreamException, URISyntaxException {
+            final String rootElement, SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
 
         final Set<Entry<String, String>> namesakes = new HashSet<>();
         while (in.hasNext()) {
@@ -366,7 +363,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     private String getXmlElementNamespace(final XMLStreamReader in, final Set<Entry<String, String>> namesakes,
-                                          final String xmlElementName) {
+            final String xmlElementName) {
         final String xmlElementNamespace = in.getNamespaceURI();
         if (!namesakes.add(new SimpleImmutableEntry<>(xmlElementNamespace, xmlElementName))) {
             final Location loc = in.getLocation();
@@ -378,7 +375,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     private SchemaTree getSchemaTreeWithAddedChildren(SchemaTree schemaTree,
-                                                      final Deque<DataSchemaNode> childDataSchemaNodes) {
+            final Deque<DataSchemaNode> childDataSchemaNodes) {
         for (final DataSchemaNode less : childDataSchemaNodes) {
             /*
              Check if SchemaNode found based on the xmlElementName is direct child of the root node.
@@ -452,7 +449,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
      */
 
     private void setValue(final AbstractNodeDataWithSchema parent, final Object value,
-                          final NamespaceContext nsContext) {
+            final NamespaceContext nsContext) {
         checkArgument(parent instanceof SimpleNodeDataWithSchema, "Node %s is not a simple type",
                 parent.getSchema().getQName());
         final SimpleNodeDataWithSchema parentSimpleNode = (SimpleNodeDataWithSchema) parent;
@@ -463,7 +460,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     private Object translateValueByType(final Object value, final DataSchemaNode node,
-                                        final NamespaceContext namespaceCtx) {
+            final NamespaceContext namespaceCtx) {
         if (node instanceof AnyxmlSchemaNode) {
 
             checkArgument(value instanceof Document);

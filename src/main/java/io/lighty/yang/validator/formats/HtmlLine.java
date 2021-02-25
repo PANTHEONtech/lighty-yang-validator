@@ -78,7 +78,7 @@ public class HtmlLine extends Line {
     }
 
     private static String createPath(final Iterable<QName> pathFromRoot, final Map<URI, String> namespacePrefix,
-                                     final SchemaContext context) {
+            final SchemaContext context) {
         final StringBuilder pathBuilder = new StringBuilder();
         for (QName path : pathFromRoot) {
             final String prefix = namespacePrefix.getOrDefault(path.getNamespace(),

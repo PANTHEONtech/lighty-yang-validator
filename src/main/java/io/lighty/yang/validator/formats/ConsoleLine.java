@@ -25,8 +25,8 @@ public class ConsoleLine extends Line {
     private final List<Boolean> isConnected;
 
     ConsoleLine(final List<Boolean> isConnected, final SchemaNode node, RpcInputOutput inputOutput,
-                final SchemaContext context, final List<Integer> removeChoiceQname,
-                final Map<URI, String> namespacePrefix, final boolean isKey) {
+            final SchemaContext context, final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix,
+            final boolean isKey) {
         super(node, inputOutput, removeChoiceQname, namespacePrefix, context, isKey);
         this.isConnected = isConnected;
     }

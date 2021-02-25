@@ -64,22 +64,22 @@ public class ModulePrinter {
     private final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTreesMap = new HashMap<>();
 
     public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
-                         final QNameModule moduleName, final OutputStream out,
-                         final Set<TypeDefinition> usedTypes, final Set<String> usedImports) {
+            final QNameModule moduleName, final OutputStream out, final Set<TypeDefinition> usedTypes,
+            final Set<String> usedImports) {
         this(schemaTree, schemaContext, moduleName,
                 new IndentingPrinter(new PrintStream(out, false, Charset.defaultCharset())),
                 usedTypes, usedImports);
     }
 
     public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
-                         final QNameModule moduleName, final Logger out,
-                         final Set<TypeDefinition> usedTypes, final Set<String> usedImports) {
+            final QNameModule moduleName, final Logger out, final Set<TypeDefinition> usedTypes,
+            final Set<String> usedImports) {
         this(schemaTree, schemaContext, moduleName, new IndentingLogger(out), usedTypes, usedImports);
     }
 
     private ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
-                          final QNameModule moduleName, final Indenting printer,
-                          final Set<TypeDefinition> usedTypes, final Set<String> usedImports) {
+            final QNameModule moduleName, final Indenting printer, final Set<TypeDefinition> usedTypes,
+            final Set<String> usedImports) {
         this.usedImports = usedImports;
         this.usedTypes = usedTypes;
         this.schemaTree = schemaTree;
@@ -152,7 +152,7 @@ public class ModulePrinter {
     }
 
     private boolean doPrintUses(final DataSchemaNode schemaNode, boolean isPrintingAllowed, final String groupingName,
-                                final SchemaTree tree, HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
+            final SchemaTree tree, HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
         if (!schemaNode.isAddedByUses()) {
             return isPrintingAllowed;
         }
@@ -276,7 +276,7 @@ public class ModulePrinter {
     }
 
     private void doPrintSchema(boolean isPrintingAllowed, final SchemaTree tree, final String groupingName,
-                               final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
+            final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
         final DataSchemaNode schemaNode = tree.getSchemaNode();
         if (!moduleName.equals(schemaNode.getQName().getModule())) {
             return;
@@ -440,7 +440,7 @@ public class ModulePrinter {
     }
 
     private static boolean isSchemaNodePathEqualsToDataSchemaNodePath(final DataSchemaNode schemaNode,
-                                                                       final DataSchemaNode dataSchemaNode) {
+            final DataSchemaNode dataSchemaNode) {
         return ((DerivableSchemaNode) schemaNode).getOriginal().isPresent()
                 && (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath().equals(dataSchemaNode.getPath()));
     }
@@ -451,7 +451,7 @@ public class ModulePrinter {
     }
 
     private boolean isStNotAugmentOrStParentNotEqualsToAugmPath(final SchemaTree st,
-                                                                final AugmentationSchemaNode augmentation) {
+            final AugmentationSchemaNode augmentation) {
         return !(st.isAugmenting()
                 && st.getSchemaNode().getPath().getParent().equals(augmentation.getTargetPath().asSchemaPath()));
     }

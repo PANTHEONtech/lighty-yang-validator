@@ -207,7 +207,7 @@ public class JsonTree extends FormatPlugin {
     }
 
     private void putNotificationDataToJsonNotification(final NotificationDefinition notification,
-                                                       final JSONObject jsonNotification) {
+            final JSONObject jsonNotification) {
         jsonNotification.put(NAME, notification.getQName().getLocalName());
         jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
         jsonNotification.put(STATUS, notification.getStatus().name());
