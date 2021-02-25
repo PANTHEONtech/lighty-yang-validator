@@ -79,16 +79,14 @@ public class JsTree extends FormatPlugin {
 
         LOG.info("</table>");
         LOG.info("</div>");
-        String loadJS = loadJS();
-        LOG.info("{}", loadJS);
+        LOG.info("{}", loadJS());
         LOG.info("</body>");
         LOG.info("</html>");
     }
 
     private void printLines(final List<Line> lines) {
         for (Line line : lines) {
-            final String linesText = line.toString();
-            LOG.info("{}", linesText);
+            LOG.info("{}", line.toString());
         }
     }
 
