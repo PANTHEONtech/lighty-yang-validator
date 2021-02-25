@@ -88,27 +88,31 @@ public class Depends extends FormatPlugin {
     private void resolveImportsInSchemaContextModules(final DependConfiguration dependConfiguration,
             final ModuleImport moduleImport, final String moduleName) {
         for (Module contextModule : this.schemaContext.getModules()) {
-            if (!moduleName.equals(contextModule.getName())) {
-                continue;
-            }
-            if (isRevisionsNotEquals(moduleImport.getRevision().orElse(null),
-                                     contextModule.getRevision().orElse(null))) {
-                continue;
-            }
-            modules.add(contextModule.getName());
-            if (!dependConfiguration.isModuleDependentsOnly()) {
-                if (!dependConfiguration.isModuleImportsOnly()) {
-                    resolveSubmodules(contextModule, dependConfiguration);
+            if (moduleName.equals(contextModule.getName())) {
+                if (isRevisionsEqualsOrNull(moduleImport.getRevision().orElse(null),
+                        contextModule.getRevision().orElse(null))) {
+                    addContextModuleToModulesAndResolveImports(dependConfiguration, contextModule);
+                    break;
                 }
-                resolveImports(contextModule, dependConfiguration);
             }
-            break;
         }
     }
 
-    private boolean isRevisionsNotEquals(final Revision importedModuleRevision, final Revision contextModuleRevision) {
-        return importedModuleRevision != null && contextModuleRevision != null
-                && (!contextModuleRevision.toString().equals(importedModuleRevision.toString()));
+    private void addContextModuleToModulesAndResolveImports(final DependConfiguration dependConfiguration,
+            final Module contextModule) {
+        modules.add(contextModule.getName());
+        if (!dependConfiguration.isModuleDependentsOnly()) {
+            if (!dependConfiguration.isModuleImportsOnly()) {
+                resolveSubmodules(contextModule, dependConfiguration);
+            }
+            resolveImports(contextModule, dependConfiguration);
+        }
+    }
+
+    private boolean isRevisionsEqualsOrNull(final Revision importedModuleRevision,
+            final Revision contextModuleRevision) {
+        return (importedModuleRevision == null || contextModuleRevision == null)
+                || (contextModuleRevision.toString().equals(importedModuleRevision.toString()));
     }
 
     private void resolveSubmodules(final Module module, final DependConfiguration dependConfiguration) {

@@ -111,27 +111,30 @@ public class ModulePrinter {
         for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
             boolean printOpeningStatement = true;
             for (SchemaTree st : schemaTree) {
-                if (isStNotAugmentOrStParentNotEqualsToAugmPath(st, augmentation)) {
-                    continue;
+                if (isStAugmentOrStParentEqualsToAugmPath(st, augmentation)) {
+                    printOpeningStatement = isPrintOpeningStatement(augmentation, printOpeningStatement);
+                    doPrintSchema(true, st, null, groupingTreesMap);
                 }
-                if (printOpeningStatement) {
-                    final StringBuilder target = new StringBuilder();
-                    for (final QName name : augmentation.getTargetPath().getNodeIdentifiers()) {
-                        target.append('/');
-                        target.append(moduleToPrefix.get(name.getModule()));
-                        target.append(':');
-                        target.append(name.getLocalName());
-                    }
-                    printer.openStatement(Statement.AUGMENT, target.toString());
-                    printOpeningStatement = false;
-                }
-                doPrintSchema(true, st, null, groupingTreesMap);
-
             }
             if (!printOpeningStatement) {
                 printer.closeStatement();
             }
         }
+    }
+
+    private boolean isPrintOpeningStatement(final AugmentationSchemaNode augmentation, boolean printOpeningStatement) {
+        if (printOpeningStatement) {
+            final StringBuilder target = new StringBuilder();
+            for (final QName name : augmentation.getTargetPath().getNodeIdentifiers()) {
+                target.append('/');
+                target.append(moduleToPrefix.get(name.getModule()));
+                target.append(':');
+                target.append(name.getLocalName());
+            }
+            printer.openStatement(Statement.AUGMENT, target.toString());
+            printOpeningStatement = false;
+        }
+        return printOpeningStatement;
     }
 
     private void printSchema(final SchemaTree tree) {
@@ -152,10 +155,16 @@ public class ModulePrinter {
     }
 
     private boolean doPrintUses(final DataSchemaNode schemaNode, boolean isPrintingAllowed, final String groupingName,
-            final SchemaTree tree, HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
-        if (!schemaNode.isAddedByUses()) {
-            return isPrintingAllowed;
+            final SchemaTree tree, final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
+        if (schemaNode.isAddedByUses()) {
+            return printingUses(schemaNode, isPrintingAllowed, groupingName, tree, groupingTrees);
         }
+        return isPrintingAllowed;
+    }
+
+    private boolean printingUses(final DataSchemaNode schemaNode, boolean isPrintingAllowed,
+            final String groupingName, final SchemaTree tree,
+            final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
         final List<GroupingDefinition> groupingDefinitions = module.getGroupings().stream()
                 .filter(g -> g.findDataChildByName(schemaNode.getQName()).isPresent())
                 .collect(Collectors.toList());
@@ -278,11 +287,14 @@ public class ModulePrinter {
     private void doPrintSchema(boolean isPrintingAllowed, final SchemaTree tree, final String groupingName,
             final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
         final DataSchemaNode schemaNode = tree.getSchemaNode();
-        if (!moduleName.equals(schemaNode.getQName().getModule())) {
-            return;
+        if (moduleName.equals(schemaNode.getQName().getModule())) {
+            isPrintingAllowed = doPrintUses(schemaNode, isPrintingAllowed, groupingName, tree, groupingTrees);
+            doPrintSchema(isPrintingAllowed, tree, groupingName, groupingTrees, schemaNode);
         }
+    }
 
-        isPrintingAllowed = doPrintUses(schemaNode, isPrintingAllowed, groupingName, tree, groupingTrees);
+    private void doPrintSchema(final boolean isPrintingAllowed, final SchemaTree tree, final String groupingName,
+            final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees, final DataSchemaNode schemaNode) {
         if (isPrintingAllowed) {
             if (schemaNode instanceof ContainerSchemaNode) {
                 printer.openStatement(Statement.CONTAINER, schemaNode.getQName().getLocalName());
@@ -450,10 +462,10 @@ public class ModulePrinter {
                 .equals(tree.getSchemaNode().getPath().getLastComponent());
     }
 
-    private boolean isStNotAugmentOrStParentNotEqualsToAugmPath(final SchemaTree st,
+    private boolean isStAugmentOrStParentEqualsToAugmPath(final SchemaTree st,
             final AugmentationSchemaNode augmentation) {
-        return !(st.isAugmenting()
-                && st.getSchemaNode().getPath().getParent().equals(augmentation.getTargetPath().asSchemaPath()));
+        return st.isAugmenting()
+                && st.getSchemaNode().getPath().getParent().equals(augmentation.getTargetPath().asSchemaPath());
     }
 
 }

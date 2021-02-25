@@ -346,10 +346,15 @@ public class Tree extends FormatPlugin {
     private void resolveActions(final List<Line> lines, final List<Boolean> isConnected, boolean hasNext,
             final List<Integer> removeChoiceQnames, final Iterator<Map.Entry<SchemaPath, SchemaTree>> actions) {
         final Map.Entry<SchemaPath, SchemaTree> nextST = actions.next();
-        if (!nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
-            return;
+        if (nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
+            final SchemaTree actionSchemaTree = nextST.getValue();
+            resolveActions(lines, isConnected, hasNext, removeChoiceQnames, actions, actionSchemaTree);
         }
-        final SchemaTree actionSchemaTree = nextST.getValue();
+    }
+
+    private void resolveActions(final List<Line> lines, final List<Boolean> isConnected, boolean hasNext,
+            final List<Integer> removeChoiceQnames, final Iterator<Map.Entry<SchemaPath, SchemaTree>> actions,
+            final SchemaTree actionSchemaTree) {
         final ActionDefinition action = actionSchemaTree.getActionNode();
         ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action, RpcInputOutput.OTHER,
                 this.schemaContext, removeChoiceQnames, namespacePrefix, false);
@@ -371,18 +376,18 @@ public class Tree extends FormatPlugin {
         }
         if (inputExists) {
             isConnected.add(actions.hasNext() || hasNext);
-            consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getInput(),
-                    RpcInputOutput.INPUT, this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getInput(), RpcInputOutput.INPUT,
+                    this.schemaContext, removeChoiceQnames, namespacePrefix, false);
             lines.add(consoleLine);
-            resolveChildNodes(lines, isConnected, inValue, outputExists, RpcInputOutput.INPUT,
-                    removeChoiceQnames, Collections.emptyList());
+            resolveChildNodes(lines, isConnected, inValue, outputExists, RpcInputOutput.INPUT, removeChoiceQnames,
+                    Collections.emptyList());
             this.treeDepth++;
             isConnected.remove(isConnected.size() - 1);
         }
         if (outputExists) {
             isConnected.add(actions.hasNext() || hasNext);
-            consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getOutput(),
-                    RpcInputOutput.OUTPUT, this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getOutput(), RpcInputOutput.OUTPUT,
+                    this.schemaContext, removeChoiceQnames, namespacePrefix, false);
             lines.add(consoleLine);
             resolveChildNodes(lines, isConnected, outValue, false, RpcInputOutput.OUTPUT, removeChoiceQnames,
                     Collections.emptyList());
