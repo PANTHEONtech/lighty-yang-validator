@@ -36,17 +36,17 @@ class TypePrinter {
         this.moduleToPrefix = moduleToPrefix;
     }
 
-    void printTypeDef(final QName name, final TypeDefinition base) {
+    void printTypeDef(final QName name, final TypeDefinition<?> base) {
         printer.openStatement(Statement.TYPEDEF, name.getLocalName());
         printType(base);
         printer.closeStatement();
     }
 
-    void printTypeUsage(final TypeDefinition type) {
+    void printTypeUsage(final TypeDefinition<?> type) {
         printer.printSimple("type", getTypeName(type));
     }
 
-    void printType(final TypeDefinition type) {
+    void printType(final TypeDefinition<?> type) {
         final String rootName = Util.getRootType(type).getQName().getLocalName();
         if (type instanceof EnumTypeDefinition) {
             final EnumTypeDefinition enumTypeDefinition = (EnumTypeDefinition) type;
@@ -150,11 +150,11 @@ class TypePrinter {
         printer.closeStatement();
     }
 
-    private void printUnion(final TypeDefinition type) {
+    private void printUnion(final TypeDefinition<?> type) {
         printer.printSimple("type", getTypeName(type));
     }
 
-    private String getTypeName(final TypeDefinition type) {
+    private String getTypeName(final TypeDefinition<?> type) {
         final String typeName;
         final String prefix = moduleToPrefix.getOrDefault(type.getQName().getModule(), "");
         if (prefix.isEmpty()) {

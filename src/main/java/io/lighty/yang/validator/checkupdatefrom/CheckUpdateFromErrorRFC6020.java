@@ -11,7 +11,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressFBWarnings({"SLF4J_FORMAT_SHOULD_BE_CONST", "SLF4J_SIGN_ONLY_FORMAT"})
 class CheckUpdateFromErrorRFC6020 {
 
     private static final String PRETEXT = "According to RFC 6020 ";
@@ -160,6 +159,8 @@ class CheckUpdateFromErrorRFC6020 {
         return this;
     }
 
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
     void print(int order) {
         LOG.error("{} {}: {}{}{}{}\n", order, name, PRETEXT, description, newInformation, oldInformation);
     }

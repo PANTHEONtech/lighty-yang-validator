@@ -47,7 +47,6 @@ import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressFBWarnings("SLF4J_SIGN_ONLY_FORMAT")
 public class Tree extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(Tree.class);
@@ -75,6 +74,8 @@ public class Tree extends FormatPlugin {
     }
 
     @Override
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
         if (this.configuration.getTreeConfiguration().isHelp()) {
             printHelp();
@@ -483,6 +484,8 @@ public class Tree extends FormatPlugin {
         }
     }
 
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
     private void printLines(final List<Line> lines) {
         for (Line l : lines) {
             final String linesText = l.toString();

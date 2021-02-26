@@ -24,7 +24,7 @@ import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressFBWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
+
 public class Depends extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(Depends.class);
@@ -41,6 +41,8 @@ public class Depends extends FormatPlugin {
     private final Set<String> modules = new HashSet<>();
 
     @Override
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
         final DependConfiguration dependConfiguration = this.configuration.getDependConfiguration();
         for (final RevisionSourceIdentifier source : this.sources) {
@@ -71,7 +73,7 @@ public class Depends extends FormatPlugin {
                 dependantsBuilder.append(NON_RECURSIVE);
             }
             final String dependandsText = dependantsBuilder.toString();
-            LOG.info(dependandsText);
+            LOG.info("{}", dependandsText);
         }
     }
 

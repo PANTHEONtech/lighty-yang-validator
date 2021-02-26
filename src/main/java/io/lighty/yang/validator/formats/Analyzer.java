@@ -19,7 +19,6 @@ import org.opendaylight.yangtools.yang.parser.stmt.reactor.EffectiveSchemaContex
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressFBWarnings("SLF4J_FORMAT_SHOULD_BE_CONST")
 public class Analyzer extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(Analyzer.class);
@@ -36,18 +35,20 @@ public class Analyzer extends FormatPlugin {
         printOut();
     }
 
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
     private void printOut() {
         for (Map.Entry<String, Integer> entry : new TreeMap<>(this.counter).entrySet()) {
-            LOG.info(String.format("%s: %d", entry.getKey(), entry.getValue()));
+            LOG.info("{}: {}", entry.getKey(), entry.getValue());
         }
     }
 
-    private void analyzeSubstatement(final DeclaredStatement subStatement) {
+    private void analyzeSubstatement(final DeclaredStatement<?> subStatement) {
         String name = subStatement.statementDefinition().getStatementName().getLocalName();
         counter.compute(name, (key, val) -> (val == null) ? 1 : val + 1);
-        final Collection substatements = subStatement.declaredSubstatements();
-        for (final Object nextSubstatement : substatements) {
-            analyzeSubstatement((DeclaredStatement)nextSubstatement);
+        final Collection<? extends DeclaredStatement<?>> substatements = subStatement.declaredSubstatements();
+        for (final DeclaredStatement<?> nextSubstatement : substatements) {
+            analyzeSubstatement(nextSubstatement);
         }
     }
 

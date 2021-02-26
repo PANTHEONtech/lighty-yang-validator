@@ -51,7 +51,10 @@ import org.slf4j.Logger;
 
 public class ModulePrinter {
 
-    private final Set<TypeDefinition> usedTypes;
+    private static final String REFERENCE_STRING = "reference";
+    private static final String DESCRIPTION_STRING = "description";
+
+    private final Set<TypeDefinition<?>> usedTypes;
     private final Set<String> usedImports;
     private final StatementPrinter printer;
     private final Set<SchemaTree> schemaTree;
@@ -64,7 +67,7 @@ public class ModulePrinter {
     private final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTreesMap = new HashMap<>();
 
     public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
-            final QNameModule moduleName, final OutputStream out, final Set<TypeDefinition> usedTypes,
+            final QNameModule moduleName, final OutputStream out, final Set<TypeDefinition<?>> usedTypes,
             final Set<String> usedImports) {
         this(schemaTree, schemaContext, moduleName,
                 new IndentingPrinter(new PrintStream(out, false, Charset.defaultCharset())),
@@ -72,13 +75,13 @@ public class ModulePrinter {
     }
 
     public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
-            final QNameModule moduleName, final Logger out, final Set<TypeDefinition> usedTypes,
+            final QNameModule moduleName, final Logger out, final Set<TypeDefinition<?>> usedTypes,
             final Set<String> usedImports) {
         this(schemaTree, schemaContext, moduleName, new IndentingLogger(out), usedTypes, usedImports);
     }
 
     private ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
-            final QNameModule moduleName, final Indenting printer, final Set<TypeDefinition> usedTypes,
+            final QNameModule moduleName, final Indenting printer, final Set<TypeDefinition<?>> usedTypes,
             final Set<String> usedImports) {
         this.usedImports = usedImports;
         this.usedTypes = usedTypes;
@@ -346,7 +349,7 @@ public class ModulePrinter {
     private void doPrintReference(final DataSchemaNode schemaNode) {
         final Optional<String> reference = schemaNode.getReference();
         if (reference.isPresent()) {
-            printer.printSimple("reference", "\"" + reference.get() + "\"");
+            printer.printSimple(REFERENCE_STRING, "\"" + reference.get() + "\"");
             printer.printEmptyLine();
         }
     }
@@ -354,7 +357,7 @@ public class ModulePrinter {
     private void doPrintDescription(final DataSchemaNode schemaNode) {
         final Optional<String> description = schemaNode.getDescription();
         if (description.isPresent()) {
-            printer.printSimple("description", "\"" + description.get() + "\"");
+            printer.printSimple(DESCRIPTION_STRING, "\"" + description.get() + "\"");
             printer.printEmptyLine();
         }
     }
@@ -390,12 +393,12 @@ public class ModulePrinter {
         }
         final Optional<String> description = module.getDescription();
         if (description.isPresent()) {
-            printer.printSimple("description", "\"" + description.get() + "\"");
+            printer.printSimple(DESCRIPTION_STRING, "\"" + description.get() + "\"");
             printer.printEmptyLine();
         }
         final Optional<String> reference = module.getReference();
         if (reference.isPresent()) {
-            printer.printSimple("reference", "\"" + reference.get() + "\"");
+            printer.printSimple(REFERENCE_STRING, "\"" + reference.get() + "\"");
             printer.printEmptyLine();
         }
         final Optional<Revision> revision = module.getRevision();
