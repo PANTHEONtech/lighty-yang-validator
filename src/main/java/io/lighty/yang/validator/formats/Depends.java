@@ -76,31 +76,43 @@ public class Depends extends FormatPlugin {
     }
 
     private void resolveImports(final Module module, final DependConfiguration dependConfiguration) {
-        for (ModuleImport m : module.getImports()) {
-            final String moduleName = m.getModuleName();
+        for (ModuleImport moduleImport : module.getImports()) {
+            final String moduleName = moduleImport.getModuleName();
             if (dependConfiguration.getExcludedModuleNames().contains(moduleName)) {
                 continue;
             }
-            for (Module contextModule : this.schemaContext.getModules()) {
-                if (moduleName.equals(contextModule.getName())) {
-                    final Optional<Revision> importedModuleRevision = m.getRevision();
-                    final Optional<Revision> contextModuleRevision = contextModule.getRevision();
-                    if (importedModuleRevision.isPresent() && contextModuleRevision.isPresent()) {
-                        if (!contextModuleRevision.get().toString().equals(importedModuleRevision.get().toString())) {
-                            continue;
-                        }
-                    }
-                    modules.add(contextModule.getName());
-                    if (!dependConfiguration.isModuleDependentsOnly()) {
-                        if (!dependConfiguration.isModuleImportsOnly()) {
-                            resolveSubmodules(contextModule, dependConfiguration);
-                        }
-                        resolveImports(contextModule, dependConfiguration);
-                    }
+            resolveImportsInSchemaContextModules(dependConfiguration, moduleImport, moduleName);
+        }
+    }
+
+    private void resolveImportsInSchemaContextModules(final DependConfiguration dependConfiguration,
+            final ModuleImport moduleImport, final String moduleName) {
+        for (Module contextModule : this.schemaContext.getModules()) {
+            if (moduleName.equals(contextModule.getName())) {
+                if (isRevisionsEqualsOrNull(moduleImport.getRevision().orElse(null),
+                        contextModule.getRevision().orElse(null))) {
+                    addContextModuleToModulesAndResolveImports(dependConfiguration, contextModule);
                     break;
                 }
             }
         }
+    }
+
+    private void addContextModuleToModulesAndResolveImports(final DependConfiguration dependConfiguration,
+            final Module contextModule) {
+        modules.add(contextModule.getName());
+        if (!dependConfiguration.isModuleDependentsOnly()) {
+            if (!dependConfiguration.isModuleImportsOnly()) {
+                resolveSubmodules(contextModule, dependConfiguration);
+            }
+            resolveImports(contextModule, dependConfiguration);
+        }
+    }
+
+    private boolean isRevisionsEqualsOrNull(final Revision importedModuleRevision,
+            final Revision contextModuleRevision) {
+        return (importedModuleRevision == null || contextModuleRevision == null)
+                || (contextModuleRevision.toString().equals(importedModuleRevision.toString()));
     }
 
     private void resolveSubmodules(final Module module, final DependConfiguration dependConfiguration) {

@@ -100,8 +100,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     private final SchemaTree tree;
 
     public TrackingXmlParserStream(final NormalizedNodeStreamWriter writer, final XmlCodecFactory codecs,
-                                   final DataSchemaNode parentNode, final boolean strictParsing,
-                                   final SchemaTree tree) {
+            final DataSchemaNode parentNode, final boolean strictParsing, final SchemaTree tree) {
         this.writer = requireNonNull(writer);
         this.codecs = requireNonNull(codecs);
         this.parentNode = parentNode;
@@ -140,7 +139,6 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
             } else {
                 throw new IllegalStateException("Unsupported schema node type " + parentNode.getClass() + ".");
             }
-
 
             read(reader, nodeDataWithSchema, reader.getLocalName(), tree);
             nodeDataWithSchema.write(writer);
@@ -231,7 +229,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
      */
 
     private void read(final XMLStreamReader in, final AbstractNodeDataWithSchema parent,
-                      final String rootElement, SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
+            final String rootElement, SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
         if (!in.hasNext()) {
             return;
         }
@@ -239,11 +237,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         if (parent instanceof LeafNodeDataWithSchema || parent instanceof LeafListEntryNodeDataWithSchema) {
             parent.setAttributes(getElementAttributes(in));
             setValue(parent, in.getElementText().trim(), in.getNamespaceContext());
-            if (isNextEndDocument(in)) {
-                return;
-            }
-
-            if (!isAtElement(in)) {
+            if (!isNextEndDocument(in) && !isAtElement(in)) {
                 in.nextTag();
             }
             return;
@@ -254,29 +248,15 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         }
 
         if (parent instanceof LeafListNodeDataWithSchema || parent instanceof ListNodeDataWithSchema) {
-            String xmlElementName = in.getLocalName();
-            while (xmlElementName.equals(parent.getSchema().getQName().getLocalName())) {
-                read(in, newEntryNode(parent), rootElement, schemaTree);
-                if (in.getEventType() == XMLStreamConstants.END_DOCUMENT
-                        || in.getEventType() == XMLStreamConstants.END_ELEMENT) {
-                    break;
-                }
-                xmlElementName = in.getLocalName();
-            }
-
+            readLeafData(in, parent, rootElement, schemaTree);
             return;
         }
 
         if (parent instanceof AnyXmlNodeDataWithSchema) {
             setValue(parent, readAnyXmlValue(in), in.getNamespaceContext());
-            if (isNextEndDocument(in)) {
-                return;
-            }
-
-            if (!isAtElement(in)) {
+            if (!isNextEndDocument(in) && !isAtElement(in)) {
                 in.nextTag();
             }
-
             return;
         }
 
@@ -284,6 +264,24 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
             parent.setAttributes(getElementAttributes(in));
         }
 
+        readTaggedData(in, parent, rootElement, schemaTree);
+    }
+
+    private void readLeafData(XMLStreamReader in, AbstractNodeDataWithSchema<?> parent, String rootElement,
+            SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
+        String xmlElementName = in.getLocalName();
+        while (xmlElementName.equals(parent.getSchema().getQName().getLocalName())) {
+            read(in, newEntryNode(parent), rootElement, schemaTree);
+            if (in.getEventType() == XMLStreamConstants.END_DOCUMENT
+                    || in.getEventType() == XMLStreamConstants.END_ELEMENT) {
+                break;
+            }
+            xmlElementName = in.getLocalName();
+        }
+    }
+
+    private void readTaggedData(XMLStreamReader in, AbstractNodeDataWithSchema<?> parent, String rootElement,
+            SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
         switch (in.nextTag()) {
             case XMLStreamConstants.START_ELEMENT:
                 /*
@@ -300,99 +298,109 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
                 // FIXME: Upstream yangtools from which this code is copied has this FIXME, so wait for solution
                 // The task is there to keep track of that
                 // https://jira.pantheon.sk/browse/PTODL-516
-                final Set<Entry<String, String>> namesakes = new HashSet<>();
-                while (in.hasNext()) {
-                    final String xmlElementName = in.getLocalName();
-                    DataSchemaNode parentSchema = parent.getSchema();
-
-                    final String parentSchemaName = parentSchema.getQName().getLocalName();
-                    if (parentSchemaName.equals(xmlElementName)
-                            && in.getEventType() == XMLStreamConstants.END_ELEMENT) {
-                        if (isNextEndDocument(in)) {
-                            break;
-                        }
-
-                        if (!isAtElement(in)) {
-                            in.nextTag();
-                        }
-                        break;
-                    }
-
-                    if (in.isEndElement() && rootElement.equals(xmlElementName)) {
-                        break;
-                    }
-
-                    if (parentSchema instanceof YangModeledAnyxmlSchemaNode) {
-                        parentSchema = ((YangModeledAnyxmlSchemaNode) parentSchema).getSchemaOfAnyXmlData();
-                    }
-                    /*
-                     Check if xml node is already added to the Set
-                     if yes, we have multiple values for the same node, which is not valid.
-                     */
-                    final String xmlElementNamespace = in.getNamespaceURI();
-                    if (!namesakes.add(new SimpleImmutableEntry<>(xmlElementNamespace, xmlElementName))) {
-                        final Location loc = in.getLocation();
-                        throw new IllegalStateException(String.format(
-                                "Duplicate namespace \"%s\" element \"%s\" in XML input at: line %s column %s",
-                                xmlElementNamespace, xmlElementName, loc.getLineNumber(), loc.getColumnNumber()));
-                    }
-                    /*
-                     Finds the actual nodes from the provided schema based on the xml element name and namespace
-                     defined in the xmlns="[namespace]" metadata.
-                     */
-                    final Deque<DataSchemaNode> childDataSchemaNodes =
-                            ParserStreamUtils.findSchemaNodeByNameAndNamespace(parentSchema, xmlElementName,
-                                    new URI(xmlElementNamespace));
-
-                    if (childDataSchemaNodes.isEmpty()) {
-                        checkState(!strictParsing, "Schema for node with name %s and namespace %s does not exist at %s",
-                                xmlElementName, xmlElementNamespace, parentSchema.getPath());
-                        skipUnknownNode(in);
-                        continue;
-                    }
-
-                    final SchemaTree parentTree = schemaTree;
-                    for (final DataSchemaNode less : childDataSchemaNodes) {
-                        /*
-                         Check if SchemaNode found based on the xmlElementName is direct child of the root node.
-                         If yes, the node is not from another module.
-                         */
-                        if (Iterables.size(less.getPath().getPathFromRoot()) == 1) {
-                            schemaTree = schemaTree.addChild(less, true, false);
-                        /*
-                         If not, the node can be augmented, we need to check if the modules
-                         of it's parent and grand parent. If they are not the same, the node is from another module,
-                         therefore we treat it as augment.
-                         */
-                        } else {
-                            final Iterator<QName> iterator = less.getPath().getPathTowardsRoot().iterator();
-
-                            final QName first = iterator.next();
-                            final QName second = iterator.next();
-                            if (second.getModule().equals(first.getModule())) {
-                                schemaTree = schemaTree.addChild(less, false, false);
-                            } else {
-                                schemaTree = schemaTree.addChild(less, true, true);
-                            }
-                        }
-                    }
-                    read(in, ((CompositeNodeDataWithSchema) parent)
-                            .addChild(childDataSchemaNodes), rootElement, schemaTree);
-                    schemaTree = parentTree;
-                }
+                readDataWithStartedElementTag(in, parent, rootElement, schemaTree);
                 break;
-            case XMLStreamConstants.END_ELEMENT:
-                if (isNextEndDocument(in)) {
-                    break;
-                }
 
-                if (!isAtElement(in)) {
+            case XMLStreamConstants.END_ELEMENT:
+                if (!isNextEndDocument(in) && !isAtElement(in)) {
                     in.nextTag();
                 }
                 break;
+
             default:
                 break;
         }
+    }
+
+    private void readDataWithStartedElementTag(final XMLStreamReader in, final AbstractNodeDataWithSchema<?> parent,
+            final String rootElement, SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
+
+        final Set<Entry<String, String>> namesakes = new HashSet<>();
+        while (in.hasNext()) {
+            final String xmlElementName = in.getLocalName();
+            DataSchemaNode parentSchema = parent.getSchema();
+
+            final String parentSchemaName = parentSchema.getQName().getLocalName();
+            if (parentSchemaName.equals(xmlElementName) && in.getEventType() == XMLStreamConstants.END_ELEMENT) {
+                if (!isNextEndDocument(in) && !isAtElement(in)) {
+                    in.nextTag();
+                }
+                break;
+            }
+
+            if (in.isEndElement() && rootElement.equals(xmlElementName)) {
+                break;
+            }
+
+            if (parentSchema instanceof YangModeledAnyxmlSchemaNode) {
+                parentSchema = ((YangModeledAnyxmlSchemaNode) parentSchema).getSchemaOfAnyXmlData();
+            }
+            /*
+             Check if xml node is already added to the Set
+             if yes, we have multiple values for the same node, which is not valid.
+             */
+            final String xmlElementNamespace = getXmlElementNamespace(in, namesakes, xmlElementName);
+            /*
+             Finds the actual nodes from the provided schema based on the xml element name and namespace
+             defined in the xmlns="[namespace]" metadata.
+             */
+            final Deque<DataSchemaNode> childDataSchemaNodes =
+                    ParserStreamUtils.findSchemaNodeByNameAndNamespace(parentSchema, xmlElementName,
+                            new URI(xmlElementNamespace));
+
+            if (childDataSchemaNodes.isEmpty()) {
+                checkState(!strictParsing, "Schema for node with name %s and namespace %s does not exist at %s",
+                        xmlElementName, xmlElementNamespace, parentSchema.getPath());
+                skipUnknownNode(in);
+                continue;
+            }
+
+            final SchemaTree parentTree = schemaTree;
+            schemaTree = getSchemaTreeWithAddedChildren(schemaTree, childDataSchemaNodes);
+            read(in, ((CompositeNodeDataWithSchema) parent).addChild(childDataSchemaNodes), rootElement, schemaTree);
+            schemaTree = parentTree;
+        }
+    }
+
+    private String getXmlElementNamespace(final XMLStreamReader in, final Set<Entry<String, String>> namesakes,
+            final String xmlElementName) {
+        final String xmlElementNamespace = in.getNamespaceURI();
+        if (!namesakes.add(new SimpleImmutableEntry<>(xmlElementNamespace, xmlElementName))) {
+            final Location loc = in.getLocation();
+            throw new IllegalStateException(String.format(
+                    "Duplicate namespace \"%s\" element \"%s\" in XML input at: line %s column %s",
+                    xmlElementNamespace, xmlElementName, loc.getLineNumber(), loc.getColumnNumber()));
+        }
+        return xmlElementNamespace;
+    }
+
+    private SchemaTree getSchemaTreeWithAddedChildren(SchemaTree schemaTree,
+            final Deque<DataSchemaNode> childDataSchemaNodes) {
+        for (final DataSchemaNode less : childDataSchemaNodes) {
+            /*
+             Check if SchemaNode found based on the xmlElementName is direct child of the root node.
+             If yes, the node is not from another module.
+             */
+            if (Iterables.size(less.getPath().getPathFromRoot()) == 1) {
+                schemaTree = schemaTree.addChild(less, true, false);
+            /*
+             If not, the node can be augmented, we need to check if the modules
+             of it's parent and grand parent. If they are not the same, the node is from another module,
+             therefore we treat it as augment.
+             */
+            } else {
+                final Iterator<QName> iterator = less.getPath().getPathTowardsRoot().iterator();
+
+                final QName first = iterator.next();
+                final QName second = iterator.next();
+                if (second.getModule().equals(first.getModule())) {
+                    schemaTree = schemaTree.addChild(less, false, false);
+                } else {
+                    schemaTree = schemaTree.addChild(less, true, true);
+                }
+            }
+        }
+        return schemaTree;
     }
 
     private static boolean isNextEndDocument(final XMLStreamReader in) throws XMLStreamException {
@@ -441,7 +449,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
      */
 
     private void setValue(final AbstractNodeDataWithSchema parent, final Object value,
-                          final NamespaceContext nsContext) {
+            final NamespaceContext nsContext) {
         checkArgument(parent instanceof SimpleNodeDataWithSchema, "Node %s is not a simple type",
                 parent.getSchema().getQName());
         final SimpleNodeDataWithSchema parentSimpleNode = (SimpleNodeDataWithSchema) parent;
@@ -452,7 +460,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     private Object translateValueByType(final Object value, final DataSchemaNode node,
-                                        final NamespaceContext namespaceCtx) {
+            final NamespaceContext namespaceCtx) {
         if (node instanceof AnyxmlSchemaNode) {
 
             checkArgument(value instanceof Document);

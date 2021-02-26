@@ -34,6 +34,17 @@ abstract class Indenting {
         if (separately) {
             builder.append("\n");
         }
+
+        builder.append(getBuilderForEachTextLine(level, separately, textLines));
+
+        if (textLines.length > 1) {
+            builder.setLength(builder.length() - 1);
+        }
+        return builder.toString();
+    }
+
+    private static StringBuilder getBuilderForEachTextLine(int level, boolean separately, String[] textLines) {
+        StringBuilder builder = new StringBuilder();
         boolean firstLine = true;
         for (String line : textLines) {
             if (separately && !line.isEmpty()) {
@@ -50,10 +61,7 @@ abstract class Indenting {
                 builder.append("\n");
             }
         }
-        if (textLines.length > 1) {
-            builder.setLength(builder.length() - 1);
-        }
-        return builder.toString();
+        return builder;
     }
 }
 
