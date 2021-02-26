@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
@@ -113,17 +114,16 @@ public final class Main {
 
         final List<String> parseAllDir = configuration.getParseAll();
         if (!parseAllDir.isEmpty()) {
-            try {
-                for (final String dir : parseAllDir) {
-                    final List<String> collect = Files.list(Paths.get(dir))
+            for (final String dir : parseAllDir) {
+                try (Stream<Path> path = Files.list(Paths.get(dir))) {
+                    final List<String> collect = path
                             .map(Path::toString)
                             .collect(Collectors.toList());
                     yangFiles.addAll(collect);
+                } catch (IOException e) {
+                    LOG.error("Could not Collect files from provided ({}) directory",
+                            String.join(",", parseAllDir), e);
                 }
-            } catch (IOException e) {
-                LOG.error("Could not Collect files from provided ({}) directory",
-                        String.join(",", parseAllDir), e);
-                return;
             }
 
             final String yangtoolsVersion = getYangtoolsVersion(SchemaContext.class);
@@ -284,7 +284,7 @@ public final class Main {
                 final YangContextFactory contextFactoryFrom =
                         new YangContextFactory(initYangDirsPath(
                                 config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath()),
-                        Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
+                                Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
                                 config.isRecursive());
                 contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
             } catch (final IOException | YangParserException e) {
@@ -308,9 +308,8 @@ public final class Main {
         if (simplifyDir == null) {
             schemaSelector.noXml();
         } else {
-            final List<File> xmlFiles;
-            try {
-                xmlFiles = Files.list(Paths.get(simplifyDir))
+            try (Stream<Path> path = Files.list(Paths.get(simplifyDir))) {
+                List<File> xmlFiles = path
                         .map(Path::toFile)
                         .collect(Collectors.toList());
 

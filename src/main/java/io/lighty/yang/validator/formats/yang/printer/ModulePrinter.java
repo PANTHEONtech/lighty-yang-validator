@@ -7,6 +7,7 @@
  */
 package io.lighty.yang.validator.formats.yang.printer;
 
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -66,8 +67,8 @@ public class ModulePrinter {
                          final QNameModule moduleName, final OutputStream out,
                          final Set<TypeDefinition> usedTypes, final Set<String> usedImports) {
         this(schemaTree, schemaContext, moduleName,
-             new IndentingPrinter(new PrintStream(out, false, Charset.defaultCharset())),
-             usedTypes, usedImports);
+                new IndentingPrinter(new PrintStream(out, false, Charset.defaultCharset())),
+                usedTypes, usedImports);
     }
 
     public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
@@ -84,7 +85,8 @@ public class ModulePrinter {
         this.schemaTree = schemaTree;
         this.moduleName = moduleName;
         this.printer = new StatementPrinter(printer);
-        module = schemaContext.findModule(moduleName).get();
+        module = schemaContext.findModule(moduleName)
+                .orElseThrow(() -> new NotFoundException("Module ", moduleName.toString()));
         moduleToPrefix = module.getImports().stream()
                 .collect(Collectors.toMap(i -> schemaContext
                                 .findModules(i.getModuleName()).iterator().next().getQNameModule(),
@@ -161,13 +163,11 @@ public class ModulePrinter {
                 final Optional<DataSchemaNode> dataChildByName = grouping.findDataChildByName(schemaNode.getQName());
                 if (dataChildByName.isPresent()) {
                     DataSchemaNode dataSchemaNode = dataChildByName.get();
-                    if (((DerivableSchemaNode) schemaNode).getOriginal().isPresent()) {
-                        if (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath()
-                                .equals(dataSchemaNode.getPath())) {
-                            continue;
-                        }
+                    if (((DerivableSchemaNode) schemaNode).getOriginal().isPresent()
+                            && !((DerivableSchemaNode) schemaNode).getOriginal().get().getPath()
+                            .equals(dataSchemaNode.getPath())) {
+                        continue;
                     }
-
                     if (!(dataSchemaNode instanceof EffectiveStatement || schemaNode instanceof EffectiveStatement)) {
                         continue;
                     }

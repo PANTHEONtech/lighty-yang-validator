@@ -10,6 +10,7 @@ package io.lighty.yang.validator.formats;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.Configuration;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -96,7 +97,8 @@ public class JsonTree extends FormatPlugin {
               final SchemaTree schemaTree, final Configuration config) {
         super.init(context, testFilesSchemaSources, schemaTree, config);
         for (final RevisionSourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
+            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
+                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
             prefixMap.put(module.getName(), module.getPrefix());
             setImportPrefixes(module.getImports());
         }
@@ -114,7 +116,8 @@ public class JsonTree extends FormatPlugin {
     @Override
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
+            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
+                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
             final JSONObject moduleMetadata = resolveModuleMetadata(module);
             final JSONObject jsonTree = new JSONObject();
             for (final DataSchemaNode node : module.getChildNodes()) {
@@ -295,15 +298,14 @@ public class JsonTree extends FormatPlugin {
                 jsonLeafType.append(BASE, base.getQName().getLocalName());
             }
         } else {
-            final String prefix =
-                    schemaContext.findModule(typeqName.getNamespace(), typeqName.getRevision()).get().getPrefix();
+            final String prefix = schemaContext.findModule(typeqName.getNamespace(), typeqName.getRevision())
+                    .orElseThrow(() -> new NotFoundException("Module", typeqName.getNamespace().toString()))
+                    .getPrefix();
             type = prefix + COLON + typeqName.getLocalName();
         }
         jsonLeafType.put(DESCRIPTION, nodeType.getDescription().orElse(EMPTY));
         jsonLeafType.put(TYPE, type);
-        if (nodeType.getDefaultValue().isPresent()) {
-            jsonLeafType.put(DEFAULT, nodeType.getDefaultValue().get());
-        }
+        nodeType.getDefaultValue().ifPresent(value -> jsonLeafType.put(DEFAULT, value));
         return jsonLeafType;
     }
 

@@ -8,6 +8,7 @@
 package io.lighty.yang.validator.formats;
 
 import io.lighty.yang.validator.GroupArguments;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.yang.printer.ModulePrinter;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.FileOutputStream;
@@ -59,14 +60,18 @@ public class MultiModulePrinter extends FormatPlugin {
         }
         //resolve imports by augmentations and typedefs
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
-            final Module module = this.schemaContext.findModule(entry.getKey()).get();
+            final Module module = this.schemaContext.findModule(entry.getKey())
+                    .orElseThrow(() -> new NotFoundException("Module", entry.getKey().toString()));
             for (SchemaTree singleEntry : entry.getValue()) {
                 gatherUsedTypeDefs(singleEntry, module);
             }
             for (AugmentationSchemaNode aug : module.getAugmentations()) {
                 for (QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
-                            .add(this.schemaContext.findModule(pathQname.getModule()).get().getName());
+                            .add(this.schemaContext.findModule(pathQname.getModule())
+                                    .orElseThrow(
+                                        () -> new NotFoundException("Module", pathQname.getModule().toString()))
+                                    .getName());
                 }
             }
         }
@@ -77,8 +82,10 @@ public class MultiModulePrinter extends FormatPlugin {
         }
         //print each yang module
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
-            final Module module = this.schemaContext.findModule(entry.getKey()).get();
-            final String withRev = "@" + module.getRevision().get().toString();
+            final Module module = this.schemaContext.findModule(entry.getKey())
+                    .orElseThrow(() -> new NotFoundException("Module", entry.getKey().toString()));
+            final String withRev = "@" + module.getRevision()
+                    .orElseThrow(() -> new NotFoundException("Revision of module", module.getName()));
             final String suffix = module.getRevision().isPresent() ? withRev + ".yang" : ".yang";
             final String name = module.getName() + suffix;
             if (!this.sources.contains(RevisionSourceIdentifier.create(module.getName(), module.getRevision()))
@@ -133,7 +140,10 @@ public class MultiModulePrinter extends FormatPlugin {
             usedImportedTypeDefs.computeIfAbsent(mod, k -> new TreeSet<>(Comparator.comparing(SchemaNode::getQName)))
                     .add(type);
             usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
-                    .add(this.schemaContext.findModule(mod).get().getName());
+                    .add(this.schemaContext.findModule(mod)
+                            .orElseThrow(() -> new NotFoundException("Module", mod.toString()))
+                            .getName());
+
         }
         if (type instanceof UnionTypeDefinition) {
             final List<TypeDefinition<?>> types = ((UnionTypeDefinition) type).getTypes();

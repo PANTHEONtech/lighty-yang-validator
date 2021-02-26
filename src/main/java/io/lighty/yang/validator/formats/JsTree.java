@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
+import io.lighty.yang.validator.exceptions.NotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -56,7 +57,8 @@ public class JsTree extends FormatPlugin {
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
             List<Line> lines = new ArrayList<>();
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision()).get();
+            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
+                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
             final String headerText = prepareHeader(module);
             LOG.info(headerText);
             for (Module m : this.schemaContext.getModules()) {
@@ -210,10 +212,7 @@ public class JsTree extends FormatPlugin {
 
     private String prepareHeader(final Module module) {
         final StringBuilder nameRevision = new StringBuilder(module.getName());
-        if (module.getRevision().isPresent()) {
-            nameRevision.append("@")
-                    .append(module.getRevision().get());
-        }
+        module.getRevision().ifPresent(value -> nameRevision.append("@").append(value));
         URL url = Resources.getResource("header");
         String text = "";
         try {
