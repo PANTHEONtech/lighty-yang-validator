@@ -475,7 +475,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
 
         checkArgument(node instanceof TypedDataSchemaNode);
         checkArgument(value instanceof String);
-        final TypeAwareCodec<?,NamespaceContext,?> xmlCodec = codecs.codecFor((TypedDataSchemaNode) node);
+        final TypeAwareCodec<?, NamespaceContext, ?> xmlCodec = codecs.codecFor((TypedDataSchemaNode) node);
         return xmlCodec.parseValue(namespaceCtx, (String) value);
     }
 

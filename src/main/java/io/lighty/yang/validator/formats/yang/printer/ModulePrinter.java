@@ -51,8 +51,8 @@ import org.slf4j.Logger;
 
 public class ModulePrinter {
 
-    private static final String REFERENCE = "reference";
-    private static final String DESCRIPTION = "description";
+    private static final String REFERENCE_STRING = "reference";
+    private static final String DESCRIPTION_STRING = "description";
 
     private final Set<TypeDefinition<?>> usedTypes;
     private final Set<String> usedImports;
@@ -349,7 +349,7 @@ public class ModulePrinter {
     private void doPrintReference(final DataSchemaNode schemaNode) {
         final Optional<String> reference = schemaNode.getReference();
         if (reference.isPresent()) {
-            printer.printSimple(REFERENCE, "\"" + reference.get() + "\"");
+            printer.printSimple(REFERENCE_STRING, "\"" + reference.get() + "\"");
             printer.printEmptyLine();
         }
     }
@@ -357,7 +357,7 @@ public class ModulePrinter {
     private void doPrintDescription(final DataSchemaNode schemaNode) {
         final Optional<String> description = schemaNode.getDescription();
         if (description.isPresent()) {
-            printer.printSimple(DESCRIPTION, "\"" + description.get() + "\"");
+            printer.printSimple(DESCRIPTION_STRING, "\"" + description.get() + "\"");
             printer.printEmptyLine();
         }
     }
@@ -393,12 +393,12 @@ public class ModulePrinter {
         }
         final Optional<String> description = module.getDescription();
         if (description.isPresent()) {
-            printer.printSimple(DESCRIPTION, "\"" + description.get() + "\"");
+            printer.printSimple(DESCRIPTION_STRING, "\"" + description.get() + "\"");
             printer.printEmptyLine();
         }
         final Optional<String> reference = module.getReference();
         if (reference.isPresent()) {
-            printer.printSimple(REFERENCE, "\"" + reference.get() + "\"");
+            printer.printSimple(REFERENCE_STRING, "\"" + reference.get() + "\"");
             printer.printEmptyLine();
         }
         final Optional<Revision> revision = module.getRevision();
