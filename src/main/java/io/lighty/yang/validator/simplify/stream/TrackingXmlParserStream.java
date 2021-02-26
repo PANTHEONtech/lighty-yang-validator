@@ -82,7 +82,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
 
     static {
         final TransformerFactory fa = TransformerFactory.newInstance();
-        if ((!fa.getFeature(StAXResult.FEATURE)) && (!fa.getFeature(StAXResult.FEATURE))) {
+        if (!fa.getFeature(StAXResult.FEATURE)) {
             throw new TransformerFactoryConfigurationError("No TransformerFactory supporting StAXResult found.");
         }
 
