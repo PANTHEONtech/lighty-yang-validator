@@ -90,12 +90,9 @@ public class Depends extends FormatPlugin {
     private void resolveImportsInSchemaContextModules(final DependConfiguration dependConfiguration,
             final ModuleImport moduleImport, final String moduleName) {
         for (Module contextModule : this.schemaContext.getModules()) {
-            if (moduleName.equals(contextModule.getName())) {
-                if (isRevisionsEqualsOrNull(moduleImport.getRevision().orElse(null),
-                        contextModule.getRevision().orElse(null))) {
-                    addContextModuleToModulesAndResolveImports(dependConfiguration, contextModule);
-                    break;
-                }
+            if (isModuleImportEqualsWithNameAndModuleRevisionsAreEquals(moduleImport, moduleName, contextModule)) {
+                addContextModuleToModulesAndResolveImports(dependConfiguration, contextModule);
+                break;
             }
         }
     }
@@ -109,6 +106,13 @@ public class Depends extends FormatPlugin {
             }
             resolveImports(contextModule, dependConfiguration);
         }
+    }
+
+    private boolean isModuleImportEqualsWithNameAndModuleRevisionsAreEquals(final ModuleImport moduleImport,
+            final String name, final Module contextModule) {
+        return name.equals(contextModule.getName()) && isRevisionsEqualsOrNull(
+                moduleImport.getRevision().orElse(null),
+                contextModule.getRevision().orElse(null));
     }
 
     private boolean isRevisionsEqualsOrNull(final Revision importedModuleRevision,
