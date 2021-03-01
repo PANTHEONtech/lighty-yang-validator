@@ -13,6 +13,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.exceptions.NotFoundException;
+import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.net.URI;
 import java.util.ArrayList;
@@ -141,8 +142,9 @@ public class Tree extends FormatPlugin {
         int augmentationNodes = st.getValue().size();
         for (final SchemaTree value : st.getValue()) {
             DataSchemaNode node = value.getSchemaNode();
-            ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER,
-                    this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
+            ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
+                    removeChoiceQnames, namespacePrefix);
             lines.add(consoleLine);
             resolveChildNodes(lines, new ArrayList<>(), value, --augmentationNodes > 0,
                     RpcInputOutput.OTHER, removeChoiceQnames, Collections.emptyList());
@@ -157,9 +159,9 @@ public class Tree extends FormatPlugin {
             if (st.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())
                     && !st.getValue().isAugmenting()) {
                 DataSchemaNode node = st.getValue().getSchemaNode();
-                ConsoleLine consoleLine =
-                        new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER, this.schemaContext,
-                                removeChoiceQnames, namespacePrefix, false);
+                LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
+                ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
+                                removeChoiceQnames, namespacePrefix);
                 lines.add(consoleLine);
                 List<QName> keyDefinitions = Collections.emptyList();
                 if (node instanceof ListSchemaNode) {
@@ -191,8 +193,9 @@ public class Tree extends FormatPlugin {
         List<Line> lines = new ArrayList<>();
         while (notifications.hasNext()) {
             final NotificationDefinition node = notifications.next();
-            ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER,
-                    this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
+            ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
+                    removeChoiceQnames, namespacePrefix);
             lines.add(consoleLine);
             resolveChildNodes(lines, new ArrayList<>(), node, false, RpcInputOutput.OTHER,
                     removeChoiceQnames, Collections.emptyList());
@@ -205,14 +208,16 @@ public class Tree extends FormatPlugin {
         List<Line> lines = new ArrayList<>();
         while (rpcs.hasNext()) {
             final RpcDefinition node = rpcs.next();
-            ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), node, RpcInputOutput.OTHER,
-                    this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
+            ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
+                    removeChoiceQnames, namespacePrefix);
             lines.add(consoleLine);
             final boolean inputExists = !node.getInput().getChildNodes().isEmpty();
             final boolean outputExists = !node.getOutput().getChildNodes().isEmpty();
             if (inputExists) {
-                consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), node.getInput(),
-                        RpcInputOutput.INPUT, this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+                lyvNodeData = new LyvNodeData(this.schemaContext, node.getInput(), Collections.emptyList());
+                consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), lyvNodeData,
+                        RpcInputOutput.INPUT, removeChoiceQnames, namespacePrefix);
                 lines.add(consoleLine);
                 final ArrayList<Boolean> isNextRpc = new ArrayList<>(Collections.singleton(rpcs.hasNext()));
                 resolveChildNodes(lines, isNextRpc, node.getInput(), outputExists, RpcInputOutput.INPUT,
@@ -220,8 +225,9 @@ public class Tree extends FormatPlugin {
                 this.treeDepth++;
             }
             if (outputExists) {
-                consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), node.getOutput(),
-                        RpcInputOutput.OUTPUT, this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+                lyvNodeData = new LyvNodeData(this.schemaContext, node.getOutput(), Collections.emptyList());
+                consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), lyvNodeData,
+                        RpcInputOutput.OUTPUT, removeChoiceQnames, namespacePrefix);
                 lines.add(consoleLine);
                 final ArrayList<Boolean> isNextRpc = new ArrayList<>(Collections.singleton(rpcs.hasNext()));
                 resolveChildNodes(lines, isNextRpc, node.getOutput(), false, RpcInputOutput.OUTPUT,
@@ -314,15 +320,17 @@ public class Tree extends FormatPlugin {
             while (actions.hasNext()) {
                 final ActionDefinition action = actions.next();
                 isConnected.add(actions.hasNext());
-                ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action, RpcInputOutput.OTHER,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+                LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, action, Collections.emptyList());
+                ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData,
+                        RpcInputOutput.OTHER, removeChoiceQnames, namespacePrefix);
                 lines.add(consoleLine);
                 final boolean inputExists = !action.getInput().getChildNodes().isEmpty();
                 final boolean outputExists = !action.getOutput().getChildNodes().isEmpty();
                 if (inputExists) {
                     isConnected.add(outputExists);
-                    consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getInput(), RpcInputOutput.INPUT,
-                            this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+                    lyvNodeData = new LyvNodeData(this.schemaContext, action.getInput(), Collections.emptyList());
+                    consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.INPUT,
+                            removeChoiceQnames, namespacePrefix);
                     lines.add(consoleLine);
                     resolveChildNodes(lines, isConnected, action.getInput(), outputExists, RpcInputOutput.INPUT,
                             removeChoiceQnames, Collections.emptyList());
@@ -331,8 +339,9 @@ public class Tree extends FormatPlugin {
                 }
                 if (outputExists) {
                     isConnected.add(false);
-                    consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getOutput(),
-                            RpcInputOutput.OUTPUT, this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+                    lyvNodeData = new LyvNodeData(this.schemaContext, action.getOutput(), Collections.emptyList());
+                    consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData,
+                            RpcInputOutput.OUTPUT, removeChoiceQnames, namespacePrefix);
                     lines.add(consoleLine);
                     resolveChildNodes(lines, isConnected, action.getOutput(), false, RpcInputOutput.OUTPUT,
                             removeChoiceQnames, Collections.emptyList());
@@ -357,8 +366,9 @@ public class Tree extends FormatPlugin {
             final List<Integer> removeChoiceQnames, final Iterator<Map.Entry<SchemaPath, SchemaTree>> actions,
             final SchemaTree actionSchemaTree) {
         final ActionDefinition action = actionSchemaTree.getActionNode();
-        ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action, RpcInputOutput.OTHER,
-                this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+        LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, action, Collections.emptyList());
+        ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.OTHER,
+                removeChoiceQnames, namespacePrefix);
         lines.add(consoleLine);
         boolean inputExists = false;
         boolean outputExists = false;
@@ -377,8 +387,9 @@ public class Tree extends FormatPlugin {
         }
         if (inputExists) {
             isConnected.add(actions.hasNext() || hasNext);
-            consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getInput(), RpcInputOutput.INPUT,
-                    this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            lyvNodeData = new LyvNodeData(this.schemaContext, action.getInput(), Collections.emptyList());
+            consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.INPUT,
+                    removeChoiceQnames, namespacePrefix);
             lines.add(consoleLine);
             resolveChildNodes(lines, isConnected, inValue, outputExists, RpcInputOutput.INPUT, removeChoiceQnames,
                     Collections.emptyList());
@@ -387,8 +398,9 @@ public class Tree extends FormatPlugin {
         }
         if (outputExists) {
             isConnected.add(actions.hasNext() || hasNext);
-            consoleLine = new ConsoleLine(new ArrayList<>(isConnected), action.getOutput(), RpcInputOutput.OUTPUT,
-                    this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            lyvNodeData = new LyvNodeData(this.schemaContext, action.getOutput(), Collections.emptyList());
+            consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.OUTPUT,
+                    removeChoiceQnames, namespacePrefix);
             lines.add(consoleLine);
             resolveChildNodes(lines, isConnected, outValue, false, RpcInputOutput.OUTPUT, removeChoiceQnames,
                     Collections.emptyList());
@@ -409,8 +421,9 @@ public class Tree extends FormatPlugin {
                 final SchemaTree caseValue = nextST.getValue();
                 final DataSchemaNode child = caseValue.getSchemaNode();
                 removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
-                ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+                LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, Collections.emptyList());
+                ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
+                        removeChoiceQnames, namespacePrefix);
                 lines.add(consoleLine);
                 resolveChildNodes(lines, isConnected, caseValue, caseNodes.hasNext()
                         || actionExists, inputOutput, removeChoiceQnames, Collections.emptyList());
@@ -429,8 +442,9 @@ public class Tree extends FormatPlugin {
         while (iterator.hasNext()) {
             final DataSchemaNode child = iterator.next();
             removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
-            ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
-                    this.schemaContext, removeChoiceQnames, namespacePrefix, false);
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, Collections.emptyList());
+            ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
+                    removeChoiceQnames, namespacePrefix);
             lines.add(consoleLine);
             resolveChildNodes(lines, isConnected, child, iterator.hasNext() || actionExists, inputOutput,
                     removeChoiceQnames, Collections.emptyList());
@@ -451,8 +465,9 @@ public class Tree extends FormatPlugin {
             if (nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
                 final SchemaTree childSchemaTree = nextST.getValue();
                 final DataSchemaNode child = childSchemaTree.getSchemaNode();
-                ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, keys.contains(child.getQName()));
+                LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, keys);
+                ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
+                        removeChoiceQnames, namespacePrefix);
                 lines.add(consoleLine);
                 List<QName> keyDefinitions = Collections.emptyList();
                 if (child instanceof ListSchemaNode) {
@@ -471,8 +486,9 @@ public class Tree extends FormatPlugin {
         final Iterator<? extends DataSchemaNode> childNodes = ((DataNodeContainer) node).getChildNodes().iterator();
         while (childNodes.hasNext()) {
             final DataSchemaNode child = childNodes.next();
-            ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), child, inputOutput,
-                    this.schemaContext, removeChoiceQnames, namespacePrefix, keys.contains(child.getQName()));
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, keys);
+            ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
+                    removeChoiceQnames, namespacePrefix);
             lines.add(consoleLine);
             List<QName> keyDefinitions = Collections.emptyList();
             if (child instanceof ListSchemaNode) {
