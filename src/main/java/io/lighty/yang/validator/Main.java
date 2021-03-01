@@ -107,7 +107,7 @@ public final class Main {
             try {
                 runLYV(yangFiles, configuration, format);
             } catch (LyvApplicationException e) {
-                LOG.error(e.getMessage());
+                LOG.error("Exception in LYV application", e);
                 return;
             }
         } else {
@@ -128,7 +128,7 @@ public final class Main {
             try {
                 yangtoolsVersion = getYangtoolsVersion(SchemaContext.class);
             } catch (LyvApplicationException e) {
-                LOG.error(e.getMessage());
+                LOG.error("Exception in LYV application", e);
                 return;
             }
             final CompilationTable table =
@@ -303,7 +303,7 @@ public final class Main {
                                 config.isRecursive());
                 contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
             } catch (final IOException | YangParserException e) {
-               throw new LyvApplicationException("Failed to create SchemaContext", e);
+                throw new LyvApplicationException("Failed to create SchemaContext", e);
             }
             final CheckUpdateFrom checkUpdateFrom = new CheckUpdateFrom(effectiveModelContext,
                     yangFiles.iterator().next(), contextFrom, config.getCheckUpdateFrom(),
