@@ -7,6 +7,7 @@
  */
 package io.lighty.yang.validator.formats;
 
+import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
@@ -24,10 +25,9 @@ public class ConsoleLine extends Line {
     private static final String RO = "ro";
     private final List<Boolean> isConnected;
 
-    ConsoleLine(final List<Boolean> isConnected, final SchemaNode node, RpcInputOutput inputOutput,
-            final SchemaContext context, final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix,
-            final boolean isKey) {
-        super(node, inputOutput, removeChoiceQname, namespacePrefix, context, isKey);
+    ConsoleLine(final List<Boolean> isConnected, final LyvNodeData lyvNodeData, RpcInputOutput inputOutput,
+            final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix) {
+        super(lyvNodeData, inputOutput, removeChoiceQname, namespacePrefix);
         this.isConnected = isConnected;
     }
 

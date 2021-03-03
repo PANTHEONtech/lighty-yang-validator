@@ -9,6 +9,7 @@ package io.lighty.yang.validator.formats;
 
 import com.google.common.collect.Lists;
 import io.lighty.yang.validator.exceptions.NotFoundException;
+import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,16 +17,11 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
-import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
-import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Status;
@@ -65,13 +61,11 @@ abstract class Line {
     String path;
     String typeName;
 
-    Line(final SchemaNode node, final RpcInputOutput inputOutput, final List<Integer> removeChoiceQname,
-            final Map<URI, String> namespacePrefix, final SchemaContext context, final boolean isKey) {
+    Line(final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput, final List<Integer> removeChoiceQname,
+            final Map<URI, String> namespacePrefix) {
+        SchemaNode node = lyvNodeData.getNode();
         this.status = node.getStatus();
-        this.isMandatory = (node instanceof MandatoryAware && ((MandatoryAware) node).isMandatory())
-                || node instanceof ContainerSchemaNode || node instanceof CaseSchemaNode
-                || node instanceof NotificationDefinition || node instanceof ActionDefinition
-                || node instanceof RpcDefinition || isKey;
+        this.isMandatory = lyvNodeData.isNodeMandatory();
         this.isListOrLeafList = node instanceof LeafListSchemaNode || node instanceof ListSchemaNode;
         this.isChoice = node instanceof ChoiceSchemaNode;
         this.isCase = node instanceof CaseSchemaNode;
@@ -79,7 +73,7 @@ abstract class Line {
         this.inputOutput = inputOutput;
         this.removeChoiceQname = removeChoiceQname;
         this.namespacePrefix = namespacePrefix;
-        resolveFlag(node, context);
+        resolveFlag(node, lyvNodeData.getContext());
         resolvePathAndType(node);
         resolveKeys(node);
         resolveIfFeatures(node);

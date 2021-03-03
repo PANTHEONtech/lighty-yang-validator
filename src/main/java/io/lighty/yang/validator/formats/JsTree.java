@@ -12,6 +12,7 @@ import com.google.common.io.Resources;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.exceptions.NotFoundException;
+import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -98,8 +99,9 @@ public class JsTree extends FormatPlugin {
         List<Line> lines = new ArrayList<>();
         for (NotificationDefinition node : module.getNotifications()) {
             final ArrayList<Integer> ids = singletonListInitializer.getSingletonListWithIncreasedValue();
-            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), node, RpcInputOutput.OTHER, this.schemaContext,
-                    removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
+            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OTHER,
+                    removeChoiceQnames, namespacePrefix);
             lines.add(htmlLine);
             resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
                     Collections.emptyList());
@@ -112,16 +114,18 @@ public class JsTree extends FormatPlugin {
         List<Line> lines = new ArrayList<>();
         for (RpcDefinition node : module.getRpcs()) {
             final ArrayList<Integer> rpcId = singletonListInitializer.getSingletonListWithIncreasedValue();
-            HtmlLine htmlLine = new HtmlLine(rpcId, node, RpcInputOutput.OTHER, this.schemaContext,
-                    removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
+            HtmlLine htmlLine = new HtmlLine(rpcId, lyvNodeData, RpcInputOutput.OTHER, removeChoiceQnames,
+                    namespacePrefix);
             lines.add(htmlLine);
             final boolean inputExists = !node.getInput().getChildNodes().isEmpty();
             final boolean outputExists = !node.getOutput().getChildNodes().isEmpty();
             ArrayList<Integer> ids = new ArrayList<>(rpcId);
             if (inputExists) {
                 ids.add(1);
-                htmlLine = new HtmlLine(new ArrayList<>(ids), node.getInput(), RpcInputOutput.INPUT,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+                lyvNodeData = new LyvNodeData(this.schemaContext, node.getInput(), Collections.emptyList());
+                htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.INPUT, removeChoiceQnames,
+                        namespacePrefix);
                 lines.add(htmlLine);
                 resolveChildNodes(lines, new ArrayList<>(ids), node.getInput(), RpcInputOutput.INPUT,
                         removeChoiceQnames, Collections.emptyList());
@@ -133,8 +137,9 @@ public class JsTree extends FormatPlugin {
                 } else {
                     ids.add(2);
                 }
-                htmlLine = new HtmlLine(new ArrayList<>(ids), node.getOutput(), RpcInputOutput.OUTPUT,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+                lyvNodeData = new LyvNodeData(this.schemaContext, node.getOutput(), Collections.emptyList());
+                htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OUTPUT, removeChoiceQnames,
+                        namespacePrefix);
                 lines.add(htmlLine);
                 resolveChildNodes(lines, new ArrayList<>(ids), node.getOutput(), RpcInputOutput.OUTPUT,
                         removeChoiceQnames, Collections.emptyList());
@@ -157,8 +162,9 @@ public class JsTree extends FormatPlugin {
         }
         for (DataSchemaNode node : module.getChildNodes()) {
             final ArrayList<Integer> ids = singletonListInitializer.getSingletonListWithIncreasedValue();
-            HtmlLine htmlLine = new HtmlLine(ids, node, RpcInputOutput.OTHER, this.schemaContext, removeChoiceQnames,
-                    namespacePrefix, Optional.empty(), false);
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
+            HtmlLine htmlLine = new HtmlLine(ids, lyvNodeData, RpcInputOutput.OTHER, removeChoiceQnames,
+                    namespacePrefix);
             lines.add(htmlLine);
             resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
                     Collections.emptyList());
@@ -169,9 +175,10 @@ public class JsTree extends FormatPlugin {
     private List<Line> getAugmentationNodesLines(final ArrayList<Integer> ids, final AugmentationSchemaNode augNode,
             final List<Integer> removeChoiceQnames) {
         List<Line> lines = new ArrayList<>();
-        HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), augNode.getChildNodes().iterator().next(),
-                RpcInputOutput.OTHER, this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.of(augNode),
-                false);
+        LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, augNode.getChildNodes().iterator().next(),
+                Collections.emptyList());
+        HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OTHER, removeChoiceQnames,
+                namespacePrefix, augNode);
         lines.add(htmlLine);
         final Iterator<? extends DataSchemaNode> nodes = augNode.getChildNodes().iterator();
         int modelAugmentationNumber = 1;
@@ -181,8 +188,9 @@ public class JsTree extends FormatPlugin {
             final ArrayList<QName> qnames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
             RpcInputOutput inputOutputOther = getAugmentationRpcInputOutput(removeChoiceQnames, qnames);
             ids.add(modelAugmentationNumber++);
-            HtmlLine line = new HtmlLine(new ArrayList<>(ids), node, inputOutputOther, this.schemaContext,
-                    removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+            lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
+            HtmlLine line = new HtmlLine(new ArrayList<>(ids), lyvNodeData, inputOutputOther, removeChoiceQnames,
+                    namespacePrefix);
             lines.add(line);
             resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
                     Collections.emptyList());
@@ -293,15 +301,17 @@ public class JsTree extends FormatPlugin {
             int id = 1;
             connections.add(0);
             connections.set(connections.size() - 1, id);
-            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), action, RpcInputOutput.OTHER,
-                    this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, action, Collections.emptyList());
+            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, RpcInputOutput.OTHER,
+                    removeChoiceQnames, namespacePrefix);
             lines.add(htmlLine);
             final boolean inputExists = !action.getInput().getChildNodes().isEmpty();
             final boolean outputExists = !action.getOutput().getChildNodes().isEmpty();
             if (inputExists) {
                 connections.add(1);
-                htmlLine = new HtmlLine(new ArrayList<>(connections), action.getInput(), RpcInputOutput.INPUT,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+                lyvNodeData = new LyvNodeData(this.schemaContext, action.getInput(), Collections.emptyList());
+                htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, RpcInputOutput.INPUT,
+                        removeChoiceQnames, namespacePrefix);
                 lines.add(htmlLine);
                 resolveChildNodes(lines, new ArrayList<>(connections), action.getInput(), RpcInputOutput.INPUT,
                         removeChoiceQnames, Collections.emptyList());
@@ -309,8 +319,9 @@ public class JsTree extends FormatPlugin {
             }
             if (outputExists) {
                 connections.add(1);
-                htmlLine = new HtmlLine(new ArrayList<>(connections), action.getOutput(), RpcInputOutput.OUTPUT,
-                        this.schemaContext, removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+                lyvNodeData = new LyvNodeData(this.schemaContext, action.getOutput(), Collections.emptyList());
+                htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, RpcInputOutput.OUTPUT,
+                        removeChoiceQnames, namespacePrefix);
                 lines.add(htmlLine);
                 resolveChildNodes(lines, new ArrayList<>(connections), action.getOutput(), RpcInputOutput.OUTPUT,
                         removeChoiceQnames, Collections.emptyList());
@@ -329,8 +340,9 @@ public class JsTree extends FormatPlugin {
             final DataSchemaNode child = iterator.next();
             removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
             connections.set(connections.size() - 1, id++);
-            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), child, inputOutput, this.schemaContext,
-                    removeChoiceQnames, namespacePrefix, Optional.empty(), false);
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, Collections.emptyList());
+            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput, removeChoiceQnames,
+                    namespacePrefix);
             lines.add(htmlLine);
             resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, removeChoiceQnames,
                     Collections.emptyList());
@@ -349,8 +361,9 @@ public class JsTree extends FormatPlugin {
         while (childNodes.hasNext()) {
             final DataSchemaNode child = childNodes.next();
             connections.set(connections.size() - 1, id++);
-            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), child, inputOutput, this.schemaContext,
-                    removeChoiceQnames, namespacePrefix, Optional.empty(), keys.contains(child.getQName()));
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, keys);
+            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput, removeChoiceQnames,
+                    namespacePrefix);
             lines.add(htmlLine);
             List<QName> keyDefinitions = Collections.emptyList();
             if (child instanceof ListSchemaNode) {

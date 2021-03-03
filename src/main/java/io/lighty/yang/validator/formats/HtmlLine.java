@@ -8,11 +8,11 @@
 package io.lighty.yang.validator.formats;
 
 import io.lighty.yang.validator.exceptions.NotFoundException;
+import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.formats.utility.SchemaHtmlEnum;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
@@ -38,25 +38,32 @@ public class HtmlLine extends Line {
     private final List<Integer> ids;
     private final SchemaHtmlEnum schema;
 
-    HtmlLine(final List<Integer> ids, final SchemaNode node, final RpcInputOutput inputOutput,
-             final SchemaContext context, final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix,
-             final Optional<AugmentationSchemaNode> augment, final boolean isKey) {
-        super(node, inputOutput, removeChoiceQname, namespacePrefix, context, isKey);
+
+    HtmlLine(final List<Integer> ids, final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
+            final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix) {
+        super(lyvNodeData, inputOutput, removeChoiceQname, namespacePrefix);
         this.ids = ids;
         Iterable<QName> pathFromRoot;
-        if (augment.isPresent()) {
-            description = augment.get().getDescription().orElse("");
-            schema = SchemaHtmlEnum.AUGMENT;
-            pathFromRoot = augment.get().getTargetPath().getNodeIdentifiers();
-            nodeName = augment.get().getTargetPath().asSchemaPath().getLastComponent().getLocalName();
-            status = augment.get().getStatus();
-            flag = "";
-        } else {
-            description = node.getDescription().orElse("");
-            pathFromRoot = node.getPath().getPathFromRoot();
-            schema = getSchemaBySchemaNode(node);
-        }
-        path = createPath(pathFromRoot, namespacePrefix, context);
+        SchemaNode node = lyvNodeData.getNode();
+        description = node.getDescription().orElse("");
+        pathFromRoot = node.getPath().getPathFromRoot();
+        schema = getSchemaBySchemaNode(node);
+        path = createPath(pathFromRoot, namespacePrefix, lyvNodeData.getContext());
+    }
+
+    HtmlLine(final List<Integer> ids, final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
+            final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix,
+            final AugmentationSchemaNode augment) {
+        super(lyvNodeData, inputOutput, removeChoiceQname, namespacePrefix);
+        this.ids = ids;
+        Iterable<QName> pathFromRoot;
+        description = augment.getDescription().orElse("");
+        schema = SchemaHtmlEnum.AUGMENT;
+        pathFromRoot = augment.getTargetPath().getNodeIdentifiers();
+        nodeName = augment.getTargetPath().asSchemaPath().getLastComponent().getLocalName();
+        status = augment.getStatus();
+        flag = "";
+        path = createPath(pathFromRoot, namespacePrefix, lyvNodeData.getContext());
     }
 
     private static SchemaHtmlEnum getSchemaBySchemaNode(final SchemaNode node) {
@@ -74,7 +81,7 @@ public class HtmlLine extends Line {
             } else {
                 return SchemaHtmlEnum.getSchemaHtmlEnumByName(
                         ((EffectiveStatement) node).getDeclared().statementDefinition().getStatementName()
-                        .getLocalName());
+                                .getLocalName());
             }
         } else {
             return SchemaHtmlEnum.EMPTY;
