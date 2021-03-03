@@ -256,27 +256,11 @@ public class ModulePrinter {
     }
 
 
-    private Optional<GroupingDefinition> getGroupingDefinitionMatch(
-            final EffectiveStatement<?, ?> schemaNode, final Collection<? extends EffectiveStatement<?, ?>> collection,
-            final GroupingDefinition grouping) {
-
+    private Optional<GroupingDefinition> getGroupingDefinitionMatch(final EffectiveStatement<?, ?> schemaNode,
+            final Collection<? extends EffectiveStatement<?, ?>> collection, final GroupingDefinition grouping) {
         boolean allSubstatementFound = true;
         for (EffectiveStatement<?,?> compare : schemaNode.effectiveSubstatements()) {
-            boolean substatementFound = false;
-            for (EffectiveStatement<?, ?> substatement : collection) {
-                if (compare.getDeclared() == null) {
-                    if (compare.equals(substatement)) {
-                        substatementFound = true;
-                        break;
-                    }
-                } else {
-                    if (compare.getDeclared().equals(substatement.getDeclared())) {
-                        substatementFound = true;
-                        break;
-                    }
-                }
-            }
-            if (!substatementFound) {
+            if (isSubstatementNotFound(collection, compare)) {
                 allSubstatementFound = false;
                 break;
             }
@@ -285,6 +269,22 @@ public class ModulePrinter {
             return Optional.of(grouping);
         }
         return Optional.empty();
+    }
+
+    private boolean isSubstatementNotFound(final Collection<? extends EffectiveStatement<?, ?>> collection,
+            final EffectiveStatement<?, ?> compare) {
+        for (EffectiveStatement<?, ?> substatement : collection) {
+            if (compare.getDeclared() == null) {
+                if (compare.equals(substatement)) {
+                    return false;
+                }
+            } else {
+                if (compare.getDeclared().equals(substatement.getDeclared())) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private void doPrintSchema(boolean isPrintingAllowed, final SchemaTree tree, final String groupingName,

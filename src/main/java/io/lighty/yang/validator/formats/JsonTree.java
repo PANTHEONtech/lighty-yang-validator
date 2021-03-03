@@ -231,14 +231,11 @@ public class JsonTree extends FormatPlugin {
             if (isAction) {
                 return !OUTPUT_TEXT.equals(path.getLocalName());
             }
-            for (final ActionDefinition action : actions) {
-                if (action.getQName().getLocalName().equals(path.getLocalName())) {
-                    isAction = true;
-                }
-            }
-            if (isAction) {
+            if (shouldSkipThisIteration(actions, path)) {
+                isAction = true;
                 continue;
             }
+
             qNames.add(path);
             final Optional<DataSchemaNode> dataTreeChild = schemaContext.findDataTreeChild(qNames);
             if (dataTreeChild.isPresent()) {
@@ -254,6 +251,15 @@ public class JsonTree extends FormatPlugin {
             }
         }
         return true;
+    }
+
+    private boolean shouldSkipThisIteration(final Collection<? extends ActionDefinition> actions, final QName path) {
+        for (final ActionDefinition action : actions) {
+            if (action.getQName().getLocalName().equals(path.getLocalName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -54,27 +54,31 @@ public class HtmlLine extends Line {
         } else {
             description = node.getDescription().orElse("");
             pathFromRoot = node.getPath().getPathFromRoot();
-            if (node instanceof EffectiveStatement) {
-                if (node instanceof AbstractUndeclaredEffectiveStatement) {
-                    if (node instanceof CaseEffectiveStatement) {
-                        schema = SchemaHtmlEnum.CASE;
-                    } else if (node instanceof InputEffectiveStatement) {
-                        schema = SchemaHtmlEnum.INPUT;
-                    } else if (node instanceof OutputEffectiveStatement) {
-                        schema = SchemaHtmlEnum.OUTPUT;
-                    } else {
-                        schema = SchemaHtmlEnum.EMPTY;
-                    }
-                } else {
-                    schema = SchemaHtmlEnum.getSchemaHtmlEnumByName(
-                            ((EffectiveStatement) node).getDeclared().statementDefinition().getStatementName()
-                            .getLocalName());
-                }
-            } else {
-                schema = SchemaHtmlEnum.EMPTY;
-            }
+            schema = getSchemaBySchemaNode(node);
         }
         path = createPath(pathFromRoot, namespacePrefix, context);
+    }
+
+    private static SchemaHtmlEnum getSchemaBySchemaNode(final SchemaNode node) {
+        if (node instanceof EffectiveStatement) {
+            if (node instanceof AbstractUndeclaredEffectiveStatement) {
+                if (node instanceof CaseEffectiveStatement) {
+                    return SchemaHtmlEnum.CASE;
+                } else if (node instanceof InputEffectiveStatement) {
+                    return SchemaHtmlEnum.INPUT;
+                } else if (node instanceof OutputEffectiveStatement) {
+                    return SchemaHtmlEnum.OUTPUT;
+                } else {
+                    return SchemaHtmlEnum.EMPTY;
+                }
+            } else {
+                return SchemaHtmlEnum.getSchemaHtmlEnumByName(
+                        ((EffectiveStatement) node).getDeclared().statementDefinition().getStatementName()
+                        .getLocalName());
+            }
+        } else {
+            return SchemaHtmlEnum.EMPTY;
+        }
     }
 
     private static String createPath(final Iterable<QName> pathFromRoot, final Map<URI, String> namespacePrefix,
