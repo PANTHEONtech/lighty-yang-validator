@@ -67,6 +67,7 @@ public class JsonTree extends FormatPlugin {
     private static final String CONFIG = "config";
     private static final String DESCRIPTION = "description";
     private static final String MODULE = "module";
+    private static final String MODULE_STRING = "Module";
     private static final String TYPE_INFO = "type_info";
     private static final String STATUS = "status";
     private static final String CLASS = "class";
@@ -97,7 +98,7 @@ public class JsonTree extends FormatPlugin {
         super.init(context, testFilesSchemaSources, schemaTree, config);
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
+                    .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.getName()));
             prefixMap.put(module.getName(), module.getPrefix());
             setImportPrefixes(module.getImports());
         }
@@ -118,7 +119,7 @@ public class JsonTree extends FormatPlugin {
     public void emitFormat() {
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
+                    .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.getName()));
             final JSONObject moduleMetadata = resolveModuleMetadata(module);
             final JSONObject jsonTree = new JSONObject();
 
@@ -329,7 +330,7 @@ public class JsonTree extends FormatPlugin {
             }
         } else {
             final String prefix = schemaContext.findModule(typeqName.getNamespace(), typeqName.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module", typeqName.getNamespace().toString()))
+                    .orElseThrow(() -> new NotFoundException(MODULE_STRING, typeqName.getNamespace().toString()))
                     .getPrefix();
             type = prefix + COLON + typeqName.getLocalName();
         }

@@ -421,12 +421,12 @@ public class ModulePrinter {
                 printer.openStatement(Statement.REVISION, rev.getDate().toString());
                 final Optional<ReferenceStatement> optReference = rev.getReference();
                 if (optReference.isPresent()) {
-                    printer.printSimpleSeparately("reference", "\""
+                    printer.printSimpleSeparately(REFERENCE_STRING, "\""
                             + optReference.get().getText() + "\"");
                 }
                 final Optional<DescriptionStatement> optDescription = rev.getDescription();
                 if (optDescription.isPresent()) {
-                    printer.printSimpleSeparately("description", "\""
+                    printer.printSimpleSeparately(DESCRIPTION_STRING, "\""
                             + optDescription.get().getText() + "\"");
 
                 }
