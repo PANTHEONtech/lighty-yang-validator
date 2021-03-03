@@ -339,10 +339,9 @@ public class CheckUpdateFrom {
     private void checkIdentityref(final IdentityrefTypeDefinition oldType, final IdentityrefTypeDefinition newType) {
         if (oldType.getIdentities().isEmpty()) {
             errors.add(identityRefBaseError());
-        } else if (oldType.getIdentities().size()
-                < newType.getIdentities().size()) {
-            errors.add(identityRefBaseError()
-                    .updateInformation(newType.getIdentities().toString(),
+        } else if (oldType.getIdentities().size() < newType.getIdentities().size()) {
+            errors.add(identityRefBaseError().updateInformation(
+                    newType.getIdentities().toString(),
                     oldType.getIdentities().toString()));
         }
     }
