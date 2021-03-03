@@ -530,8 +530,8 @@ public class CheckUpdateFrom {
             } else {
                 final RangeConstraint<?> oldRangeConstraint = oldRange.get();
                 final RangeConstraint<?> newRangeConstraint = newRange.get();
-                final Set newRangeSet = newRangeConstraint.getAllowedRanges().asRanges();
-                final Set oldRangeSet = oldRangeConstraint.getAllowedRanges().asRanges();
+                final Set<? extends Range<?>> newRangeSet = newRangeConstraint.getAllowedRanges().asRanges();
+                final Set<? extends Range<?>> oldRangeSet = oldRangeConstraint.getAllowedRanges().asRanges();
                 if (newRangeSet.containsAll(oldRangeSet)) {
                     checkReference(oldRangeConstraint.getReference(), newRangeConstraint.getReference());
                 } else {

@@ -62,9 +62,7 @@ public class MultiModulePrinter extends FormatPlugin {
         resolveAugmentationsImports();
 
         for (final QNameModule name : this.usedImportedTypeDefs.keySet()) {
-            if (!subtrees.containsKey(name)) {
-                subtrees.put(name, Collections.emptySet());
-            }
+            subtrees.putIfAbsent(name, Collections.emptySet());
         }
         //print each yang module
         printEachYangModule();

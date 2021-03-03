@@ -90,12 +90,9 @@ public class Depends extends FormatPlugin {
     private void resolveImportsInSchemaContextModules(final DependConfiguration dependConfiguration,
             final ModuleImport moduleImport, final String moduleName) {
         for (Module contextModule : this.schemaContext.getModules()) {
-            if (moduleName.equals(contextModule.getName())) {
-                if (isRevisionsEqualsOrNull(moduleImport.getRevision().orElse(null),
-                        contextModule.getRevision().orElse(null))) {
-                    addContextModuleToModulesAndResolveImports(dependConfiguration, contextModule);
-                    break;
-                }
+            if (moduleName.equals(contextModule.getName()) && isRevisionsEqualsOrNull(moduleImport, contextModule)) {
+                addContextModuleToModulesAndResolveImports(dependConfiguration, contextModule);
+                break;
             }
         }
     }
@@ -111,10 +108,11 @@ public class Depends extends FormatPlugin {
         }
     }
 
-    private boolean isRevisionsEqualsOrNull(final Revision importedModuleRevision,
-            final Revision contextModuleRevision) {
-        return (importedModuleRevision == null || contextModuleRevision == null)
-                || (contextModuleRevision.toString().equals(importedModuleRevision.toString()));
+    private boolean isRevisionsEqualsOrNull(final ModuleImport moduleImport, final Module contextModule) {
+        Revision moduleImportRevision = moduleImport.getRevision().orElse(null);
+        Revision contextModuleRevision = contextModule.getRevision().orElse(null);
+        return (moduleImportRevision == null || contextModuleRevision == null)
+                || (contextModuleRevision.toString().equals(moduleImportRevision.toString()));
     }
 
     private void resolveSubmodules(final Module module, final DependConfiguration dependConfiguration) {

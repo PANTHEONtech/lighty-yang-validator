@@ -89,7 +89,7 @@ public class JsTree extends FormatPlugin {
                         justification = "Valid output from LYV is dependent on Logback output")
     private void printLines(final List<Line> lines) {
         for (Line line : lines) {
-            LOG.info("{}", line.toString());
+            LOG.info("{}", line);
         }
     }
 
@@ -202,10 +202,7 @@ public class JsTree extends FormatPlugin {
 
             final ListIterator<Integer> integerListIterator =
                     removeChoiceQnames.listIterator(removeChoiceQnames.size());
-            while (integerListIterator.hasPrevious()) {
-                qnamesCopy.remove(integerListIterator.previous().intValue());
-                i--;
-            }
+            removeQnameCopyByIntegerListValues(qnamesCopy, integerListIterator);
             if (!this.schemaContext.findDataTreeChild(qnamesCopy).isPresent()) {
                 removeChoiceQnames.add(i - 1);
             } else if (this.schemaContext.findDataTreeChild(qnamesCopy).get() instanceof ActionNodeContainer) {
@@ -215,6 +212,13 @@ public class JsTree extends FormatPlugin {
             }
         }
         return inputOutputOther;
+    }
+
+    private void removeQnameCopyByIntegerListValues(final List<QName> qnamesCopy,
+            final ListIterator<Integer> integerListIterator) {
+        while (integerListIterator.hasPrevious()) {
+            qnamesCopy.remove(integerListIterator.previous().intValue());
+        }
     }
 
     private RpcInputOutput getRpcInputOutput(final ArrayList<QName> qnames,
