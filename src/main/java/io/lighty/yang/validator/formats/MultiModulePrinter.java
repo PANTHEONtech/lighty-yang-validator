@@ -42,6 +42,7 @@ public class MultiModulePrinter extends FormatPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiModulePrinter.class);
     private static final String HELP_NAME = "yang";
+    private static final String MODULE_STRING = "Module";
     private static final String HELP_DESCRIPTION = "print raw yang module according to RFC7950";
 
     private final Map<QNameModule, Set<TypeDefinition<?>>> usedImportedTypeDefs = new HashMap<>();
@@ -71,7 +72,7 @@ public class MultiModulePrinter extends FormatPlugin {
     private void printEachYangModule() {
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.schemaContext.findModule(entry.getKey())
-                    .orElseThrow(() -> new NotFoundException("Module", entry.getKey().toString()));
+                    .orElseThrow(() -> new NotFoundException(MODULE_STRING, entry.getKey().toString()));
             final String withRev = "@" + module.getRevision()
                     .orElseThrow(() -> new NotFoundException("Revision of module", module.getName()));
             final String suffix = module.getRevision().isPresent() ? withRev + ".yang" : ".yang";
@@ -103,7 +104,7 @@ public class MultiModulePrinter extends FormatPlugin {
     private void resolveAugmentationsImports() {
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.schemaContext.findModule(entry.getKey())
-                    .orElseThrow(() -> new NotFoundException("Module", entry.getKey().toString()));
+                    .orElseThrow(() -> new NotFoundException(MODULE_STRING, entry.getKey().toString()));
             for (SchemaTree singleEntry : entry.getValue()) {
                 gatherUsedTypeDefs(singleEntry, module);
             }
@@ -112,7 +113,7 @@ public class MultiModulePrinter extends FormatPlugin {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                             .add(this.schemaContext.findModule(pathQname.getModule())
                                     .orElseThrow(
-                                        () -> new NotFoundException("Module", pathQname.getModule().toString()))
+                                        () -> new NotFoundException(MODULE_STRING, pathQname.getModule().toString()))
                                     .getName());
                 }
             }
@@ -148,7 +149,7 @@ public class MultiModulePrinter extends FormatPlugin {
                     .add(type);
             usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                     .add(this.schemaContext.findModule(mod)
-                            .orElseThrow(() -> new NotFoundException("Module", mod.toString()))
+                            .orElseThrow(() -> new NotFoundException(MODULE_STRING, mod.toString()))
                             .getName());
 
         }
