@@ -31,24 +31,24 @@ public class Analyzer extends FormatPlugin {
 
     @Override
     void emitFormat() {
-        Set<DeclaredStatement<?>> declaredStatements = new HashSet<>();
-        fillDeclaredStatements(declaredStatements, this.schemaContext.getModules());
-        for (DeclaredStatement<?> declaredStatement : declaredStatements) {
+        Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(this.schemaContext.getModules());
+        for (DeclaredStatement<?> declaredStatement : statements) {
             analyzeSubstatement(declaredStatement);
         }
         printOut();
     }
 
-    private void fillDeclaredStatements(final Set<DeclaredStatement<?>> resultStatements,
-            final Collection<? extends Module> modules) {
+    private Set<DeclaredStatement<?>> getRecursivelyDeclaredStatements(final Collection<? extends Module> modules) {
+        Set<DeclaredStatement<?>> declaredStatements = new HashSet<>();
         for (Module module : modules) {
-            resultStatements.add(((EffectiveStatement<?, ?>) module).getDeclared());
+            declaredStatements.add(((EffectiveStatement<?, ?>) module).getDeclared());
 
             Collection<? extends Module> submodules = module.getSubmodules();
             if (submodulesAreNotEmpty(submodules)) {
-                fillDeclaredStatements(resultStatements, submodules);
+                declaredStatements.addAll(getRecursivelyDeclaredStatements(submodules));
             }
         }
+        return declaredStatements;
     }
 
     private boolean submodulesAreNotEmpty(Collection<? extends Module> submodules) {
