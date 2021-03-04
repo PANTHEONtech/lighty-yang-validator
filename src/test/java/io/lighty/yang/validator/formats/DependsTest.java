@@ -33,7 +33,7 @@ public class DependsTest extends FormatTest {
                 new HashSet<>());
     }
 
-    @Test//(enabled = false) // TODO enable when rt:address-family will be fixed
+    @Test
     public void onlySubmodulesTest() throws Exception {
         setFormat();
         this.builder.setDependConfiguration(false, false, true,
