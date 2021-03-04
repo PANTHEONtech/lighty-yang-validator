@@ -11,11 +11,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
+import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
-import org.opendaylight.yangtools.yang.parser.stmt.reactor.EffectiveSchemaContext;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,11 +31,28 @@ public class Analyzer extends FormatPlugin {
 
     @Override
     void emitFormat() {
-        for (Object subStatement : ((EffectiveSchemaContext) this.schemaContext).getRootDeclaredStatements()) {
-            analyzeSubstatement((DeclaredStatement) subStatement);
+        Set<DeclaredStatement<?>> declaredStatements = new HashSet<>();
+        fillDeclaredStatements(declaredStatements, this.schemaContext.getModules());
+        for (DeclaredStatement<?> declaredStatement : declaredStatements) {
+            analyzeSubstatement(declaredStatement);
         }
-
         printOut();
+    }
+
+    private void fillDeclaredStatements(final Set<DeclaredStatement<?>> resultStatements,
+            final Collection<? extends Module> modules) {
+        for (Module module : modules) {
+            resultStatements.add(((EffectiveStatement<?, ?>) module).getDeclared());
+
+            Collection<? extends Module> submodules = module.getSubmodules();
+            if (submodulesAreNotEmpty(submodules)) {
+                fillDeclaredStatements(resultStatements, submodules);
+            }
+        }
+    }
+
+    private boolean submodulesAreNotEmpty(Collection<? extends Module> submodules) {
+        return submodules != null && !submodules.isEmpty();
     }
 
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
