@@ -294,8 +294,6 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
                  Is not valid
                  */
                 // FIXME: Upstream yangtools from which this code is copied has this FIXME, so wait for solution
-                // The task is there to keep track of that
-                // https://jira.pantheon.sk/browse/PTODL-516
                 readDataWithStartedElementTag(in, parent, rootElement, schemaTree);
                 break;
 
@@ -467,8 +465,6 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
              *  reuse JSON parsing or XML parsing - anyxml is not well-defined in
              *  JSON.
              *  Upstream yangtools from which this code is copied has this FIXME, so wait for solution
-             *  The task is there to keep track of that
-             *  https://jira.pantheon.sk/browse/PTDL-1181
              */
             return new DOMSource(((Document) value).getDocumentElement());
         }

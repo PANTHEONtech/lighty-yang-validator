@@ -92,7 +92,6 @@ abstract class Line {
         if (node instanceof ChoiceSchemaNode) {
             qNames.remove(qNames.size() - 1);
             // TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
-            // https://jira.pantheon.sk/browse/PTDL-1471
             DataSchemaNode dataSchemaNode = context.findDataTreeChild(qNames)
                     .orElseThrow(() -> new NotFoundException("Data tree child", qNames.toString()));
             if (dataSchemaNode.isConfiguration() && ((ChoiceSchemaNode) node).isConfiguration()) {
@@ -101,7 +100,6 @@ abstract class Line {
                 this.flag = noConfig;
             }
             // TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
-            // https://jira.pantheon.sk/browse/PTDL-1471
         } else if (context.findDataTreeChild(qNames)
                 .orElseThrow(() -> new NotFoundException("Data tree child", qNames.toString()))
                 .isConfiguration()) {
