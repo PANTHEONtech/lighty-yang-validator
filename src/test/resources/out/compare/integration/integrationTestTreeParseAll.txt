@@ -1,0 +1,94 @@
+module: ietf-netconf-acm
+  +--rw nacm
+     +--rw enable-nacm?       boolean
+     +--rw read-default?       action-type
+     +--rw write-default?       action-type
+     +--rw exec-default?       action-type
+     +--rw enable-external-groups?       boolean
+     +--ro denied-operations       yang:zero-based-counter32
+     +--ro denied-data-writes       yang:zero-based-counter32
+     +--ro denied-notifications       yang:zero-based-counter32
+     +--rw groups
+     |  +--rw group* [name]
+     |     +--rw name       group-name-type
+     |     +--rw user-name*       user-name-type
+     +--rw rule-list* [name]
+        +--rw name       string
+        +--rw group*       union
+        +--rw rule* [name]
+           +--rw name       string
+           +--rw module-name?       union
+           +--rw (rule-type)?
+           |  +-- :(protocol-operation)
+           |  |  +--rw rpc-name?       union
+           |  +-- :(notification)
+           |  |  +--rw notification-name?       union
+           |  +-- :(data-node)
+           |     +--rw path       node-instance-identifier
+           +--rw access-operations?       union
+           +--rw action       action-type
+           +--rw comment?       string
+module: ietf-inet-types
+module: ietf-x509-cert-to-name
+module: ietf-netconf-config
+  +--rw netconf
+     +--rw tls
+        +--rw enabled?       boolean
+        +--rw cert-maps {tls-map-certificates}?
+        |  +--rw cert-to-name* [id]
+        |     +--rw id       uint32
+        |     +--rw fingerprint       x509c2n:tls-fingerprint
+        |     +--rw map-type       identityref
+        |     +--rw name       string
+        +--rw psk-maps {tls-map-pre-shared-keys}?
+        |  +--rw psk-map* [psk-identity]
+        |     +--rw psk-identity       string
+        |     +--rw user-name       nacm:user-name-type
+        |     +--rw not-valid-before?       yang:date-and-time
+        |     +--rw not-valid-after?       yang:date-and-time
+        |     +--rw key       yang:hex-string
+        +--rw call-home {tls-call-home}?
+           +--rw client* [address, port]
+              +--rw address       inet:host
+              +--rw port       inet:port-number
+              +--rw (connection-type)?
+              |  +-- :(persistent)
+              |  |  +--rw persistent-connection?       empty
+              |  +-- :(periodic)
+              |     +--rw periodic
+              |        +--rw interval?       uint16
+              |        +--rw linger?       uint16
+              +--rw reconnect-strategy
+                 +--rw retry-interval?       uint16
+                 +--rw max-attempts?       uint16
+augment /netconf:
+  +--rw tls
+     +--rw enabled?       boolean
+     +--rw cert-maps {tls-map-certificates}?
+     |  +--rw cert-to-name* [id]
+     |     +--rw id       uint32
+     |     +--rw fingerprint       x509c2n:tls-fingerprint
+     |     +--rw map-type       identityref
+     |     +--rw name       string
+     +--rw psk-maps {tls-map-pre-shared-keys}?
+     |  +--rw psk-map* [psk-identity]
+     |     +--rw psk-identity       string
+     |     +--rw user-name       nacm:user-name-type
+     |     +--rw not-valid-before?       yang:date-and-time
+     |     +--rw not-valid-after?       yang:date-and-time
+     |     +--rw key       yang:hex-string
+     +--rw call-home {tls-call-home}?
+        +--rw client* [address, port]
+           +--rw address       inet:host
+           +--rw port       inet:port-number
+           +--rw (connection-type)?
+           |  +-- :(persistent)
+           |  |  +--rw persistent-connection?       empty
+           |  +-- :(periodic)
+           |     +--rw periodic
+           |        +--rw interval?       uint16
+           |        +--rw linger?       uint16
+           +--rw reconnect-strategy
+              +--rw retry-interval?       uint16
+              +--rw max-attempts?       uint16
+module: ietf-yang-types
