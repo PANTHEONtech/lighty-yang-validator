@@ -63,11 +63,17 @@ public final class ItUtils {
         return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
     }
 
-    public static String removeHtmlGeneratedInfo(final String text) {
+    /**
+     * Remove information about generated file included folder path and generated time.
+     * @param text output from lyv with parameter parse-all/-a
+     * @param endOfTestedFile required end of tested file
+     * @return output without generated info
+     */
+    public static String removeHtmlGeneratedInfo(final String text, final String endOfTestedFile) {
         int length = text.length();
         int cut = 0;
-        for (int i = length - 2; i >= 0; i--) {
-            if (text.charAt(i) == '\n') {
+        for (int i = length - 2; i > endOfTestedFile.length(); i--) {
+            if (text.startsWith(endOfTestedFile, i - endOfTestedFile.length())) {
                 cut = i;
                 break;
             }

@@ -16,7 +16,7 @@ public class IntegrationTest implements Cleanable {
     @Test
     public void treeFormatParseAllTest() throws IOException {
         String lyvOutput = ItUtils.startLyvParseAllWithFileOutput("yang/parse/all", "tree");
-        String outputWithoutGenInfo = ItUtils.removeHtmlGeneratedInfo(lyvOutput);
+        String outputWithoutGenInfo = ItUtils.removeHtmlGeneratedInfo(lyvOutput, "module: ietf-yang-types");
         String expectedOutput = ItUtils.getExpectedOutput("integrationTestTreeParseAll.txt");
         Assert.assertEquals(expectedOutput, outputWithoutGenInfo);
     }
@@ -51,7 +51,7 @@ public class IntegrationTest implements Cleanable {
         Assert.assertEquals(expectedOutput, lyvOutput.replaceAll(" \n", "\n"));
     }
 
-//    @Test
+    @Test(enabled = false)
     public void yangFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("xml", "yang",
                 "yang/without/imports/in/root/ietf-interfaces@2018-02-20.yang", "yang");
