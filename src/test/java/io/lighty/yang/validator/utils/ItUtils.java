@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.testng.Assert;
 
@@ -63,21 +66,25 @@ public final class ItUtils {
         return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
     }
 
-    /**
-     * Remove information about generated file included folder path and generated time.
-     * @param text output from lyv with parameter parse-all/-a
-     * @param endOfTestedFile required end of tested file
-     * @return output without generated info
-     */
-    public static String removeHtmlGeneratedInfo(final String text, final String endOfTestedFile) {
+    public static String removeHtmlGeneratedInfo(final String text) {
         int length = text.length();
         int cut = 0;
-        for (int i = length - 2; i > endOfTestedFile.length(); i--) {
-            if (text.startsWith(endOfTestedFile, i - endOfTestedFile.length())) {
+        for (int i = length - 2; i >= 0; i--) {
+            if (text.charAt(i) == '\n') {
                 cut = i;
                 break;
             }
         }
         return text.substring(0, cut);
+    }
+
+    public static void compareModulesAndAugmentData(final String expected, final String output) {
+        List<String> splitExp =  new ArrayList<>(Arrays.asList(expected.split("module|augment", 0)));
+        List<String> splitOut =  new ArrayList<>(Arrays.asList(output.split("module|augment", 0)));
+        splitExp.removeIf(t -> t.isEmpty() | t.isBlank());
+        splitOut.removeIf(t -> t.isEmpty() | t.isBlank());
+
+        Assert.assertTrue(splitExp.containsAll(splitOut));
+        Assert.assertTrue(splitOut.containsAll(splitExp));
     }
 }
