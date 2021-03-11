@@ -80,7 +80,7 @@ public final class ItUtils {
     }
 
     public static void compareModulesAndAugmentData(final String expected, final String output) {
-        List<String> splitExp =  Arrays.stream(expected.split("module|augment", 0))
+        List<String> splitExp =  Arrays.stream(expected.split("module|augment"))
                 .map(String::trim)
                 .filter(t -> !(t.isBlank() || t.isEmpty()))
                 .collect(Collectors.toList());
@@ -90,7 +90,6 @@ public final class ItUtils {
                 .collect(Collectors.toList());
 
         verifyLengthOfElements(splitExp, splitOut);
-
         Collections.sort(splitExp);
         Collections.sort(splitOut);
         for (int i = 0; i < splitExp.size(); i++) {
