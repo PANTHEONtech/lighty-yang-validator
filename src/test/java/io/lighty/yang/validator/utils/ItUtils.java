@@ -6,9 +6,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.testng.Assert;
 
@@ -79,12 +80,37 @@ public final class ItUtils {
     }
 
     public static void compareModulesAndAugmentData(final String expected, final String output) {
-        List<String> splitExp =  new ArrayList<>(Arrays.asList(expected.split("module|augment", 0)));
-        List<String> splitOut =  new ArrayList<>(Arrays.asList(output.split("module|augment", 0)));
-        splitExp.removeIf(t -> t.isEmpty() | t.isBlank());
-        splitOut.removeIf(t -> t.isEmpty() | t.isBlank());
+        List<String> splitExp =  Arrays.stream(expected.split("module|augment", 0))
+                .map(String::trim)
+                .filter(t -> !(t.isBlank() || t.isEmpty()))
+                .collect(Collectors.toList());
+        List<String> splitOut = Arrays.stream(output.split("module|augment"))
+                .map(String::trim)
+                .filter(t -> !(t.isBlank() || t.isEmpty()))
+                .collect(Collectors.toList());
 
-        Assert.assertTrue(splitExp.containsAll(splitOut));
-        Assert.assertTrue(splitOut.containsAll(splitExp));
+        verifyLengthOfElements(splitExp, splitOut);
+
+        Collections.sort(splitExp);
+        Collections.sort(splitOut);
+        for (int i = 0; i < splitExp.size(); i++) {
+            Assert.assertEquals(splitExp.get(i), splitOut.get(i));
+        }
+    }
+
+
+    private static void verifyLengthOfElements(List<String> expected, List<String> output) {
+        if (expected.size() > output.size()) {
+            List<String> notFoundExpectedElements = expected.stream()
+                    .filter(t -> !output.contains(t))
+                    .collect(Collectors.toList());
+            Assert.fail(String.format("Expected elements are not contained in output %s", notFoundExpectedElements));
+        }
+        if (expected.size() < output.size()) {
+            List<String> additionalOutputElements = output.stream()
+                    .filter(t -> !expected.contains(t))
+                    .collect(Collectors.toList());
+            Assert.fail(String.format("Additional elements contained in output %s", additionalOutputElements));
+        }
     }
 }
