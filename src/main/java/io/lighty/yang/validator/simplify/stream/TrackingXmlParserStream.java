@@ -50,6 +50,7 @@ import org.opendaylight.yangtools.yang.data.codec.xml.XmlCodecFactory;
 import org.opendaylight.yangtools.yang.data.util.AbstractNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.AnyXmlNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.CompositeNodeDataWithSchema;
+import org.opendaylight.yangtools.yang.data.util.CompositeNodeDataWithSchema.ChildReusePolicy;
 import org.opendaylight.yangtools.yang.data.util.ContainerNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.LeafListEntryNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.LeafListNodeDataWithSchema;
@@ -63,10 +64,12 @@ import org.opendaylight.yangtools.yang.data.util.codec.TypeAwareCodec;
 import org.opendaylight.yangtools.yang.model.api.AnyxmlSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.parser.stmt.reactor.EffectiveSchemaContext;
 import org.w3c.dom.Document;
 
 
@@ -353,7 +356,8 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
 
             final SchemaTree parentTree = schemaTree;
             schemaTree = getSchemaTreeWithAddedChildren(schemaTree, childDataSchemaNodes);
-            read(in, ((CompositeNodeDataWithSchema) parent).addChild(childDataSchemaNodes), rootElement, schemaTree);
+            read(in, ((CompositeNodeDataWithSchema) parent).addChild(childDataSchemaNodes, ChildReusePolicy.NOOP),
+                    rootElement, schemaTree);
             schemaTree = parentTree;
         }
     }
@@ -478,11 +482,10 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     private static AbstractNodeDataWithSchema<?> newEntryNode(final AbstractNodeDataWithSchema<?> parent) {
         final AbstractNodeDataWithSchema<?> newChild;
         if (parent instanceof ListNodeDataWithSchema) {
-            newChild = ListEntryNodeDataWithSchema.forSchema((ListSchemaNode) parent.getSchema());
+            newChild = ((ListNodeDataWithSchema) parent).newChildEntry();
         } else {
-            newChild = new LeafListEntryNodeDataWithSchema((LeafListSchemaNode) parent.getSchema());
+            newChild = ((LeafListNodeDataWithSchema) parent).newChildEntry();
         }
-        ((CompositeNodeDataWithSchema) parent).addChild(newChild);
         return newChild;
     }
 
