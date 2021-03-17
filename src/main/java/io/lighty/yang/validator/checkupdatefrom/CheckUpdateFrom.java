@@ -66,7 +66,6 @@ import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.MustConstraintAware;
 import org.opendaylight.yangtools.yang.model.api.MustDefinition;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
-import org.opendaylight.yangtools.yang.model.api.RevisionAwareXPath;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
@@ -85,6 +84,7 @@ import org.opendaylight.yangtools.yang.model.api.type.PatternConstraint;
 import org.opendaylight.yangtools.yang.model.api.type.RangeConstraint;
 import org.opendaylight.yangtools.yang.model.api.type.RangeRestrictedTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.StringTypeDefinition;
+import org.opendaylight.yangtools.yang.xpath.api.YangXPathExpression.QualifiedBound;
 
 public class CheckUpdateFrom {
 
@@ -480,17 +480,17 @@ public class CheckUpdateFrom {
     }
 
     private void checkWhen(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        final Optional<RevisionAwareXPath> newWhen = newNode.getWhenCondition();
-        final Optional<RevisionAwareXPath> oldWhen = oldNode.getWhenCondition();
+        Optional<? extends QualifiedBound> newWhen = newNode.getWhenCondition();
+        Optional<? extends QualifiedBound> oldWhen = oldNode.getWhenCondition();
         if (oldWhen.isEmpty() && newWhen.isPresent()) {
             errors.add(addedWhenError().updateInformation(
-                    newNode.getPath().toString() + WHEN + newWhen.get().getOriginalString(),
+                    newNode.getPath().toString() + WHEN + newWhen.get().toString(),
                     oldNode.getPath().toString() + WHEN + DONT_EXISTS));
         } else if (oldWhen.isPresent() && newWhen.isPresent()
-                && (!oldWhen.get().getOriginalString().equals(newWhen.get().getOriginalString()))) {
+                && (!oldWhen.get().toString().equals(newWhen.get().toString()))) {
             errors.add(checkWhenWarning().updateInformation(
-                    newNode.getPath().toString() + WHEN + newWhen.get().getOriginalString(),
-                    oldNode.getPath().toString() + WHEN + oldWhen.get().getOriginalString()));
+                    newNode.getPath().toString() + WHEN + newWhen.get().toString(),
+                    oldNode.getPath().toString() + WHEN + oldWhen.get().toString()));
         }
     }
 

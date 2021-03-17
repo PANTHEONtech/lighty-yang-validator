@@ -37,7 +37,6 @@ import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
-import org.opendaylight.yangtools.yang.model.api.RevisionAwareXPath;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
@@ -47,6 +46,7 @@ import org.opendaylight.yangtools.yang.model.api.stmt.DescriptionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ReferenceStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.RevisionStatement;
+import org.opendaylight.yangtools.yang.xpath.api.YangXPathExpression.QualifiedBound;
 import org.slf4j.Logger;
 
 public class ModulePrinter {
@@ -338,10 +338,10 @@ public class ModulePrinter {
     }
 
     private void doPrintWhen(final DataSchemaNode schemaNode) {
-        final Optional<RevisionAwareXPath> whenCondition = schemaNode.getWhenCondition();
+        final Optional<? extends QualifiedBound> whenCondition = schemaNode.getWhenCondition();
         if (whenCondition.isPresent()) {
             printer.printSimple("when",
-                    "\"" + whenCondition.get().getOriginalString() + "\"");
+                    "\"" + whenCondition.get().toString() + "\"");
             printer.printEmptyLine();
         }
     }

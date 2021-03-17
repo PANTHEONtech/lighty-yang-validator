@@ -20,6 +20,7 @@ import net.sourceforge.argparse4j.impl.choice.CollectionArgumentChoice;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
+import org.opendaylight.yangtools.yang.model.api.ModuleLike;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +78,7 @@ public class Depends extends FormatPlugin {
         }
     }
 
-    private void resolveImports(final Module module, final DependConfiguration dependConfiguration) {
+    private void resolveImports(final ModuleLike module, final DependConfiguration dependConfiguration) {
         for (ModuleImport moduleImport : module.getImports()) {
             final String moduleName = moduleImport.getModuleName();
             if (dependConfiguration.getExcludedModuleNames().contains(moduleName)) {
@@ -115,15 +116,15 @@ public class Depends extends FormatPlugin {
                 || (contextModuleRevision.toString().equals(moduleImportRevision.toString()));
     }
 
-    private void resolveSubmodules(final Module module, final DependConfiguration dependConfiguration) {
+    private void resolveSubmodules(final ModuleLike module, final DependConfiguration dependConfiguration) {
         final StringBuilder dependantsBuilder = new StringBuilder();
-        for (Module m : module.getSubmodules()) {
-            final String moduleName = m.getName();
+        for (ModuleLike subModule : module.getSubmodules()) {
+            final String moduleName = subModule.getName();
             if (dependConfiguration.getExcludedModuleNames().contains(moduleName)) {
                 continue;
             }
             dependantsBuilder.append(moduleName);
-            final Optional<Revision> revision = m.getRevision();
+            final Optional<Revision> revision = subModule.getRevision();
             if (revision.isPresent()) {
                 dependantsBuilder
                         .append(AT)
@@ -136,9 +137,9 @@ public class Depends extends FormatPlugin {
             modules.add(moduleWithRevision);
             if (!dependConfiguration.isModuleDependentsOnly()) {
                 if (!dependConfiguration.isModuleIncludesOnly()) {
-                    resolveImports(m, dependConfiguration);
+                    resolveImports(subModule, dependConfiguration);
                 }
-                resolveSubmodules(m, dependConfiguration);
+                resolveSubmodules(subModule, dependConfiguration);
             }
         }
     }
