@@ -27,7 +27,7 @@ import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ContainerLike;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DerivableSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.GroupingDefinition;
@@ -299,7 +299,7 @@ public class ModulePrinter {
     private void doPrintSchema(final boolean isPrintingAllowed, final SchemaTree tree, final String groupingName,
             final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees, final DataSchemaNode schemaNode) {
         if (isPrintingAllowed) {
-            if (schemaNode instanceof ContainerSchemaNode) {
+            if (schemaNode instanceof ContainerLike) {
                 printer.openStatement(Statement.CONTAINER, schemaNode.getQName().getLocalName());
                 printer.printConfig(schemaNode.isConfiguration());
             } else if (schemaNode instanceof ListSchemaNode) {

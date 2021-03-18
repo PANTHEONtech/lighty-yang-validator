@@ -466,17 +466,23 @@ public class CheckUpdateFrom {
         final Collection<? extends MustDefinition> oldMust = ((MustConstraintAware) oldNode).getMustConstraints();
         if (oldMust.size() < newMust.size()) {
             errors.add(addedMustError().updateInformation(
-                    newNode.getPath().toString() + MUST + new ArrayList<>(newMust).toString(),
-                    oldNode.getPath().toString() + MUST + new ArrayList<>(oldMust).toString()));
+                    newNode.getPath().toString() + MUST + getXpathFromMustList(newMust),
+                    oldNode.getPath().toString() + MUST + getXpathFromMustList(oldMust)));
         } else {
             for (MustDefinition newMustDefinition : newMust) {
                 if (!oldMust.contains(newMustDefinition)) {
                     errors.add(checkMustWarning().updateInformation(
-                            newNode.getPath().toString() + MUST + newMustDefinition.toString(),
-                            oldNode.getPath().toString() + MUST + new ArrayList<>(oldMust).toString()));
+                            newNode.getPath().toString() + MUST + newMustDefinition.getXpath().toString(),
+                            oldNode.getPath().toString() + MUST + getXpathFromMustList(oldMust)));
                 }
             }
         }
+    }
+
+    private String getXpathFromMustList(Collection<? extends MustDefinition> must) {
+        return "[" + must.stream()
+                .map(t -> t.getXpath().toString())
+                .collect(Collectors.joining(",")) + "]";
     }
 
     private void checkWhen(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
@@ -574,14 +580,64 @@ public class CheckUpdateFrom {
     private void checkPattern(final StringTypeDefinition oldNode, final StringTypeDefinition newNode) {
         final List<PatternConstraint> oldPatterns = oldNode.getPatternConstraints();
         final List<PatternConstraint> newPatterns = newNode.getPatternConstraints();
-        if (newPatterns.containsAll(oldPatterns)) {
-            for (PatternConstraint oldPattern : oldPatterns) {
-                checkReference(oldPattern.getReference(),
-                        newPatterns.get(newPatterns.indexOf(oldPattern)).getReference());
+        if (isPatternContainerListSame(newPatterns, oldPatterns)) {
+            for (int i = 0; i < oldPatterns.size(); i++) {
+                checkReference(oldPatterns.get(i).getReference(), newPatterns.get(i).getReference());
             }
         } else {
-            errors.add(patternError().updateInformation(newPatterns.toString(), oldPatterns.toString()));
+            errors.add(patternError().updateInformation(patterConstraintListToString(newPatterns),
+                            patterConstraintListToString(oldPatterns)));
         }
+    }
+
+    public boolean isPatternContainerListSame(final List<PatternConstraint> oldPatterns,
+            final List<PatternConstraint> newPatterns) {
+        if (oldPatterns.size() != newPatterns.size()) {
+            return false;
+        }
+        for (int i = 0; i < oldPatterns.size(); i++) {
+            if (isPatternValuesSame(newPatterns.get(i), oldPatterns.get(i))) {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isPatternValuesSame(PatternConstraint newPattern, PatternConstraint oldPattern) {
+        return newPattern.getErrorMessage().equals(oldPattern.getErrorMessage())
+                && newPattern.getJavaPatternString().equals(oldPattern.getJavaPatternString())
+                && newPattern.getRegularExpressionString().equals(oldPattern.getRegularExpressionString())
+                && newPattern.getErrorAppTag().equals(oldPattern.getErrorAppTag())
+                && newPattern.getDescription().equals(oldPattern.getDescription())
+                && newPattern.getReference().equals(oldPattern.getReference());
+    }
+
+    private String patterConstraintListToString(List<PatternConstraint> patterns) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append('[');
+        for (int i = 0; i < patterns.size(); i++) {
+            PatternConstraint pattern = patterns.get(i);
+            stringBuilder.append("{regex=")
+                    .append(pattern.getJavaPatternString());
+            if (pattern.getErrorMessage().isPresent()) {
+                stringBuilder.append(",")
+                        .append("errorMessage=")
+                        .append(pattern.getErrorMessage().get());
+            }
+            if (pattern.getErrorAppTag().isPresent()) {
+                stringBuilder.append(",")
+                        .append("errorAppTag=")
+                        .append(pattern.getErrorAppTag().get());
+            }
+            stringBuilder.append("}");
+
+            if (i != patterns.size() - 1) {
+                stringBuilder.append(", ");
+            }
+        }
+        stringBuilder.append(']');
+        return stringBuilder.toString();
     }
 
     private void checkBits(final BitsTypeDefinition oldNode, final BitsTypeDefinition newNode) {
