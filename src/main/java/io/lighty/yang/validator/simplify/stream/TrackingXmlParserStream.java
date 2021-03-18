@@ -62,14 +62,12 @@ import org.opendaylight.yangtools.yang.data.util.SimpleNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.YangModeledAnyXmlNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.codec.TypeAwareCodec;
 import org.opendaylight.yangtools.yang.model.api.AnyxmlSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ContainerLike;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
-import org.opendaylight.yangtools.yang.parser.stmt.reactor.EffectiveSchemaContext;
 import org.w3c.dom.Document;
 
 
@@ -125,8 +123,8 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         if (reader.hasNext()) {
             reader.nextTag();
             final AbstractNodeDataWithSchema<?> nodeDataWithSchema;
-            if (parentNode instanceof ContainerSchemaNode) {
-                nodeDataWithSchema = new ContainerNodeDataWithSchema((ContainerSchemaNode) parentNode);
+            if (parentNode instanceof ContainerLike) {
+                nodeDataWithSchema = new ContainerNodeDataWithSchema((ContainerLike) parentNode);
             } else if (parentNode instanceof ListSchemaNode) {
                 nodeDataWithSchema = new ListNodeDataWithSchema((ListSchemaNode) parentNode);
             } else if (parentNode instanceof YangModeledAnyxmlSchemaNode) {
