@@ -481,8 +481,10 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         final AbstractNodeDataWithSchema<?> newChild;
         if (parent instanceof ListNodeDataWithSchema) {
             newChild = ((ListNodeDataWithSchema) parent).newChildEntry();
-        } else {
+        } else if (parent instanceof LeafListNodeDataWithSchema) {
             newChild = ((LeafListNodeDataWithSchema) parent).newChildEntry();
+        } else {
+            throw new IllegalStateException("Unsupported schema data node type " + parent.getClass() + ".");
         }
         return newChild;
     }
