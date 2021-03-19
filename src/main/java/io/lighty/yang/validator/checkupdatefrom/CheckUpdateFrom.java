@@ -309,8 +309,8 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkTypeAware(TypeDefinition<? extends TypeDefinition<?>> oldType,
-                                TypeDefinition<? extends TypeDefinition<?>> newType) {
+    private void checkTypeAware(final TypeDefinition<? extends TypeDefinition<?>> oldType,
+                                final TypeDefinition<? extends TypeDefinition<?>> newType) {
         final boolean isTypeError = checkType(oldType, newType);
         checkReference(oldType.getReference(), newType.getReference());
         checkDefault(oldType, newType);
@@ -466,28 +466,28 @@ public class CheckUpdateFrom {
         final Collection<? extends MustDefinition> oldMust = ((MustConstraintAware) oldNode).getMustConstraints();
         if (oldMust.size() < newMust.size()) {
             errors.add(addedMustError().updateInformation(
-                    newNode.getPath().toString() + MUST + getXpathFromMustList(newMust),
-                    oldNode.getPath().toString() + MUST + getXpathFromMustList(oldMust)));
+                    newNode.getPath().toString() + MUST + getXpathStringFromMustCollection(newMust),
+                    oldNode.getPath().toString() + MUST + getXpathStringFromMustCollection(oldMust)));
         } else {
             for (MustDefinition newMustDefinition : newMust) {
                 if (!oldMust.contains(newMustDefinition)) {
                     errors.add(checkMustWarning().updateInformation(
                             newNode.getPath().toString() + MUST + newMustDefinition.getXpath().toString(),
-                            oldNode.getPath().toString() + MUST + getXpathFromMustList(oldMust)));
+                            oldNode.getPath().toString() + MUST + getXpathStringFromMustCollection(oldMust)));
                 }
             }
         }
     }
 
-    private String getXpathFromMustList(Collection<? extends MustDefinition> must) {
+    private String getXpathStringFromMustCollection(Collection<? extends MustDefinition> must) {
         return "[" + must.stream()
                 .map(t -> t.getXpath().toString())
                 .collect(Collectors.joining(",")) + "]";
     }
 
     private void checkWhen(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        Optional<? extends QualifiedBound> newWhen = newNode.getWhenCondition();
-        Optional<? extends QualifiedBound> oldWhen = oldNode.getWhenCondition();
+        final Optional<? extends QualifiedBound> newWhen = newNode.getWhenCondition();
+        final Optional<? extends QualifiedBound> oldWhen = oldNode.getWhenCondition();
         if (oldWhen.isEmpty() && newWhen.isPresent()) {
             errors.add(addedWhenError().updateInformation(
                     newNode.getPath().toString() + WHEN + newWhen.get().toString(),
@@ -580,7 +580,7 @@ public class CheckUpdateFrom {
     private void checkPattern(final StringTypeDefinition oldNode, final StringTypeDefinition newNode) {
         final List<PatternConstraint> oldPatterns = oldNode.getPatternConstraints();
         final List<PatternConstraint> newPatterns = newNode.getPatternConstraints();
-        if (isPatternContainerListSame(newPatterns, oldPatterns)) {
+        if (isPatternConstraintListSame(newPatterns, oldPatterns)) {
             for (int i = 0; i < oldPatterns.size(); i++) {
                 checkReference(oldPatterns.get(i).getReference(), newPatterns.get(i).getReference());
             }
@@ -590,7 +590,7 @@ public class CheckUpdateFrom {
         }
     }
 
-    public boolean isPatternContainerListSame(final List<PatternConstraint> oldPatterns,
+    public boolean isPatternConstraintListSame(final List<PatternConstraint> oldPatterns,
             final List<PatternConstraint> newPatterns) {
         if (oldPatterns.size() != newPatterns.size()) {
             return false;
@@ -604,7 +604,7 @@ public class CheckUpdateFrom {
         return true;
     }
 
-    private boolean isPatternValuesSame(PatternConstraint newPattern, PatternConstraint oldPattern) {
+    private boolean isPatternValuesSame(final PatternConstraint newPattern, final PatternConstraint oldPattern) {
         return newPattern.getErrorMessage().equals(oldPattern.getErrorMessage())
                 && newPattern.getJavaPatternString().equals(oldPattern.getJavaPatternString())
                 && newPattern.getRegularExpressionString().equals(oldPattern.getRegularExpressionString())
@@ -613,8 +613,8 @@ public class CheckUpdateFrom {
                 && newPattern.getReference().equals(oldPattern.getReference());
     }
 
-    private String patterConstraintListToString(List<PatternConstraint> patterns) {
-        StringBuilder stringBuilder = new StringBuilder();
+    private String patterConstraintListToString(final List<PatternConstraint> patterns) {
+        final StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append('[');
         for (int i = 0; i < patterns.size(); i++) {
             PatternConstraint pattern = patterns.get(i);
