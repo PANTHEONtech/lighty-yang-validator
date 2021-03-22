@@ -41,14 +41,14 @@ public class IntegrationTest implements Cleanable {
     @Test
     public void jsonTreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "json-tree");
-        String expectedOutput = ItUtils.getExpectedOutput("integrationTestJsonTree.txt");
+        String expectedOutput = ItUtils.getExpectedOutput("integrationTestJsonTree.json");
         Assert.assertEquals(expectedOutput, lyvOutput);
     }
 
     @Test
     public void jstreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "jstree");
-        String expectedOutput = ItUtils.getExpectedOutput("integrationTestJsTree.txt");
+        String expectedOutput = ItUtils.getExpectedOutput("integrationTestJsTree.html");
         Assert.assertEquals(expectedOutput, lyvOutput.replaceAll(" \n", "\n"));
     }
 
