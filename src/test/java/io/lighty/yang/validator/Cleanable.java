@@ -8,13 +8,14 @@
 package io.lighty.yang.validator;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public interface Cleanable {
 
-    default void tearDown() throws Exception {
+    default void tearDown() throws IOException {
         Files.list(Paths.get(MainTest.class.getResource("/out").getFile()))
                 .filter(Files::isRegularFile)
                 .map(Path::toFile)
