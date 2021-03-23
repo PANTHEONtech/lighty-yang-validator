@@ -1,9 +1,9 @@
-module ietf-interfaces {
+module ietf-interfaces-modified {
     yang-version 1.1;
 
-    namespace "urn:ietf:params:xml:ns:yang:ietf-interfaces";
+    namespace "urn:ietf:params:xml:ns:yang:ietf-interfaces-modified";
 
-    prefix if;
+    prefix ifm;
 
     organization "IETF NETMOD (Network Modeling) Working Group";
 
@@ -124,6 +124,127 @@ module ietf-interfaces {
                 reference "RFC 2863: The Interfaces Group MIB - ifAdminStatus";
 
             }
+            leaf oper-status {
+                type enumeration {
+                    enum up {
+                        value 1;
+                        description "Ready to pass packets.";
+                    }
+                    enum down {
+                        value 2;
+                        description "The interface does not pass any packets.";
+                    }
+                    enum testing {
+                        value 3;
+                        description
+                            "In some test mode.  No operational packets ca
+                            be passed.";
+                    }
+                    enum unknown {
+                        value 4;
+                        description "Status cannot be determined for some reason.";
+                    }
+                    enum dormant {
+                        value 5;
+                        description "Waiting for some external event.";
+                    }
+                    enum not-present {
+                        value 6;
+                        description "Some component (typically hardware) is missing.";
+                    }
+                    enum lower-layer-down {
+                        value 7;
+                        description "Down due to state of lower-layer interface(s).";
+                    }
+                }
+                description
+                    "The current operational state of the interface
+
+                    This leaf has the same semantics as ifOperStatus.";
+
+                mandatory true;
+
+                reference "RFC 2863: The Interfaces Group MIB - ifOperStatus";
+
+            }
+            uses choice-data;
+            uses decimal-data;
+            uses union-data;
+            uses int-leaf-list;
+            uses admin-status;
+        }
+    }
+    grouping decimal-data {
+        leaf decimal-data {
+            type decimal64 {
+                fraction-digits 2;
+                range "1..3.14 | 10..10 | 20..92233720368547758.07";
+            }
+            description "Added test case scenario with uses statement";
+
+        }
+    }
+    grouping choice-data {
+        choice snack {
+            case list-data {
+                uses list-data;
+            }
+        }
+    }
+    grouping list-data {
+        list list-data {
+            key "device";
+            leaf device {
+                type string;
+            }
+        }
+    }
+    grouping int-leaf-list {
+        leaf-list int-leaf-list {
+            type int16 {
+                range "-32768..32767";
+            }
+            description "Added test case scenario with uses statement";
+
+            reference "RFC 2863: The Interfaces Group MIB - ifStackTable";
+
+        }
+    }
+    grouping admin-status {
+        leaf admin-status {
+            type enumeration {
+                enum up {
+                    value 1;
+                    description "Ready to pass packets.";
+                }
+                enum down {
+                    value 2;
+                    description "Not ready to pass packets and not in some test mode.";
+                }
+                enum testing {
+                    value 3;
+                    description "In some test mode.";
+                }
+            }
+            description
+                "The desired state of the interface
+
+                This leaf has the same read semantics as ifAdminStatus.";
+
+            mandatory true;
+
+            reference "RFC 2863: The Interfaces Group MIB - ifAdminStatus";
+
+        }
+    }
+    grouping union-data {
+        leaf union-data {
+            type union {
+                type int32;
+                type enumeration;
+            }
+            description "Added test case scenario with uses statement";
+
         }
     }
 }

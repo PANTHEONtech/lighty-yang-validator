@@ -1,7 +1,7 @@
-module ietf-interfaces {
+module ietf-interfaces-modified {
   yang-version 1.1;
-  namespace "urn:ietf:params:xml:ns:yang:ietf-interfaces";
-  prefix if;
+  namespace "urn:ietf:params:xml:ns:yang:ietf-interfaces-modified";
+  prefix ifm;
 
   import ietf-yang-types {
     prefix yang;
@@ -54,11 +54,97 @@ module ietf-interfaces {
 
   typedef interface-ref {
     type leafref {
-      path "/if:interfaces/if:interface/if:name";
+      path "/ifm:interfaces/ifm:interface/ifm:name";
     }
     description
       "This type is used by data models that need to reference
        interfaces.";
+  }
+
+  grouping list-data {
+    list list-data {
+      key device;
+      leaf device {
+        type string;
+      }
+    }
+  }
+
+  grouping decimal-data {
+    leaf decimal-data {
+      type decimal64 {
+       fraction-digits 2;
+       range "1 .. 3.14 | 10 | 20..max";
+      }
+      description "Added test case scenario with uses statement";
+    }
+  }
+
+  grouping choice-data {
+    choice snack {
+      case sports-arena {
+        leaf pretzel {
+         type empty;
+        }
+      }
+      case list-data {
+        uses list-data;
+      }
+    }
+  }
+
+  grouping union-data {
+    leaf union-data {
+      type union {
+       type int32;
+       type enumeration {
+         enum "unbounded";
+       }
+      }
+      description "Added test case scenario with uses statement";
+    }
+  }
+
+  grouping int-leaf-list {
+    leaf-list int-leaf-list {
+      type int16;
+      config false;
+      description
+        "Added test case scenario with uses statement";
+      reference
+        "RFC 2863: The Interfaces Group MIB - ifStackTable";
+    }
+  }
+
+  grouping admin-status {
+    leaf admin-status {
+      if-feature if-mib;
+      type enumeration {
+        enum up {
+          value 1;
+          description
+            "Ready to pass packets.";
+        }
+        enum down {
+          value 2;
+          description
+            "Not ready to pass packets and not in some test mode.";
+        }
+        enum testing {
+          value 3;
+          description
+            "In some test mode.";
+        }
+      }
+      config false;
+      mandatory true;
+      description
+        "The desired state of the interface.
+
+         This leaf has the same read semantics as ifAdminStatus.";
+      reference
+        "RFC 2863: The Interfaces Group MIB - ifAdminStatus";
+    }
   }
 
   /*
@@ -251,34 +337,12 @@ module ietf-interfaces {
                      ifLinkUpDownTrapEnable";
       }
 
-      leaf admin-status {
-        if-feature if-mib;
-        type enumeration {
-          enum up {
-            value 1;
-            description
-              "Ready to pass packets.";
-          }
-          enum down {
-            value 2;
-            description
-              "Not ready to pass packets and not in some test mode.";
-          }
-          enum testing {
-            value 3;
-            description
-              "In some test mode.";
-          }
-        }
-        config false;
-        mandatory true;
-        description
-          "The desired state of the interface.
-
-           This leaf has the same read semantics as ifAdminStatus.";
-        reference
-          "RFC 2863: The Interfaces Group MIB - ifAdminStatus";
-      }
+      uses decimal-data;
+      uses choice-data;
+      uses union-data;
+      uses int-leaf-list;
+      uses admin-status;
+      anyxml anyxml-data;
 
       leaf oper-status {
         type enumeration {
@@ -655,7 +719,7 @@ module ietf-interfaces {
 
   typedef interface-state-ref {
     type leafref {
-      path "/if:interfaces-state/if:interface/if:name";
+      path "/ifm:interfaces-state/ifm:interface/ifm:name";
     }
     status deprecated;
     description
