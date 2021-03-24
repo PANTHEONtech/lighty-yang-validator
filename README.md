@@ -59,7 +59,7 @@ Use `-r` or `--recursive` option to search for the files recursively, within the
   * yang
   * json-tree
   * jstree
-  * name-revision.
+  * name-revision
 
 * **Simplify YANG**: Use `-s` or `--simplify` option, to to simplify the YANG file. The YANG file will be simplified,
   based on the nodes used in the XML file. Use with `-o` to specify output directory where will be simplified yang generated.
