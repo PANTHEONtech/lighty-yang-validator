@@ -21,7 +21,7 @@ import org.testng.Assert;
 
 public final class ItUtils {
     private static final String OUTPUT_FOLDER = "/out";
-    private static final String OUTPUT_LOG = "/out/out.log";
+    public static final String OUTPUT_LOG = "/out/out.log";
 
     private ItUtils() {
         throw new UnsupportedOperationException("Util class");

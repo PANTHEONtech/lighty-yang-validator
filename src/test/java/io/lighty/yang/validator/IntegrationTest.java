@@ -9,8 +9,10 @@ package io.lighty.yang.validator;
 
 import io.lighty.yang.validator.utils.ItUtils;
 import java.io.IOException;
+import java.io.InputStream;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 public class IntegrationTest implements Cleanable {
@@ -18,6 +20,12 @@ public class IntegrationTest implements Cleanable {
     @AfterMethod
     public void cleanOutput() throws IOException {
         tearDown();
+    }
+
+    @BeforeMethod
+    public void verifiedCleanEnviroment() {
+        InputStream resourceAsStream = ItUtils.class.getResourceAsStream(ItUtils.OUTPUT_LOG);
+        Assert.assertNull(resourceAsStream);
     }
 
     @Test
