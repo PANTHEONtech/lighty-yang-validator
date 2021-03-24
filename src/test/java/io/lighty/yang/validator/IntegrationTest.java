@@ -10,12 +10,12 @@ package io.lighty.yang.validator;
 import io.lighty.yang.validator.utils.ItUtils;
 import java.io.IOException;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.Test;
 
 public class IntegrationTest implements Cleanable {
 
-    @AfterClass
+    @AfterMethod
     public void cleanOutput() throws IOException {
         tearDown();
     }
