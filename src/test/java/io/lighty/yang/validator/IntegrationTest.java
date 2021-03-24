@@ -26,7 +26,7 @@ public class IntegrationTest implements Cleanable {
         String outputWithoutGenInfo = ItUtils.removeHtmlGeneratedInfo(lyvOutput);
         String expectedOutput = ItUtils.getExpectedOutput("integrationTestTreeParseAll.txt");
 
-        ItUtils.compareModulesAndAugmentData(expectedOutput, outputWithoutGenInfo);
+        ItUtils.compareModulesAndAugmentData(outputWithoutGenInfo, expectedOutput);
     }
 
     @Test
@@ -49,7 +49,7 @@ public class IntegrationTest implements Cleanable {
     public void treeFormatTest() throws IOException {
         String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "tree");
         String expectedOutput = ItUtils.getExpectedOutput("integrationTestTree.txt");
-        Assert.assertEquals(expectedOutput, lyvOutput);
+        Assert.assertEquals(lyvOutput, expectedOutput);
     }
 
     @Test
@@ -57,7 +57,7 @@ public class IntegrationTest implements Cleanable {
         String lyvOutput = ItUtils.startRecursivelyLyvWithFileOutput("yang",
                 "integration/yang/ietf-interfaces-modified@2018-02-20.yang", "tree");
         String expectedOutput = ItUtils.getExpectedOutput("integrationTestTreeRecursive.txt");
-        Assert.assertEquals(expectedOutput, lyvOutput);
+        Assert.assertEquals(lyvOutput, expectedOutput);
     }
 
     @Test
@@ -74,7 +74,7 @@ public class IntegrationTest implements Cleanable {
         final String expected = "module ietf-netconf-config@2013-10-21 depends on following modules: "
                 + "ietf-inet-types ietf-netconf-acm ietf-yang-types ietf-netconf-common@2013-10-21 "
                 + "ietf-netconf-common@2013-10-21ietf-netconf-tls@2013-10-21 ietf-x509-cert-to-name \n";
-        ItUtils.compareDependFormatOutput(expected, lyvOutput);
+        ItUtils.compareDependFormatOutput(lyvOutput, expected);
     }
 
     @Test
@@ -89,7 +89,7 @@ public class IntegrationTest implements Cleanable {
     public void jsonTreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "json-tree");
         String expectedOutput = ItUtils.getExpectedOutput("integrationTestJsonTree.json");
-        Assert.assertEquals(expectedOutput, lyvOutput);
+        Assert.assertEquals(lyvOutput, expectedOutput);
     }
 
     @Test
@@ -104,7 +104,7 @@ public class IntegrationTest implements Cleanable {
     public void jstreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "jstree");
         String expectedOutput = ItUtils.getExpectedOutput("integrationTestJsTree.html");
-        Assert.assertEquals(expectedOutput, lyvOutput.replaceAll(" \n", "\n"));
+        Assert.assertEquals(lyvOutput.replaceAll(" \n", "\n"), expectedOutput);
     }
 
     @Test
@@ -122,7 +122,7 @@ public class IntegrationTest implements Cleanable {
         Assert.assertTrue(errorLog.isEmpty());
         String lyvOutput = ItUtils.loadLyvOutput("/out/ietf-interfaces-modified@2018-02-20.yang");
         String expectedOutput = ItUtils.getExpectedOutput("integrationTestYang.txt");
-        ItUtils.compareSimplifyYangOutput(expectedOutput, lyvOutput);
+        ItUtils.compareSimplifyYangOutput(lyvOutput, expectedOutput);
     }
 
     @Test
