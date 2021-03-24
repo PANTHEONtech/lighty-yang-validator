@@ -187,24 +187,15 @@ public final class Main {
         table.buildHtml();
     }
 
-    private static Throwable getSourceException(final LyvApplicationException exception) {
+    private static String formatLyvExceptionMessage(final LyvApplicationException exception) {
         Throwable throwable = exception;
+        final StringBuilder messageBuilder = new StringBuilder();
         while (throwable != null && !(throwable instanceof SourceException)) {
             throwable = throwable.getCause();
         }
-        return throwable;
-    }
-
-    private static String formatLyvExceptionMessage(final LyvApplicationException exception) {
-        if (exception == null) {
-            return "Received empty exception object";
-        }
-        Throwable throwable = getSourceException(exception);
         if (throwable == null) {
             throwable = exception;
         }
-
-        final StringBuilder messageBuilder = new StringBuilder();
         messageBuilder.append(throwable.getMessage()).append("\n");
         while (throwable.getCause() != null) {
             throwable = throwable.getCause();
