@@ -61,7 +61,10 @@ Use `-r` or `--recursive` option to search for the files recursively, within the
   * jstree
   * name-revision.
 
-* **Simplify YANG**: Use `-s` or `--simplify` option, to to simplify the YANG file. The YANG file will be simplified, based on the nodes used in the XML file. Use with `-o` to specify output directory, otherwise it will be printed out to *stdout*.
+* **Simplify YANG**: Use `-s` or `--simplify` option, to to simplify the YANG file. The YANG file will be simplified,
+  based on the nodes used in the XML file. Use with `-o` to specify output directory where will be simplified yang generated.
+  In this case out.log file will contain only error message if some error will be present. Without specified output directory
+  will be result printed to *stdout*.
 
 ## Formats
 

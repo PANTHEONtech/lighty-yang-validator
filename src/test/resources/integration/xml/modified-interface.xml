@@ -1,0 +1,24 @@
+<data>
+    <interfaces xmlns="urn:ietf:params:xml:ns:yang:ietf-interfaces-modified">
+        <interface>
+            <name>eth0</name>
+            <enabled>true</enabled>
+            <oper-status>testing</oper-status>
+            <list-data>
+                <device>device1</device>
+            </list-data>
+            <list-data>
+                <device>device2</device>
+            </list-data>
+            <list-data>
+                <device>device3</device>
+            </list-data>
+            <decimal-data>5</decimal-data>
+            <union-data>unbounded</union-data>
+            <int-leaf-list>10</int-leaf-list>
+            <int-leaf-list>15</int-leaf-list>
+            <int-leaf-list>20</int-leaf-list>
+            <admin-status>testing</admin-status>
+        </interface>
+    </interfaces>
+</data>

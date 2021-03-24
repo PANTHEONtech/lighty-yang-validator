@@ -107,7 +107,7 @@ public final class Main {
             try {
                 runLYV(yangFiles, configuration, format);
             } catch (LyvApplicationException e) {
-                LOG.error("Exception in LYV application", e);
+                LOG.error("Exception in LYV application: {}", formatLyvExceptionMessage(e));
                 return;
             }
         } else {
@@ -179,22 +179,29 @@ public final class Main {
                 runLYV(Collections.singletonList(yangFile), configuration, formatter);
                 table.addRow(name, null, CompilationStatus.PASSED);
             } catch (LyvApplicationException e) {
-                Throwable throwable = e;
-                final StringBuilder messageBuilder = new StringBuilder();
-                while (!(throwable instanceof SourceException)) {
-                    throwable = throwable.getCause();
-                }
-                messageBuilder.append(throwable.getMessage());
-                while (throwable.getCause() != null) {
-                    throwable = throwable.getCause();
-                    messageBuilder.append(throwable.getMessage());
-                }
-                final String message = messageBuilder.toString();
+                final String message = formatLyvExceptionMessage(e);
                 table.addRow(name, message, CompilationStatus.FAILED);
                 LOG.error("name : {}, message: {}", name, message);
             }
         }
         table.buildHtml();
+    }
+
+    private static String formatLyvExceptionMessage(final LyvApplicationException exception) {
+        Throwable throwable = exception;
+        final StringBuilder messageBuilder = new StringBuilder();
+        while (throwable != null && !(throwable instanceof SourceException)) {
+            throwable = throwable.getCause();
+        }
+        if (throwable == null) {
+            throwable = exception;
+        }
+        messageBuilder.append(throwable.getMessage()).append("\n");
+        while (throwable.getCause() != null) {
+            throwable = throwable.getCause();
+            messageBuilder.append(throwable.getMessage()).append("\n");
+        }
+        return messageBuilder.toString();
     }
 
     private static String getYangtoolsVersion(Class<?> clazz) throws LyvApplicationException {
