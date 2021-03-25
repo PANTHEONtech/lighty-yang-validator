@@ -60,7 +60,7 @@ public class Tree extends FormatPlugin {
     private static final String RPCS = "RPCs:";
     private static final String NOTIFICATION = "notifications:";
 
-    private final Map<URI, String> namespacePrefix = new HashMap<>();
+    private Map<URI, String> namespacePrefix = new HashMap<>();
     private Module usedModule = null;
     private int treeDepth;
     private int lineLength;
@@ -69,6 +69,8 @@ public class Tree extends FormatPlugin {
     void init(final SchemaContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
             final SchemaTree schemaTree, final Configuration config) {
         super.init(context, testFilesSchemaSources, schemaTree, config);
+        this.namespacePrefix = new HashMap<>();
+        this.usedModule = null;
         treeDepth = this.configuration.getTreeConfiguration().getTreeDepth();
         final int len = this.configuration.getTreeConfiguration().getLineLength();
         this.lineLength = len == 0 ? 10000 : len;

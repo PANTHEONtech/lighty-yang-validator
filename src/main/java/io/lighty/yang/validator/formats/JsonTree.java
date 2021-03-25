@@ -90,12 +90,13 @@ public class JsonTree extends FormatPlugin {
     private static final String SLASH = "/";
     private static final String COLON = ":";
 
-    private final Map<String, String> prefixMap = new HashMap<>();
+    private Map<String, String> prefixMap = new HashMap<>();
 
     @Override
     void init(final SchemaContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
               final SchemaTree schemaTree, final Configuration config) {
         super.init(context, testFilesSchemaSources, schemaTree, config);
+        this.prefixMap = new HashMap<>();
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.getName()));
