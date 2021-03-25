@@ -17,10 +17,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.json.JSONObject;
 import org.opendaylight.yangtools.yang.common.QName;
@@ -40,7 +38,6 @@ import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
-import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
@@ -90,27 +87,10 @@ public class JsonTree extends FormatPlugin {
     private static final String SLASH = "/";
     private static final String COLON = ":";
 
-    private final Map<String, String> prefixMap = new HashMap<>();
-
     @Override
     void init(final SchemaContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
               final SchemaTree schemaTree, final Configuration config) {
         super.init(context, testFilesSchemaSources, schemaTree, config);
-        for (final RevisionSourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.getName()));
-            prefixMap.put(module.getName(), module.getPrefix());
-            setImportPrefixes(module.getImports());
-        }
-    }
-
-    private void setImportPrefixes(Collection<? extends ModuleImport> imports) {
-        for (ModuleImport moduleImport : imports) {
-            prefixMap.put(moduleImport.getModuleName(), moduleImport.getPrefix());
-            final Optional<? extends Module> module = schemaContext.findModule(moduleImport.getModuleName(),
-                    moduleImport.getRevision().orElse(Revision.of(EARLIEST_REVISION)));
-            module.ifPresent(module1 -> setImportPrefixes(module1.getImports()));
-        }
     }
 
     @Override

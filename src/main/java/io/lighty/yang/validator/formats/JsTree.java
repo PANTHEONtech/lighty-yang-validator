@@ -51,12 +51,13 @@ public class JsTree extends FormatPlugin {
     private static final String HELP_DESCRIPTION = "Prints out html, javascript tree of the modules";
     private static final String INPUT = "input";
 
-    private final Map<URI, String> namespacePrefix = new HashMap<>();
+    private Map<URI, String> namespacePrefix = new HashMap<>();
 
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
+        this.namespacePrefix = new HashMap<>();
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
                     .orElseThrow(() -> new NotFoundException("Module", source.getName()));
