@@ -103,7 +103,7 @@ public final class ItUtils {
     }
 
     public static void compareModulesAndAugmentData(final String expected, final String output) {
-        compareMixedOutput(expected, output, "module|augment");
+        compareMixedOutput(expected, output, "module: |augment ");
     }
 
     public static void compareSimplifyYangOutput(final String expected, final String output) {
