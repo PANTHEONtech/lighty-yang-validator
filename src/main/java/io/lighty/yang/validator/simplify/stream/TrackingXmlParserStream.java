@@ -145,23 +145,6 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         return this;
     }
 
-    /**
-     * This method traverses a {@link DOMSource} and emits node events into a NormalizedNodeStreamWriter based on the
-     * YANG-modeled data contained in the source.
-     *
-     * @param src {@link DOMSource} to be traversed
-     * @return instance of XmlParserStream
-     * @throws XMLStreamException           if a well-formedness error or an unexpected processing condition occurs
-     *                                      while parsing the XML
-     * @throws URISyntaxException           if the namespace URI of an XML element contains a syntax error
-     * @throws IOException                  if an error occurs while parsing the value of an anyxml node
-     */
-    @Beta
-    public TrackingXmlParserStream traverse(final DOMSource src) throws XMLStreamException, URISyntaxException,
-            IOException {
-        return parse(new DOMSourceXMLStreamReader(src));
-    }
-
     private static ImmutableMap<QName, Object> getElementAttributes(final XMLStreamReader in) {
         checkState(in.isStartElement(), "Attributes can be extracted only from START_ELEMENT.");
         final Map<QName, String> attributes = new LinkedHashMap<>();
