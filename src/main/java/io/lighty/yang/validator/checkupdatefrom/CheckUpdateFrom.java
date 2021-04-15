@@ -66,7 +66,6 @@ import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.MustConstraintAware;
 import org.opendaylight.yangtools.yang.model.api.MustDefinition;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
-import org.opendaylight.yangtools.yang.model.api.RevisionAwareXPath;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
@@ -85,6 +84,7 @@ import org.opendaylight.yangtools.yang.model.api.type.PatternConstraint;
 import org.opendaylight.yangtools.yang.model.api.type.RangeConstraint;
 import org.opendaylight.yangtools.yang.model.api.type.RangeRestrictedTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.StringTypeDefinition;
+import org.opendaylight.yangtools.yang.xpath.api.YangXPathExpression.QualifiedBound;
 
 public class CheckUpdateFrom {
 
@@ -309,8 +309,8 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkTypeAware(TypeDefinition<? extends TypeDefinition<?>> oldType,
-                                TypeDefinition<? extends TypeDefinition<?>> newType) {
+    private void checkTypeAware(final TypeDefinition<? extends TypeDefinition<?>> oldType,
+                                final TypeDefinition<? extends TypeDefinition<?>> newType) {
         final boolean isTypeError = checkType(oldType, newType);
         checkReference(oldType.getReference(), newType.getReference());
         checkDefault(oldType, newType);
@@ -466,31 +466,37 @@ public class CheckUpdateFrom {
         final Collection<? extends MustDefinition> oldMust = ((MustConstraintAware) oldNode).getMustConstraints();
         if (oldMust.size() < newMust.size()) {
             errors.add(addedMustError().updateInformation(
-                    newNode.getPath().toString() + MUST + new ArrayList<>(newMust).toString(),
-                    oldNode.getPath().toString() + MUST + new ArrayList<>(oldMust).toString()));
+                    newNode.getPath().toString() + MUST + getXpathStringFromMustCollection(newMust),
+                    oldNode.getPath().toString() + MUST + getXpathStringFromMustCollection(oldMust)));
         } else {
             for (MustDefinition newMustDefinition : newMust) {
                 if (!oldMust.contains(newMustDefinition)) {
                     errors.add(checkMustWarning().updateInformation(
-                            newNode.getPath().toString() + MUST + newMustDefinition.toString(),
-                            oldNode.getPath().toString() + MUST + new ArrayList<>(oldMust).toString()));
+                            newNode.getPath().toString() + MUST + newMustDefinition.getXpath().toString(),
+                            oldNode.getPath().toString() + MUST + getXpathStringFromMustCollection(oldMust)));
                 }
             }
         }
     }
 
+    private String getXpathStringFromMustCollection(Collection<? extends MustDefinition> must) {
+        return "[" + must.stream()
+                .map(t -> t.getXpath().toString())
+                .collect(Collectors.joining(",")) + "]";
+    }
+
     private void checkWhen(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        final Optional<RevisionAwareXPath> newWhen = newNode.getWhenCondition();
-        final Optional<RevisionAwareXPath> oldWhen = oldNode.getWhenCondition();
+        final Optional<? extends QualifiedBound> newWhen = newNode.getWhenCondition();
+        final Optional<? extends QualifiedBound> oldWhen = oldNode.getWhenCondition();
         if (oldWhen.isEmpty() && newWhen.isPresent()) {
             errors.add(addedWhenError().updateInformation(
-                    newNode.getPath().toString() + WHEN + newWhen.get().getOriginalString(),
+                    newNode.getPath().toString() + WHEN + newWhen.get().toString(),
                     oldNode.getPath().toString() + WHEN + DONT_EXISTS));
         } else if (oldWhen.isPresent() && newWhen.isPresent()
-                && (!oldWhen.get().getOriginalString().equals(newWhen.get().getOriginalString()))) {
+                && (!oldWhen.get().toString().equals(newWhen.get().toString()))) {
             errors.add(checkWhenWarning().updateInformation(
-                    newNode.getPath().toString() + WHEN + newWhen.get().getOriginalString(),
-                    oldNode.getPath().toString() + WHEN + oldWhen.get().getOriginalString()));
+                    newNode.getPath().toString() + WHEN + newWhen.get().toString(),
+                    oldNode.getPath().toString() + WHEN + oldWhen.get().toString()));
         }
     }
 
@@ -574,14 +580,64 @@ public class CheckUpdateFrom {
     private void checkPattern(final StringTypeDefinition oldNode, final StringTypeDefinition newNode) {
         final List<PatternConstraint> oldPatterns = oldNode.getPatternConstraints();
         final List<PatternConstraint> newPatterns = newNode.getPatternConstraints();
-        if (newPatterns.containsAll(oldPatterns)) {
-            for (PatternConstraint oldPattern : oldPatterns) {
-                checkReference(oldPattern.getReference(),
-                        newPatterns.get(newPatterns.indexOf(oldPattern)).getReference());
+        if (isPatternConstraintListSame(newPatterns, oldPatterns)) {
+            for (int i = 0; i < oldPatterns.size(); i++) {
+                checkReference(oldPatterns.get(i).getReference(), newPatterns.get(i).getReference());
             }
         } else {
-            errors.add(patternError().updateInformation(newPatterns.toString(), oldPatterns.toString()));
+            errors.add(patternError().updateInformation(patterConstraintListToString(newPatterns),
+                            patterConstraintListToString(oldPatterns)));
         }
+    }
+
+    public boolean isPatternConstraintListSame(final List<PatternConstraint> oldPatterns,
+            final List<PatternConstraint> newPatterns) {
+        if (oldPatterns.size() != newPatterns.size()) {
+            return false;
+        }
+        for (int i = 0; i < oldPatterns.size(); i++) {
+            if (isPatternValuesSame(newPatterns.get(i), oldPatterns.get(i))) {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isPatternValuesSame(final PatternConstraint newPattern, final PatternConstraint oldPattern) {
+        return newPattern.getErrorMessage().equals(oldPattern.getErrorMessage())
+                && newPattern.getJavaPatternString().equals(oldPattern.getJavaPatternString())
+                && newPattern.getRegularExpressionString().equals(oldPattern.getRegularExpressionString())
+                && newPattern.getErrorAppTag().equals(oldPattern.getErrorAppTag())
+                && newPattern.getDescription().equals(oldPattern.getDescription())
+                && newPattern.getReference().equals(oldPattern.getReference());
+    }
+
+    private String patterConstraintListToString(final List<PatternConstraint> patterns) {
+        final StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append('[');
+        for (int i = 0; i < patterns.size(); i++) {
+            PatternConstraint pattern = patterns.get(i);
+            stringBuilder.append("{regex=")
+                    .append(pattern.getJavaPatternString());
+            if (pattern.getErrorMessage().isPresent()) {
+                stringBuilder.append(",")
+                        .append("errorMessage=")
+                        .append(pattern.getErrorMessage().get());
+            }
+            if (pattern.getErrorAppTag().isPresent()) {
+                stringBuilder.append(",")
+                        .append("errorAppTag=")
+                        .append(pattern.getErrorAppTag().get());
+            }
+            stringBuilder.append("}");
+
+            if (i != patterns.size() - 1) {
+                stringBuilder.append(", ");
+            }
+        }
+        stringBuilder.append(']');
+        return stringBuilder.toString();
     }
 
     private void checkBits(final BitsTypeDefinition oldNode, final BitsTypeDefinition newNode) {

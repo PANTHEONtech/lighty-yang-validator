@@ -50,6 +50,7 @@ import org.opendaylight.yangtools.yang.data.codec.xml.XmlCodecFactory;
 import org.opendaylight.yangtools.yang.data.util.AbstractNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.AnyXmlNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.CompositeNodeDataWithSchema;
+import org.opendaylight.yangtools.yang.data.util.CompositeNodeDataWithSchema.ChildReusePolicy;
 import org.opendaylight.yangtools.yang.data.util.ContainerNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.LeafListEntryNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.LeafListNodeDataWithSchema;
@@ -61,7 +62,7 @@ import org.opendaylight.yangtools.yang.data.util.SimpleNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.YangModeledAnyXmlNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.codec.TypeAwareCodec;
 import org.opendaylight.yangtools.yang.model.api.AnyxmlSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ContainerLike;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
@@ -122,8 +123,8 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         if (reader.hasNext()) {
             reader.nextTag();
             final AbstractNodeDataWithSchema<?> nodeDataWithSchema;
-            if (parentNode instanceof ContainerSchemaNode) {
-                nodeDataWithSchema = new ContainerNodeDataWithSchema((ContainerSchemaNode) parentNode);
+            if (parentNode instanceof ContainerLike) {
+                nodeDataWithSchema = new ContainerNodeDataWithSchema((ContainerLike) parentNode);
             } else if (parentNode instanceof ListSchemaNode) {
                 nodeDataWithSchema = new ListNodeDataWithSchema((ListSchemaNode) parentNode);
             } else if (parentNode instanceof YangModeledAnyxmlSchemaNode) {
@@ -336,7 +337,8 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
 
             final SchemaTree parentTree = schemaTree;
             schemaTree = getSchemaTreeWithAddedChildren(schemaTree, childDataSchemaNodes);
-            read(in, ((CompositeNodeDataWithSchema) parent).addChild(childDataSchemaNodes), rootElement, schemaTree);
+            read(in, ((CompositeNodeDataWithSchema) parent).addChild(childDataSchemaNodes, ChildReusePolicy.NOOP),
+                    rootElement, schemaTree);
             schemaTree = parentTree;
         }
     }
@@ -461,11 +463,12 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     private static AbstractNodeDataWithSchema<?> newEntryNode(final AbstractNodeDataWithSchema<?> parent) {
         final AbstractNodeDataWithSchema<?> newChild;
         if (parent instanceof ListNodeDataWithSchema) {
-            newChild = ListEntryNodeDataWithSchema.forSchema((ListSchemaNode) parent.getSchema());
+            newChild = ((ListNodeDataWithSchema) parent).newChildEntry();
+        } else if (parent instanceof LeafListNodeDataWithSchema) {
+            newChild = ((LeafListNodeDataWithSchema) parent).newChildEntry();
         } else {
-            newChild = new LeafListEntryNodeDataWithSchema((LeafListSchemaNode) parent.getSchema());
+            throw new IllegalStateException("Unsupported schema data node type " + parent.getClass() + ".");
         }
-        ((CompositeNodeDataWithSchema) parent).addChild(newChild);
         return newChild;
     }
 
