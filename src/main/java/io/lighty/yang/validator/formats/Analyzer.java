@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import org.opendaylight.yangtools.yang.model.api.Module;
+import org.opendaylight.yangtools.yang.model.api.ModuleLike;
 import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.slf4j.Logger;
@@ -38,12 +38,12 @@ public class Analyzer extends FormatPlugin {
         printOut();
     }
 
-    private Set<DeclaredStatement<?>> getRecursivelyDeclaredStatements(final Collection<? extends Module> modules) {
+    private Set<DeclaredStatement<?>> getRecursivelyDeclaredStatements(final Collection<? extends ModuleLike> modules) {
         Set<DeclaredStatement<?>> declaredStatements = new HashSet<>();
-        for (Module module : modules) {
+        for (ModuleLike module : modules) {
             declaredStatements.add(((EffectiveStatement<?, ?>) module).getDeclared());
 
-            Collection<? extends Module> submodules = module.getSubmodules();
+            Collection<? extends ModuleLike> submodules = module.getSubmodules();
             if (submodulesAreNotEmpty(submodules)) {
                 declaredStatements.addAll(getRecursivelyDeclaredStatements(submodules));
             }
@@ -51,7 +51,7 @@ public class Analyzer extends FormatPlugin {
         return declaredStatements;
     }
 
-    private boolean submodulesAreNotEmpty(Collection<? extends Module> submodules) {
+    private boolean submodulesAreNotEmpty(Collection<? extends ModuleLike> submodules) {
         return submodules != null && !submodules.isEmpty();
     }
 

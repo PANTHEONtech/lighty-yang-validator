@@ -30,7 +30,7 @@ import org.opendaylight.yangtools.yang.model.api.AnyxmlSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ContainerLike;
 import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
@@ -323,7 +323,7 @@ public class JsonTree extends FormatPlugin {
     private String resolveNodeClass(final DataSchemaNode node) {
         if (node instanceof ListSchemaNode) {
             return "list";
-        } else if (node instanceof ContainerSchemaNode) {
+        } else if (node instanceof ContainerLike) {
             return "container";
         } else if (node instanceof LeafListSchemaNode) {
             return "leaf-list";

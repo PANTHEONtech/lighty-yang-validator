@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
-import org.opendaylight.yangtools.yang.data.impl.schema.nodes.LazyLeafOperations;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -51,8 +50,6 @@ public class TreeSimplifiedTest implements Cleanable {
     public void setUpOutput() throws Exception {
         this.constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
         this.constructor.setAccessible(true);
-        // Just to ignore Log message from LazyLeafOperations saying "Leaf nodes are treated as transient nodes"
-        LazyLeafOperations.isEnabled();
         this.method = Main.class.getDeclaredMethod("setMainLoggerOutput", Configuration.class);
         final Main mainClass = this.constructor.newInstance();
         this.method.setAccessible(true);

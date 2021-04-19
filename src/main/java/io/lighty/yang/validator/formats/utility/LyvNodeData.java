@@ -13,7 +13,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.ContainerLike;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
@@ -47,7 +47,7 @@ public class LyvNodeData {
 
     public boolean isNodeMandatory() {
         return (this.node instanceof MandatoryAware && ((MandatoryAware) this.node).isMandatory())
-                || this.node instanceof ContainerSchemaNode || this.node instanceof CaseSchemaNode
+                || this.node instanceof ContainerLike || this.node instanceof CaseSchemaNode
                 || this.node instanceof NotificationDefinition || this.node instanceof ActionDefinition
                 || this.node instanceof RpcDefinition || this.isKey;
     }
