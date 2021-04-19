@@ -1,5 +1,6 @@
 # :cloud_with_lightning: lighty YANG Validator 14.0.1-SNAPSHOT
 
+
 This tool validates YANG modules using the YANG-Tools parser. If there are any problems parsing the module, it will show the stacktrace with the problem, linking to the corresponding module.
 
 > This makes lighty YANG Validator **a must-have tool, when using [OpenDaylight](https://github.com/opendaylight) or [lighty.io](https://github.com/PANTHEONtech/lighty).**
