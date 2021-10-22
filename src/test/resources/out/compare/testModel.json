@@ -131,7 +131,7 @@
               }],
               "name": "input",
               "description": "",
-              "config": false,
+              "config": true,
               "class": "container",
               "status": "CURRENT"
             },
@@ -231,7 +231,7 @@
           ],
           "name": "input",
           "description": "",
-          "config": false,
+          "config": true,
           "class": "container",
           "status": "CURRENT"
         },
@@ -300,7 +300,7 @@
           ],
           "name": "input",
           "description": "",
-          "config": false,
+          "config": true,
           "class": "container",
           "status": "CURRENT"
         },

@@ -124,7 +124,7 @@
                     "type_info": {},
                     "name": "input",
                     "description": "",
-                    "config": false,
+                    "config": true,
                     "class": "container",
                     "status": "CURRENT"
                   },
@@ -651,7 +651,7 @@
                     "type_info": {},
                     "name": "input",
                     "description": "",
-                    "config": false,
+                    "config": true,
                     "class": "container",
                     "status": "CURRENT"
                   },
