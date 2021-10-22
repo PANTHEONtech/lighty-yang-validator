@@ -160,8 +160,7 @@ abstract class Line {
                 type = type.getBaseType();
             }
             String prefix = namespacePrefix.get(type.getQName().getNamespace());
-            if (prefix == null
-                    || BaseTypes.isYangBuildInType(type.getPath().getLastComponent().getLocalName())) {
+            if (prefix == null || isBaseType(type)) {
                 typeName = type.getQName().getLocalName();
             } else {
                 typeName = prefix + ":" + type.getQName().getLocalName();
@@ -172,5 +171,19 @@ abstract class Line {
         } else {
             path = null;
         }
+    }
+
+    private boolean isBaseType(TypeDefinition<? extends TypeDefinition<?>> type) {
+        TypeDefinition<?> baseType = type.getBaseType();
+        if (baseType == null) {
+            return true;
+        }
+        while (baseType != null) {
+            if (!baseType.getQName().getLocalName().equals(type.getQName().getLocalName())) {
+                return false;
+            }
+            baseType = baseType.getBaseType();
+        }
+        return true;
     }
 }
