@@ -8,10 +8,10 @@
 package io.lighty.yang.validator.formats;
 
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
-import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
@@ -26,7 +26,7 @@ public class ConsoleLine extends Line {
     private final List<Boolean> isConnected;
 
     ConsoleLine(final List<Boolean> isConnected, final LyvNodeData lyvNodeData, RpcInputOutput inputOutput,
-            final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix) {
+            final List<Integer> removeChoiceQname, final Map<XMLNamespace, String> namespacePrefix) {
         super(lyvNodeData, inputOutput, removeChoiceQname, namespacePrefix);
         this.isConnected = isConnected;
     }

@@ -14,7 +14,6 @@ import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -28,6 +27,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.ActionNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
@@ -51,7 +51,7 @@ public class JsTree extends FormatPlugin {
     private static final String HELP_DESCRIPTION = "Prints out html, javascript tree of the modules";
     private static final String INPUT = "input";
 
-    private Map<URI, String> namespacePrefix = new HashMap<>();
+    private Map<XMLNamespace, String> namespacePrefix = new HashMap<>();
 
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",

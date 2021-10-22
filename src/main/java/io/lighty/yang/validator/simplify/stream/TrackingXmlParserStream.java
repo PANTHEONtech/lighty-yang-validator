@@ -19,7 +19,6 @@ import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Deque;
@@ -43,8 +42,8 @@ import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXResult;
 import javax.xml.transform.stax.StAXSource;
-import org.opendaylight.yangtools.odlext.model.api.YangModeledAnyxmlSchemaNode;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.data.api.schema.stream.NormalizedNodeStreamWriter;
 import org.opendaylight.yangtools.yang.data.codec.xml.XmlCodecFactory;
 import org.opendaylight.yangtools.yang.data.util.AbstractNodeDataWithSchema;
@@ -59,7 +58,6 @@ import org.opendaylight.yangtools.yang.data.util.ListEntryNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.ListNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.ParserStreamUtils;
 import org.opendaylight.yangtools.yang.data.util.SimpleNodeDataWithSchema;
-import org.opendaylight.yangtools.yang.data.util.YangModeledAnyXmlNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.codec.TypeAwareCodec;
 import org.opendaylight.yangtools.yang.model.api.AnyxmlSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerLike;
@@ -68,6 +66,7 @@ import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.model.util.SchemaInferenceStack;
 import org.w3c.dom.Document;
 
 
@@ -127,8 +126,6 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
                 nodeDataWithSchema = new ContainerNodeDataWithSchema((ContainerLike) parentNode);
             } else if (parentNode instanceof ListSchemaNode) {
                 nodeDataWithSchema = new ListNodeDataWithSchema((ListSchemaNode) parentNode);
-            } else if (parentNode instanceof YangModeledAnyxmlSchemaNode) {
-                nodeDataWithSchema = new YangModeledAnyXmlNodeDataWithSchema((YangModeledAnyxmlSchemaNode) parentNode);
             } else if (parentNode instanceof AnyxmlSchemaNode) {
                 nodeDataWithSchema = new AnyXmlNodeDataWithSchema((AnyxmlSchemaNode) parentNode);
             } else if (parentNode instanceof LeafSchemaNode) {
@@ -162,7 +159,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
                 continue;
             }
 
-            final QName qName = QName.create(URI.create(attributeNS), in.getAttributeLocalName(attrIndex));
+            final QName qName = QName.create(XMLNamespace.of(attributeNS), in.getAttributeLocalName(attrIndex));
             attributes.put(qName, in.getAttributeValue(attrIndex));
         }
 
@@ -242,10 +239,6 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
             return;
         }
 
-        if (parent instanceof YangModeledAnyxmlSchemaNode) {
-            parent.setAttributes(getElementAttributes(in));
-        }
-
         readTaggedData(in, parent, rootElement, schemaTree);
     }
 
@@ -312,9 +305,6 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
                 break;
             }
 
-            if (parentSchema instanceof YangModeledAnyxmlSchemaNode) {
-                parentSchema = ((YangModeledAnyxmlSchemaNode) parentSchema).getSchemaOfAnyXmlData();
-            }
             /*
              Check if xml node is already added to the Set
              if yes, we have multiple values for the same node, which is not valid.
@@ -326,7 +316,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
              */
             final Deque<DataSchemaNode> childDataSchemaNodes =
                     ParserStreamUtils.findSchemaNodeByNameAndNamespace(parentSchema, xmlElementName,
-                            new URI(xmlElementNamespace));
+                            XMLNamespace.of(xmlElementNamespace));
 
             if (childDataSchemaNodes.isEmpty()) {
                 checkState(!strictParsing, "Schema for node with name %s and namespace %s does not exist at %s",
@@ -456,7 +446,10 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
 
         checkArgument(node instanceof TypedDataSchemaNode);
         checkArgument(value instanceof String);
-        final TypeAwareCodec<?, NamespaceContext, ?> xmlCodec = codecs.codecFor((TypedDataSchemaNode) node);
+        SchemaInferenceStack schemaInferenceStack
+                = SchemaInferenceStack.ofSchemaPath(codecs.getEffectiveModelContext(), node.getPath());
+        final TypeAwareCodec<?, NamespaceContext, ?> xmlCodec
+                = codecs.codecFor((TypedDataSchemaNode) node, schemaInferenceStack);
         return xmlCodec.parseValue(namespaceCtx, (String) value);
     }
 

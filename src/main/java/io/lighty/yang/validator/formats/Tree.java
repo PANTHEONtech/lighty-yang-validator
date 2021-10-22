@@ -15,7 +15,6 @@ import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.simplify.SchemaTree;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.sourceforge.argparse4j.impl.choice.CollectionArgumentChoice;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.ActionNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
@@ -60,7 +60,7 @@ public class Tree extends FormatPlugin {
     private static final String RPCS = "RPCs:";
     private static final String NOTIFICATION = "notifications:";
 
-    private Map<URI, String> namespacePrefix = new HashMap<>();
+    private Map<XMLNamespace, String> namespacePrefix = new HashMap<>();
     private Module usedModule = null;
     private int treeDepth;
     private int lineLength;

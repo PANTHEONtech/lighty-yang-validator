@@ -10,13 +10,13 @@ package io.lighty.yang.validator.formats;
 import com.google.common.collect.Lists;
 import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
@@ -35,8 +35,7 @@ import org.opendaylight.yangtools.yang.model.api.stmt.IfFeatureStatement;
 import org.opendaylight.yangtools.yang.model.api.type.BooleanTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.LeafrefTypeDefinition;
-import org.opendaylight.yangtools.yang.model.util.BaseTypes;
-import org.opendaylight.yangtools.yang.parser.rfc7950.stmt.AbstractDeclaredEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.spi.meta.AbstractDeclaredEffectiveStatement;
 
 abstract class Line {
 
@@ -47,7 +46,7 @@ abstract class Line {
 
     final RpcInputOutput inputOutput;
     final List<Integer> removeChoiceQname;
-    private final Map<URI, String> namespacePrefix;
+    private final Map<XMLNamespace, String> namespacePrefix;
 
     final List<IfFeatureStatement> ifFeatures = new ArrayList<>();
     final List<String> keys = new ArrayList<>();
@@ -62,7 +61,7 @@ abstract class Line {
     String typeName;
 
     Line(final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput, final List<Integer> removeChoiceQname,
-            final Map<URI, String> namespacePrefix) {
+            final Map<XMLNamespace, String> namespacePrefix) {
         SchemaNode node = lyvNodeData.getNode();
         this.status = node.getStatus();
         this.isMandatory = lyvNodeData.isNodeMandatory();

@@ -30,7 +30,6 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 import org.opendaylight.yangtools.yang.data.api.schema.DataContainerChild;
 import org.opendaylight.yangtools.yang.data.api.schema.stream.NormalizedNodeStreamWriter;
-import org.opendaylight.yangtools.yang.data.codec.xml.XmlCodecFactory;
 import org.opendaylight.yangtools.yang.data.codec.xml.XmlParserStream;
 import org.opendaylight.yangtools.yang.data.impl.schema.ImmutableNormalizedNodeStreamWriter;
 import org.opendaylight.yangtools.yang.data.impl.schema.NormalizedNodeResult;
@@ -79,15 +78,14 @@ public class MainTest implements Cleanable {
             try (InputStream input = new FileInputStream(xmlFile)) {
                 final NormalizedNodeResult result = new NormalizedNodeResult();
                 final NormalizedNodeStreamWriter streamWriter = ImmutableNormalizedNodeStreamWriter.from(result);
-                final XmlParserStream xmlParser = XmlParserStream.create(streamWriter,
-                        XmlCodecFactory.create(effectiveModelContext), effectiveModelContext);
+                final XmlParserStream xmlParser = XmlParserStream.create(streamWriter, effectiveModelContext);
                 reader = FACTORY.createXMLStreamReader(input);
                 xmlParser.parse(reader);
                 xmlParser.flush();
                 xmlParser.close();
                 Assert.assertTrue(result.isFinished());
-                final AbstractCollection<DataContainerChild<?, ?>> value =
-                        (AbstractCollection<DataContainerChild<?, ?>>) result.getResult().getValue();
+                final AbstractCollection<DataContainerChild> value =
+                        (AbstractCollection<DataContainerChild>) result.getResult().body();
                 Assert.assertEquals(value.size(), 1);
             }
         }

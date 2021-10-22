@@ -12,8 +12,6 @@ import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.simplify.SchemaTree;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,6 +21,7 @@ import java.util.Optional;
 import org.json.JSONObject;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
+import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.ActionNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.AnydataSchemaNode;
@@ -294,12 +293,7 @@ public class JsonTree extends FormatPlugin {
     private JSONObject resolveType(TypeDefinition<? extends TypeDefinition<?>> nodeType) {
         final JSONObject jsonLeafType = new JSONObject();
         final QName typeqName = nodeType.getQName();
-        int equals = 0;
-        try {
-            equals = typeqName.getNamespace().compareTo(new URI(BASETYPENAMESPACE));
-        } catch (URISyntaxException e) {
-            LOG.error("Incorrect namespace used");
-        }
+        int  equals = typeqName.getNamespace().compareTo(XMLNamespace.of(BASETYPENAMESPACE));
         String type;
         if (equals == 0) {
             type = typeqName.getLocalName();
