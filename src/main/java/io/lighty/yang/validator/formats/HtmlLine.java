@@ -10,11 +10,11 @@ package io.lighty.yang.validator.formats;
 import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.formats.utility.SchemaHtmlEnum;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.opendaylight.yangtools.yang.common.QName;
+import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
@@ -27,7 +27,7 @@ import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.InputEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.OutputEffectiveStatement;
-import org.opendaylight.yangtools.yang.parser.rfc7950.stmt.AbstractUndeclaredEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.spi.meta.AbstractUndeclaredEffectiveStatement;
 
 public class HtmlLine extends Line {
 
@@ -40,7 +40,7 @@ public class HtmlLine extends Line {
 
 
     HtmlLine(final List<Integer> ids, final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
-            final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix) {
+            final List<Integer> removeChoiceQname, final Map<XMLNamespace, String> namespacePrefix) {
         super(lyvNodeData, inputOutput, removeChoiceQname, namespacePrefix);
         this.ids = ids;
         Iterable<QName> pathFromRoot;
@@ -52,7 +52,7 @@ public class HtmlLine extends Line {
     }
 
     HtmlLine(final List<Integer> ids, final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
-            final List<Integer> removeChoiceQname, final Map<URI, String> namespacePrefix,
+            final List<Integer> removeChoiceQname, final Map<XMLNamespace, String> namespacePrefix,
             final AugmentationSchemaNode augment) {
         super(lyvNodeData, inputOutput, removeChoiceQname, namespacePrefix);
         this.ids = ids;
@@ -88,8 +88,8 @@ public class HtmlLine extends Line {
         }
     }
 
-    private static String createPath(final Iterable<QName> pathFromRoot, final Map<URI, String> namespacePrefix,
-            final SchemaContext context) {
+    private static String createPath(final Iterable<QName> pathFromRoot,
+            final Map<XMLNamespace, String> namespacePrefix, final SchemaContext context) {
         final StringBuilder pathBuilder = new StringBuilder();
         for (QName path : pathFromRoot) {
             final String prefix = namespacePrefix.getOrDefault(path.getNamespace(),

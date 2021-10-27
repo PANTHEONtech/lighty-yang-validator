@@ -36,7 +36,7 @@ import static io.lighty.yang.validator.checkupdatefrom.CheckUpdateFromErrorRFC79
 import static io.lighty.yang.validator.checkupdatefrom.CheckUpdateFromErrorRFC7950.identityRefBaseError;
 import static io.lighty.yang.validator.checkupdatefrom.CheckUpdateFromErrorRFC7950.missingBaseIdentityError;
 import static io.lighty.yang.validator.checkupdatefrom.CheckUpdateFromErrorRFC7950.missingIdentityError;
-import static org.opendaylight.yangtools.yang.model.util.type.BaseTypes.baseTypeOf;
+import static org.opendaylight.yangtools.yang.model.ri.type.BaseTypes.baseTypeOf;
 
 import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Range;
@@ -58,6 +58,7 @@ import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.ElementCountConstraint;
 import org.opendaylight.yangtools.yang.model.api.ElementCountConstraintAware;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
@@ -67,7 +68,6 @@ import org.opendaylight.yangtools.yang.model.api.MustConstraintAware;
 import org.opendaylight.yangtools.yang.model.api.MustDefinition;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.Status;
 import org.opendaylight.yangtools.yang.model.api.TypeAware;
@@ -75,6 +75,7 @@ import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.RevisionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
+import org.opendaylight.yangtools.yang.model.api.stmt.TypedefEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.type.BitsTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.EnumTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
@@ -84,6 +85,7 @@ import org.opendaylight.yangtools.yang.model.api.type.PatternConstraint;
 import org.opendaylight.yangtools.yang.model.api.type.RangeConstraint;
 import org.opendaylight.yangtools.yang.model.api.type.RangeRestrictedTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.StringTypeDefinition;
+import org.opendaylight.yangtools.yang.model.util.SchemaInferenceStack;
 import org.opendaylight.yangtools.yang.xpath.api.YangXPathExpression.QualifiedBound;
 
 public class CheckUpdateFrom {
@@ -101,23 +103,23 @@ public class CheckUpdateFrom {
     private static final RangeSet<Integer> INTEGER_ALLOWED_RANGES =
             ImmutableRangeSet.of(Range.closed(0, Integer.MAX_VALUE));
 
-    private final SchemaContext oldContext;
-    private final SchemaContext newContext;
+    private final SchemaInferenceStack oldSchemaIS;
+    private final SchemaInferenceStack newSchemaIS;
     private final Module oldModule;
     private final Module newModule;
     private final boolean is7950;
 
     private final Set<CheckUpdateFromErrorRFC6020> errors = new LinkedHashSet<>();
 
-    public CheckUpdateFrom(final SchemaContext newContext, final String newModule,
-                           final SchemaContext oldContext, final String oldModule,
+    public CheckUpdateFrom(final EffectiveModelContext newContext, final String newModule,
+                           final EffectiveModelContext oldContext, final String oldModule,
                            final int rfcVersion) {
-        this.newContext = newContext;
-        this.oldContext = oldContext;
         final String newModuleName = extractModuleName(newModule);
         final String oldModuleName = extractModuleName(oldModule);
-        this.newModule = this.newContext.findModules(newModuleName).iterator().next();
-        this.oldModule = this.oldContext.findModules(oldModuleName).iterator().next();
+        this.oldSchemaIS = SchemaInferenceStack.of(oldContext);
+        this.newSchemaIS = SchemaInferenceStack.of(newContext);
+        this.newModule = newContext.findModules(newModuleName).iterator().next();
+        this.oldModule = oldContext.findModules(oldModuleName).iterator().next();
         this.is7950 = rfcVersion == 7950;
     }
 
@@ -203,14 +205,20 @@ public class CheckUpdateFrom {
         final Collection<? extends TypeDefinition<?>> oldTypeDefs = this.oldModule.getTypeDefinitions();
         final Collection<? extends TypeDefinition<?>> newTypeDefs = this.newModule.getTypeDefinitions();
         for (final TypeDefinition<?> oldTypeDef : oldTypeDefs) {
+            this.oldSchemaIS.enterTypedef(QName.create(this.oldModule.getQNameModule(),
+                    oldTypeDef.getQName().getLocalName()));
             for (final TypeDefinition<?> newTypeDef : newTypeDefs) {
                 if (oldTypeDef.getQName().getLocalName().equals(newTypeDef.getQName().getLocalName())) {
+                    this.newSchemaIS.enterTypedef(QName.create(this.newModule.getQNameModule(),
+                            newTypeDef.getQName().getLocalName()));
                     checkTypeAware(oldTypeDef, newTypeDef);
-                    checkStatus(oldTypeDef.getStatus(), newTypeDef.getStatus(), oldTypeDef.getPath(),
-                            newTypeDef.getPath());
+                    checkStatus(oldTypeDef.getStatus(), newTypeDef.getStatus(), this.newSchemaIS.toSchemaPath(),
+                            this.newSchemaIS.toSchemaPath());
+                    this.newSchemaIS.exit();
                     break;
                 }
             }
+            this.oldSchemaIS.exit();
         }
     }
 
@@ -218,21 +226,28 @@ public class CheckUpdateFrom {
         final Collection<? extends RpcDefinition> oldRPCs = this.oldModule.getRpcs();
         final Collection<? extends RpcDefinition> newRPCs = this.newModule.getRpcs();
         for (final RpcDefinition oldRPC : oldRPCs) {
+            this.oldSchemaIS.enterDataTree(QName.create(this.oldModule.getQNameModule(),
+                    oldRPC.getQName().getLocalName()));
             boolean rpcFound = false;
             for (final RpcDefinition newRPC : newRPCs) {
+                this.newSchemaIS.enterDataTree(QName.create(this.newModule.getQNameModule(),
+                        newRPC.getQName().getLocalName()));
                 if (oldRPC.equals(newRPC)) {
                     checkReference(oldRPC.getReference(), newRPC.getReference());
-                    checkStatus(oldRPC.getStatus(), newRPC.getStatus(), oldRPC.getPath(), newRPC.getPath());
+                    checkStatus(oldRPC.getStatus(), newRPC.getStatus(), this.oldSchemaIS.toSchemaNodeIdentifier(),
+                            this.newSchemaIS.toSchemaNodeIdentifier());
                     findNodesRecursively(Collections.singletonList(oldRPC.getInput()));
                     findNodesRecursively(Collections.singletonList(oldRPC.getOutput()));
                     rpcFound = true;
                     break;
                 }
+                this.newSchemaIS.exit();
             }
             if (!rpcFound) {
                 errors.add(missingNodeError().updateInformation("missing rpc node",
-                        oldRPC.getPath().toString()));
+                        getPathFromSchemaIS(oldSchemaIS)));
             }
+            this.oldSchemaIS.exit();
         }
     }
 
@@ -244,7 +259,8 @@ public class CheckUpdateFrom {
             for (final AugmentationSchemaNode newAug : newAugmentations) {
                 if (oldAug.getTargetPath().equals(newAug.getTargetPath())) {
                     checkReference(oldAug.getReference(), newAug.getReference());
-                    checkStatus(oldAug.getStatus(), newAug.getStatus(), oldAug.getTargetPath(), newAug.getTargetPath());
+                    checkStatus(oldAug.getStatus(), newAug.getStatus(), oldAug.getTargetPath(),
+                            newAug.getTargetPath());
                     findNodesRecursively(oldAug.getChildNodes());
                     augFound = true;
                     break;
@@ -261,29 +277,38 @@ public class CheckUpdateFrom {
         final Collection<? extends NotificationDefinition> oldNotifications = this.oldModule.getNotifications();
         final Collection<? extends NotificationDefinition> newNotifications = this.newModule.getNotifications();
         for (final NotificationDefinition oldNotification : oldNotifications) {
+            this.oldSchemaIS.enterDataTree(QName.create(this.oldModule.getQNameModule(),
+                    oldNotification.getQName().getLocalName()));
             boolean notificationFound = false;
             for (final NotificationDefinition newNotification : newNotifications) {
                 if (oldNotification.equals(newNotification)) {
+                    this.newSchemaIS.enterDataTree(QName.create(this.newModule.getQNameModule(),
+                            newNotification.getQName().getLocalName()));
                     checkReference(oldNotification.getReference(), newNotification.getReference());
                     checkStatus(oldNotification.getStatus(), newNotification.getStatus(),
-                            oldNotification.getPath(), newNotification.getPath());
+                            this.oldSchemaIS.toSchemaNodeIdentifier(), this.newSchemaIS.toSchemaNodeIdentifier());
                     findNodesRecursively(oldNotification.getChildNodes());
                     notificationFound = true;
+                    this.newSchemaIS.exit();
                     break;
                 }
             }
             if (!notificationFound) {
                 errors.add(missingNodeError().updateInformation("missing notification node",
-                        oldNotification.getPath().toString()));
+                        getPathFromSchemaIS(oldSchemaIS)));
             }
+            this.oldSchemaIS.exit();
         }
     }
 
     private void findNodesRecursively(final Collection<? extends DataSchemaNode> childNodes) {
         for (final DataSchemaNode oldNode : childNodes) {
+            this.oldSchemaIS.enterDataTree(QName.create(this.oldModule.getQNameModule(),
+                    oldNode.getQName().getLocalName()));
             final DataSchemaNode newNode = checkNodeExists(oldNode);
-
             if (newNode != null) {
+                this.newSchemaIS.enterDataTree(QName.create(this.newModule.getQNameModule(),
+                        newNode.getQName().getLocalName()));
                 checkReference(oldNode.getReference(), newNode.getReference());
                 checkMust(oldNode, newNode);
                 if (is7950) {
@@ -291,7 +316,8 @@ public class CheckUpdateFrom {
                 }
                 checkMandatory(oldNode, newNode);
                 checkState(oldNode, newNode);
-                checkStatus(oldNode.getStatus(), newNode.getStatus(), oldNode.getPath(), newNode.getPath());
+                checkStatus(oldNode.getStatus(), newNode.getStatus(), this.oldSchemaIS.toSchemaNodeIdentifier(),
+                        this.newSchemaIS.toSchemaNodeIdentifier());
                 if (oldNode instanceof ElementCountConstraintAware) {
                     checkMinElements(oldNode, newNode);
                     checkMaxElements(oldNode, newNode);
@@ -305,7 +331,9 @@ public class CheckUpdateFrom {
                 if (oldNode instanceof DataNodeContainer) {
                     findNodesRecursively(((DataNodeContainer) oldNode).getChildNodes());
                 }
+                this.newSchemaIS.exit();
             }
+            this.oldSchemaIS.exit();
         }
     }
 
@@ -355,9 +383,9 @@ public class CheckUpdateFrom {
             final Integer newMaxElements = newElementCountConstraint.get().getMaxElements();
             final Integer oldMaxElements = oldElementCountConstraint.get().getMaxElements();
             if (newMaxElements != null && oldMaxElements != null && newMaxElements < oldMaxElements) {
-                errors.add(maxElementsError().updateInformation(newNode.getPath().toString()
+                errors.add(maxElementsError().updateInformation(getPathFromSchemaIS(this.newSchemaIS)
                                 + MAX_ELEMENTS + newMaxElements,
-                        oldNode.getPath().toString() + MAX_ELEMENTS + oldMaxElements));
+                        getPathFromSchemaIS(this.oldSchemaIS) + MAX_ELEMENTS + oldMaxElements));
             }
         }
     }
@@ -369,21 +397,21 @@ public class CheckUpdateFrom {
                 ((ElementCountConstraintAware) newNode).getElementCountConstraint();
         if (newElementCountConstraint.isPresent() && oldElementCountConstraint.isEmpty()) {
             if (newElementCountConstraint.get().getMinElements() != null) {
-                errors.add(minElementsError().updateInformation(newNode.getPath().toString()
+                errors.add(minElementsError().updateInformation(getPathFromSchemaIS(this.newSchemaIS)
                                 + MIN_ELEMENTS + newElementCountConstraint.get().getMinElements(),
-                        oldNode.getPath().toString() + MIN_ELEMENTS + DONT_EXISTS));
+                        getPathFromSchemaIS(this.oldSchemaIS) + MIN_ELEMENTS + DONT_EXISTS));
             }
         } else if (newElementCountConstraint.isPresent()) {
             final Integer newMinElements = newElementCountConstraint.get().getMinElements();
             final Integer oldMinElements = oldElementCountConstraint.get().getMinElements();
             if (newMinElements != null && oldMinElements == null) {
-                errors.add(minElementsError().updateInformation(newNode.getPath().toString()
+                errors.add(minElementsError().updateInformation(getPathFromSchemaIS(this.newSchemaIS)
                                 + MIN_ELEMENTS + newElementCountConstraint.get().getMinElements(),
-                        oldNode.getPath().toString() + MIN_ELEMENTS + DONT_EXISTS));
+                        getPathFromSchemaIS(this.oldSchemaIS) + MIN_ELEMENTS + DONT_EXISTS));
             } else if (newMinElements != null && oldMinElements < newMinElements) {
-                errors.add(minElementsError().updateInformation(newNode.getPath().toString()
+                errors.add(minElementsError().updateInformation(getPathFromSchemaIS(this.newSchemaIS)
                                 + MIN_ELEMENTS + newElementCountConstraint.get().getMinElements(),
-                        oldNode.getPath().toString() + MIN_ELEMENTS
+                        getPathFromSchemaIS(this.oldSchemaIS) + MIN_ELEMENTS
                                 + oldElementCountConstraint.get().getMinElements()));
             }
 
@@ -394,23 +422,23 @@ public class CheckUpdateFrom {
         final TypeDefinition<?> oldBaseType = baseTypeOf(oldNode);
         final TypeDefinition<?> newBaseType = baseTypeOf(newNode);
 
-        newBaseType.getPath();
-
         final String oldQname = oldBaseType.getQName().getLocalName();
         final String newQname = newBaseType.getQName().getLocalName();
         if (!oldQname.equals(newQname)) {
-            errors.add(typeError().updateInformation(newNode.getPath().toString() + "\ntype: " + newQname,
-                    oldNode.getPath().toString() + "\ntype: " + oldQname));
+            final String oldPath = buildTypeDefinitionPath(oldNode, this.oldSchemaIS);
+            final String newPath = buildTypeDefinitionPath(newNode, this.newSchemaIS);
+            errors.add(typeError().updateInformation(newPath + "\ntype: " + newQname,
+                    oldPath + "\ntype: " + oldQname));
             return true;
         }
         return false;
     }
 
     private void checkStatus(final Status oldStatus, final Status newStatus, final SchemaNodeIdentifier oldPath,
-                             final SchemaNodeIdentifier newPath) {
+            final SchemaNodeIdentifier newPath) {
         if (oldStatus.compareTo(newStatus) > 0) {
-            errors.add(statusError().updateInformation(newPath.toString() + STATUS + newStatus,
-                    oldPath.toString() + STATUS + oldStatus));
+            errors.add(statusError().updateInformation(newPath.asSchemaPath() + STATUS + newStatus,
+                    oldPath.asSchemaPath() + STATUS + oldStatus));
         }
     }
 
@@ -423,15 +451,15 @@ public class CheckUpdateFrom {
     }
 
     private void checkState(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        final boolean oldIsConfig = oldNode.isConfiguration();
-        final boolean newIsConfig = newNode.isConfiguration();
+        final boolean oldIsConfig = oldNode.effectiveConfig().orElse(Boolean.TRUE);
+        final boolean newIsConfig = newNode.effectiveConfig().orElse(Boolean.TRUE);
         if ((!oldIsConfig && newIsConfig)
                 && (newNode instanceof MandatoryAware && ((MandatoryAware) newNode).isMandatory())) {
-            errors.add(illegalConfigStateError().updateInformation(newNode.getPath().toString()
+            errors.add(illegalConfigStateError().updateInformation(getPathFromSchemaIS(this.newSchemaIS)
                             + CONFIG + "true mandatory true",
                     oldNode.getQName().toString() + CONFIG + FALSE));
         } else if (oldIsConfig && !newIsConfig) {
-            errors.add(illegalConfigChangeError().updateInformation(newNode.getPath().toString()
+            errors.add(illegalConfigChangeError().updateInformation(getPathFromSchemaIS(this.newSchemaIS)
                             + CONFIG + FALSE,
                     oldNode.getQName().toString() + CONFIG + "true"));
         }
@@ -442,8 +470,9 @@ public class CheckUpdateFrom {
             final boolean oldMandatory = ((MandatoryAware) oldNode).isMandatory();
             final boolean newMandatory = ((MandatoryAware) newNode).isMandatory();
             if (!oldMandatory && newMandatory) {
-                errors.add(mandatoryError().updateInformation(newNode.getPath().toString() + "\nmandatory: true",
-                        oldNode.getPath().toString() + "\nmandatroy: false"));
+                errors.add(mandatoryError().updateInformation(getPathFromSchemaIS(this.newSchemaIS)
+                                + "\nmandatory: true", getPathFromSchemaIS(this.oldSchemaIS)
+                                + "\nmandatroy: false"));
             }
         }
     }
@@ -452,28 +481,27 @@ public class CheckUpdateFrom {
         if (newNode instanceof MustConstraintAware) {
             final Collection<? extends MustDefinition> newMust = ((MustConstraintAware) newNode).getMustConstraints();
             if (oldNode instanceof MustConstraintAware) {
-                checkOldAndNewMust(oldNode, newNode, newMust);
+                checkOldAndNewMust(oldNode, newMust);
             } else {
                 errors.add(addedMustError().updateInformation(
-                        newNode.getPath().toString() + MUST + new ArrayList<>(newMust).toString(),
+                        this.newSchemaIS.toSchemaPath() + MUST + new ArrayList<>(newMust).toString(),
                         DONT_EXISTS));
             }
         }
     }
 
-    private void checkOldAndNewMust(final DataSchemaNode oldNode, final DataSchemaNode newNode,
-            final Collection<? extends MustDefinition> newMust) {
+    private void checkOldAndNewMust(final DataSchemaNode oldNode, final Collection<? extends MustDefinition> newMust) {
         final Collection<? extends MustDefinition> oldMust = ((MustConstraintAware) oldNode).getMustConstraints();
         if (oldMust.size() < newMust.size()) {
             errors.add(addedMustError().updateInformation(
-                    newNode.getPath().toString() + MUST + getXpathStringFromMustCollection(newMust),
-                    oldNode.getPath().toString() + MUST + getXpathStringFromMustCollection(oldMust)));
+                    getPathFromSchemaIS(this.newSchemaIS) + MUST + getXpathStringFromMustCollection(newMust),
+                    getPathFromSchemaIS(this.oldSchemaIS) + MUST + getXpathStringFromMustCollection(oldMust)));
         } else {
             for (MustDefinition newMustDefinition : newMust) {
                 if (!oldMust.contains(newMustDefinition)) {
                     errors.add(checkMustWarning().updateInformation(
-                            newNode.getPath().toString() + MUST + newMustDefinition.getXpath().toString(),
-                            oldNode.getPath().toString() + MUST + getXpathStringFromMustCollection(oldMust)));
+                            getPathFromSchemaIS(this.newSchemaIS) + MUST + newMustDefinition.getXpath().toString(),
+                            getPathFromSchemaIS(this.oldSchemaIS) + MUST + getXpathStringFromMustCollection(oldMust)));
                 }
             }
         }
@@ -490,13 +518,13 @@ public class CheckUpdateFrom {
         final Optional<? extends QualifiedBound> oldWhen = oldNode.getWhenCondition();
         if (oldWhen.isEmpty() && newWhen.isPresent()) {
             errors.add(addedWhenError().updateInformation(
-                    newNode.getPath().toString() + WHEN + newWhen.get().toString(),
-                    oldNode.getPath().toString() + WHEN + DONT_EXISTS));
+                    getPathFromSchemaIS(this.newSchemaIS) + WHEN + newWhen.get().toString(),
+                    getPathFromSchemaIS(this.oldSchemaIS) + WHEN + DONT_EXISTS));
         } else if (oldWhen.isPresent() && newWhen.isPresent()
                 && (!oldWhen.get().toString().equals(newWhen.get().toString()))) {
             errors.add(checkWhenWarning().updateInformation(
-                    newNode.getPath().toString() + WHEN + newWhen.get().toString(),
-                    oldNode.getPath().toString() + WHEN + oldWhen.get().toString()));
+                    getPathFromSchemaIS(this.newSchemaIS) + WHEN + newWhen.get().toString(),
+                    getPathFromSchemaIS(this.oldSchemaIS) + WHEN + oldWhen.get().toString()));
         }
     }
 
@@ -510,8 +538,9 @@ public class CheckUpdateFrom {
         final Optional<String> oldUnit = oldNode.getUnits();
         final Optional<String> newUnit = newNode.getUnits();
         if (oldUnit.isPresent() && newUnit.isEmpty()) {
+            final String oldPath = buildTypeDefinitionPath(oldNode, this.oldSchemaIS);
             errors.add(unitsError().updateInformation(DONT_EXISTS,
-                    oldNode.getPath().toString() + "\nunits: " + oldUnit.get()));
+                    oldPath + "\nunits: " + oldUnit.get()));
         }
     }
 
@@ -519,8 +548,9 @@ public class CheckUpdateFrom {
         final Optional<?> oldDefault = oldNode.getDefaultValue();
         final Optional<?> newDefault = newNode.getDefaultValue();
         if (oldDefault.isPresent() && (newDefault.isEmpty() || !oldDefault.get().equals(newDefault.get()))) {
+            final String oldPath = buildTypeDefinitionPath(oldNode, this.oldSchemaIS);
             errors.add(defaultError().updateInformation(DONT_EXISTS,
-                    oldNode.getPath().toString() + "\ndefault: " + oldDefault.get().toString()));
+                    oldPath + "\ndefault: " + oldDefault.get().toString()));
         }
     }
 
@@ -530,9 +560,11 @@ public class CheckUpdateFrom {
         final Optional<RangeConstraint<?>> newRange =
                 ((RangeRestrictedTypeDefinition) newNode).getRangeConstraint();
         if (oldRange.isPresent()) {
+            final String oldPath = buildTypeDefinitionPath(oldNode, this.oldSchemaIS);
+            final String newPath = buildTypeDefinitionPath(newNode, this.newSchemaIS);
             if (newRange.isEmpty()) {
                 errors.add(rangeError().updateInformation(DONT_EXISTS,
-                        oldNode.getPath().toString() + RANGES + oldRange.get().toString()));
+                        oldPath + RANGES + oldRange.get().toString()));
             } else {
                 final RangeConstraint<?> oldRangeConstraint = oldRange.get();
                 final RangeConstraint<?> newRangeConstraint = newRange.get();
@@ -542,8 +574,8 @@ public class CheckUpdateFrom {
                     checkReference(oldRangeConstraint.getReference(), newRangeConstraint.getReference());
                 } else {
                     errors.add(rangeError().updateInformation(
-                            newNode.getPath().toString() + RANGES + newRangeSet.toString(),
-                            oldNode.getPath().toString() + RANGES + oldRangeSet.toString()));
+                            newPath + RANGES + newRangeSet.toString(),
+                            oldPath + RANGES + oldRangeSet.toString()));
                 }
             }
         }
@@ -553,12 +585,14 @@ public class CheckUpdateFrom {
                              final LengthRestrictedTypeDefinition<?> newNode) {
         final Optional<LengthConstraint> oldLengths = oldNode.getLengthConstraint();
         final Optional<LengthConstraint> newLengths = newNode.getLengthConstraint();
+        final String oldPath = buildTypeDefinitionPath(oldNode, this.oldSchemaIS);
+        final String newPath = buildTypeDefinitionPath(newNode, this.newSchemaIS);
 
         if (oldLengths.isPresent()) {
             if (newLengths.isEmpty()) {
                 if (!oldLengths.get().getAllowedRanges().equals(INTEGER_ALLOWED_RANGES)) {
                     errors.add(lengthError().updateInformation(DONT_EXISTS,
-                            oldNode.getPath().toString() + LENGTH
+                            oldPath + LENGTH
                                     + oldLengths.get().getAllowedRanges().toString()));
                 }
             } else {
@@ -570,8 +604,8 @@ public class CheckUpdateFrom {
                     checkReference(oldLengthConstraint.getReference(), newLengthConstraint.getReference());
                 } else {
                     errors.add(lengthError().updateInformation(
-                            newNode.getPath().toString() + LENGTH + newRangeSet.toString(),
-                            oldNode.getPath().toString() + LENGTH + oldRangeSet.toString()));
+                            newPath + LENGTH + newRangeSet,
+                            oldPath + LENGTH + oldRangeSet));
                 }
             }
         }
@@ -679,7 +713,8 @@ public class CheckUpdateFrom {
         if (dataChildByName.isPresent()) {
             return dataChildByName.get();
         } else {
-            errors.add(missingNodeError().updateInformation("missing node", node.getPath().toString()));
+            errors.add(missingNodeError().updateInformation("missing node",
+                    getPathFromSchemaIS(this.oldSchemaIS)));
             return null;
         }
     }
@@ -703,11 +738,11 @@ public class CheckUpdateFrom {
 
             final List<Revision> newDates = revisionsNew
                     .stream()
-                    .map(RevisionStatement::getDate)
+                    .map(RevisionStatement::argument)
                     .collect(Collectors.toList());
             for (RevisionStatement oldRev : revisionsOld) {
-                if (!newDates.contains(oldRev.getDate())) {
-                    errors.add(missingOldRevision().updateInformation(DONT_EXISTS, oldRev.getDate().toString()));
+                if (!newDates.contains(oldRev.argument())) {
+                    errors.add(missingOldRevision().updateInformation(DONT_EXISTS, oldRev.argument().toString()));
                 }
             }
         }
@@ -739,6 +774,23 @@ public class CheckUpdateFrom {
                 Collections.singletonList("--rfc-version"), false, "?", 6020,
                 new CollectionArgumentChoice<>(Arrays.asList(6020, 7950)), Integer.TYPE);
         return groupArguments;
+    }
+
+    private String buildTypeDefinitionPath(final TypeDefinition<?> typeDefinition,
+            final SchemaInferenceStack schemaIS) {
+        if (schemaIS.toInference().statementPath().size() == 1
+                && schemaIS.toInference().statementPath().get(0) instanceof TypedefEffectiveStatement) {
+            return schemaIS.toSchemaPath().toString();
+        } else {
+            if (schemaIS.toSchemaNodeIdentifier().asSchemaPath().getLastComponent().equals(typeDefinition.getQName())) {
+                return getPathFromSchemaIS(schemaIS);
+            }
+            return String.format("%s TypeDefinition: [%s]", getPathFromSchemaIS(schemaIS), typeDefinition.getQName());
+        }
+    }
+
+    private String getPathFromSchemaIS(final SchemaInferenceStack schemaInferenceStack) {
+        return schemaInferenceStack.toSchemaNodeIdentifier().asSchemaPath().toString();
     }
 
 }

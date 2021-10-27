@@ -310,7 +310,7 @@ public final class Main {
             if (yangFiles.size() != 1) {
                 throw new LyvApplicationException("Check-update-from option may be used with single module only");
             }
-            final SchemaContext contextFrom;
+            final EffectiveModelContext contextFrom;
             try {
                 final YangContextFactory contextFactoryFrom =
                         new YangContextFactory(initYangDirsPath(

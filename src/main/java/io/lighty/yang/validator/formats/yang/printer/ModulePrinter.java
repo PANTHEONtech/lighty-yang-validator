@@ -418,22 +418,22 @@ public class ModulePrinter {
     private void printEachRevision(final Collection<? extends RevisionStatement> revisions) {
         for (RevisionStatement rev : revisions) {
             if (rev.getDescription().isPresent() || rev.getReference().isPresent()) {
-                printer.openStatement(Statement.REVISION, rev.getDate().toString());
+                printer.openStatement(Statement.REVISION, rev.argument().toString());
                 final Optional<ReferenceStatement> optReference = rev.getReference();
                 if (optReference.isPresent()) {
                     printer.printSimpleSeparately(REFERENCE_STRING, "\""
-                            + optReference.get().getText() + "\"");
+                            + optReference.get().rawArgument() + "\"");
                 }
                 final Optional<DescriptionStatement> optDescription = rev.getDescription();
                 if (optDescription.isPresent()) {
                     printer.printSimpleSeparately(DESCRIPTION_STRING, "\""
-                            + optDescription.get().getText() + "\"");
+                            + optDescription.get().rawArgument() + "\"");
 
                 }
                 printer.closeStatement();
                 printer.printEmptyLine();
             } else {
-                doPrintSimpleRevision(rev.getDate());
+                doPrintSimpleRevision(rev.argument());
             }
         }
     }
