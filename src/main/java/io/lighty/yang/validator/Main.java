@@ -35,6 +35,7 @@ import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
@@ -229,7 +231,23 @@ public final class Main {
             throw new LyvApplicationException("Could not read manifest", e);
         }
         Attributes attr = manifest.getMainAttributes();
-        return attr.getValue("Bundle-Version");
+
+        String version = attr.getValue("Bundle-Version");
+        if (version == null) {
+            String propertiesPath = classPath.substring(0, classPath.lastIndexOf("!") + 1)
+                    + "/META-INF/maven/org.opendaylight.yangtools/yang-model-api/pom.properties";
+            Properties properties = new Properties();
+            try {
+                InputStream is = new URL(propertiesPath).openStream();
+                if (is != null) {
+                    properties.load(is);
+                    version = properties.getProperty("version", "");
+                }
+            } catch (IOException e) {
+                throw new LyvApplicationException("Could not read properties file", e);
+            }
+        }
+        return version;
     }
 
     private static void setMainLoggerOutput(final Configuration config) {
