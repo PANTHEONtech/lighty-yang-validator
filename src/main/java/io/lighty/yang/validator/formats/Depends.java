@@ -123,6 +123,9 @@ public class Depends extends FormatPlugin {
             if (dependConfiguration.getExcludedModuleNames().contains(moduleName)) {
                 continue;
             }
+            if (dependantsBuilder.length() > 0) {
+                dependantsBuilder.append(' ');
+            }
             dependantsBuilder.append(moduleName);
             final Optional<Revision> revision = subModule.getRevision();
             if (revision.isPresent()) {
