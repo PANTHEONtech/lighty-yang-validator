@@ -1790,7 +1790,7 @@
   ],
   "notifications": [
     {
-      "path": "AbsoluteSchemaPath{path=[(urn:ietf:params:xml:ns:yang:ietf-connection-oriented-oam?revision=2019-04-16)defect-condition-notification]}",
+      "path": "Absolute{qnames=[(urn:ietf:params:xml:ns:yang:ietf-connection-oriented-oam?revision=2019-04-16)defect-condition-notification]}",
       "type_info": {},
       "children": [
         {
@@ -1978,7 +1978,7 @@
       "status": "CURRENT"
     },
     {
-      "path": "AbsoluteSchemaPath{path=[(urn:ietf:params:xml:ns:yang:ietf-connection-oriented-oam?revision=2019-04-16)defect-cleared-notification]}",
+      "path": "Absolute{qnames=[(urn:ietf:params:xml:ns:yang:ietf-connection-oriented-oam?revision=2019-04-16)defect-cleared-notification]}",
       "type_info": {},
       "children": [
         {
