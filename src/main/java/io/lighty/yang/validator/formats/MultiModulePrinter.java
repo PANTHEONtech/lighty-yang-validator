@@ -30,7 +30,6 @@ import org.opendaylight.yangtools.yang.common.QNameModule;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.type.UnionTypeDefinition;
@@ -135,7 +134,7 @@ public class MultiModulePrinter extends FormatPlugin {
             resolveType(type, module);
 
         }
-        for (final SchemaTree child : tree.getChildren().values()) {
+        for (final SchemaTree child : tree.getChildren()) {
             gatherUsedTypeDefs(child, module);
         }
     }
@@ -162,12 +161,12 @@ public class MultiModulePrinter extends FormatPlugin {
     }
 
     private void splitTree(final SchemaTree tree) {
-        for (final Map.Entry<SchemaPath, SchemaTree> child : tree.getChildren().entrySet()) {
-            if (child.getValue().isRootNode()) {
-                final QNameModule childModule = child.getKey().getLastComponent().getModule();
-                subtrees.computeIfAbsent(childModule, k -> new HashSet<>()).add(child.getValue());
+        for (final SchemaTree child : tree.getChildren()) {
+            if (child.isRootNode()) {
+                final QNameModule childModule = child.getQname().getModule();
+                subtrees.computeIfAbsent(childModule, k -> new HashSet<>()).add(child);
             }
-            splitTree(child.getValue());
+            splitTree(child);
         }
     }
 
