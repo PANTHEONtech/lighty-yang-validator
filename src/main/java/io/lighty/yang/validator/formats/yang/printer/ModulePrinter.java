@@ -29,7 +29,6 @@ import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerLike;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DerivableSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.GroupingDefinition;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
@@ -38,7 +37,6 @@ import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
@@ -46,6 +44,7 @@ import org.opendaylight.yangtools.yang.model.api.stmt.DescriptionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ReferenceStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.RevisionStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
 import org.opendaylight.yangtools.yang.xpath.api.YangXPathExpression.QualifiedBound;
 import org.slf4j.Logger;
 
@@ -101,7 +100,7 @@ public class ModulePrinter {
         printHeader();
         typePrinter.printTypedefs(printer, usedTypes);
         printAugmentations();
-        for (SchemaTree st : schemaTree) {
+        for (final SchemaTree st : schemaTree) {
             if (!st.isAugmenting()) {
                 printSchema(st);
             }
@@ -113,7 +112,7 @@ public class ModulePrinter {
     private void printAugmentations() {
         for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
             boolean printOpeningStatement = true;
-            for (SchemaTree st : schemaTree) {
+            for (final SchemaTree st : schemaTree) {
                 if (isStAugmentOrStParentEqualsToAugmPath(st, augmentation)) {
                     printOpeningStatement = isPrintOpeningStatement(augmentation, printOpeningStatement);
                     doPrintSchema(true, st, null, groupingTreesMap);
@@ -149,15 +148,15 @@ public class ModulePrinter {
     private void printGroupings(final HashMap<GroupingDefinition, Set<SchemaTree>> trees) {
         for (final Map.Entry<GroupingDefinition, Set<SchemaTree>> tree : trees.entrySet()) {
             printer.openStatement(Statement.GROUPING, tree.getKey().getQName().getLocalName());
-            for (SchemaTree entry : tree.getValue()) {
-                doPrintSchema(true, entry, tree.getKey().getPath().getLastComponent().getLocalName(),
-                        new HashMap<>());
+            for (final SchemaTree entry : tree.getValue()) {
+                doPrintSchema(true, entry, tree.getKey().getQName().getLocalName(), new HashMap<>());
             }
             printer.closeStatement();
         }
     }
 
-    private boolean doPrintUses(final DataSchemaNode schemaNode, boolean isPrintingAllowed, final String groupingName,
+    private boolean doPrintUses(final DataSchemaNode schemaNode, final boolean isPrintingAllowed,
+            final String groupingName,
             final SchemaTree tree, final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
         if (schemaNode.isAddedByUses()) {
             return printingUses(schemaNode, isPrintingAllowed, groupingName, tree, groupingTrees);
@@ -165,32 +164,32 @@ public class ModulePrinter {
         return isPrintingAllowed;
     }
 
-    private boolean printingUses(final DataSchemaNode schemaNode, boolean isPrintingAllowed,
+    private boolean printingUses(final DataSchemaNode schemaNode, final boolean isPrintingAllowed,
             final String groupingName, final SchemaTree tree,
             final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
         final List<GroupingDefinition> groupingDefinitions = module.getGroupings().stream()
                 .filter(g -> g.findDataChildByName(schemaNode.getQName()).isPresent())
                 .collect(Collectors.toList());
-        Optional<GroupingDefinition> match = findMatchInGroupingDefinitions(groupingDefinitions, schemaNode);
+        final Optional<GroupingDefinition> match = findMatchInGroupingDefinitions(groupingDefinitions, schemaNode);
         if (match.isEmpty()) {
             return isPrintingAllowed;
         }
 
         final GroupingDefinition groupingDefinition = match.get();
-        if (groupingDefinition.getPath().getLastComponent().getLocalName().equals(groupingName)) {
+        if (groupingDefinition.getQName().getLocalName().equals(groupingName)) {
             return isPrintingAllowed;
         }
-        String uses = groupingDefinition.getPath().getLastComponent().getLocalName();
+        final String uses = groupingDefinition.getQName().getLocalName();
         if (!groupingTrees.containsKey(groupingDefinition)) {
             groupingTrees.put(groupingDefinition, new HashSet<>());
         }
 
-        Set<SchemaTree> schemaTrees = groupingTrees.get(groupingDefinition);
+        final Set<SchemaTree> schemaTrees = groupingTrees.get(groupingDefinition);
         if (tree.getSchemaNode() instanceof ChoiceSchemaNode) {
             resolveChoiceSchemaNode(schemaTrees, tree);
         } else {
             boolean containsKey = false;
-            for (SchemaTree st : schemaTrees) {
+            for (final SchemaTree st : schemaTrees) {
                 if (st.getSchemaNode().getQName().equals(tree.getSchemaNode().getQName())) {
                     containsKey = true;
                     break;
@@ -210,22 +209,19 @@ public class ModulePrinter {
     private Optional<GroupingDefinition> findMatchInGroupingDefinitions(
             final List<GroupingDefinition> groupingDefinitions, final DataSchemaNode schemaNode) {
         Optional<GroupingDefinition> match;
-        for (GroupingDefinition grouping : groupingDefinitions) {
+        for (final GroupingDefinition grouping : groupingDefinitions) {
             final Optional<DataSchemaNode> dataChildByName = grouping.findDataChildByName(schemaNode.getQName());
             if (dataChildByName.isEmpty()) {
                 continue;
             }
-            DataSchemaNode dataSchemaNode = dataChildByName.get();
-            if (isSchemaNodePathEqualsToDataSchemaNodePath(schemaNode, dataSchemaNode)) {
-                continue;
-            }
+            final DataSchemaNode dataSchemaNode = dataChildByName.get();
 
             if (!(dataSchemaNode instanceof EffectiveStatement || schemaNode instanceof EffectiveStatement)) {
                 continue;
             }
-            Collection<? extends EffectiveStatement<?, ?>> effectiveStatements =
-                    ((EffectiveStatement<?, ?>) dataSchemaNode).effectiveSubstatements();
-            EffectiveStatement<?, ?> effectiveSchemaNode = (EffectiveStatement<?, ?>) schemaNode;
+            final Collection<? extends EffectiveStatement<?, ?>> effectiveStatements
+                    = ((EffectiveStatement<?, ?>) dataSchemaNode).effectiveSubstatements();
+            final EffectiveStatement<?, ?> effectiveSchemaNode = (EffectiveStatement<?, ?>) schemaNode;
             if (effectiveSchemaNode.effectiveSubstatements().size() != effectiveStatements.size()) {
                 continue;
             }
@@ -241,11 +237,11 @@ public class ModulePrinter {
     private void resolveChoiceSchemaNode(final Set<SchemaTree> schemaTrees, final SchemaTree tree) {
         boolean extendedTree = false;
         for (final SchemaTree st : schemaTrees) {
-            if (st.getSchemaNode() instanceof ChoiceSchemaNode && isEqualsSchemaTreeLastComponents(st, tree)) {
+            if (st.getSchemaNode() instanceof ChoiceSchemaNode && st.getQname().equals(tree.getQname())) {
                 extendedTree = true;
-                for (Map.Entry<SchemaPath, SchemaTree> entry : tree.getChildren().entrySet()) {
-                    if (!st.getChildren().containsKey(entry.getKey())) {
-                        st.addChild(entry.getValue());
+                for (final SchemaTree entry : tree.getChildren()) {
+                    if (!st.getChildren().contains(entry)) {
+                        st.addChild(entry);
                     }
                 }
             }
@@ -255,11 +251,10 @@ public class ModulePrinter {
         }
     }
 
-
     private Optional<GroupingDefinition> getGroupingDefinitionMatch(final EffectiveStatement<?, ?> schemaNode,
             final Collection<? extends EffectiveStatement<?, ?>> collection, final GroupingDefinition grouping) {
         boolean allSubstatementFound = true;
-        for (EffectiveStatement<?,?> compare : schemaNode.effectiveSubstatements()) {
+        for (final EffectiveStatement<?, ?> compare : schemaNode.effectiveSubstatements()) {
             if (isSubstatementNotFound(collection, compare)) {
                 allSubstatementFound = false;
                 break;
@@ -273,7 +268,7 @@ public class ModulePrinter {
 
     private boolean isSubstatementNotFound(final Collection<? extends EffectiveStatement<?, ?>> collection,
             final EffectiveStatement<?, ?> compare) {
-        for (EffectiveStatement<?, ?> substatement : collection) {
+        for (final EffectiveStatement<?, ?> substatement : collection) {
             if (compare.getDeclared() == null) {
                 if (compare.equals(substatement)) {
                     return false;
@@ -329,7 +324,7 @@ public class ModulePrinter {
             doPrintReference(schemaNode);
             doPrintWhen(schemaNode);
         }
-        for (final SchemaTree child : tree.getChildren().values()) {
+        for (final SchemaTree child : tree.getChildren()) {
             doPrintSchema(isPrintingAllowed, child, groupingName, groupingTrees);
         }
         if (isPrintingAllowed) {
@@ -340,8 +335,7 @@ public class ModulePrinter {
     private void doPrintWhen(final DataSchemaNode schemaNode) {
         final Optional<? extends QualifiedBound> whenCondition = schemaNode.getWhenCondition();
         if (whenCondition.isPresent()) {
-            printer.printSimple("when",
-                    "\"" + whenCondition.get().toString() + "\"");
+            printer.printSimple("when", "\"" + whenCondition.get() + "\"");
             printer.printEmptyLine();
         }
     }
@@ -376,7 +370,7 @@ public class ModulePrinter {
         printer.openStatement(Statement.MODULE, module.getName());
         printer.printSimple("yang-version", module.getYangVersion().toString());
         printer.printEmptyLine();
-        printer.printSimple("namespace", "\"" + module.getNamespace().toString() + "\"");
+        printer.printSimple("namespace", "\"" + module.getNamespace() + "\"");
         printer.printEmptyLine();
         printer.printSimple("prefix", module.getPrefix());
         printer.printEmptyLine();
@@ -416,7 +410,7 @@ public class ModulePrinter {
     }
 
     private void printEachRevision(final Collection<? extends RevisionStatement> revisions) {
-        for (RevisionStatement rev : revisions) {
+        for (final RevisionStatement rev : revisions) {
             if (rev.getDescription().isPresent() || rev.getReference().isPresent()) {
                 printer.openStatement(Statement.REVISION, rev.argument().toString());
                 final Optional<ReferenceStatement> optReference = rev.getReference();
@@ -454,21 +448,15 @@ public class ModulePrinter {
         }
     }
 
-    private static boolean isSchemaNodePathEqualsToDataSchemaNodePath(final DataSchemaNode schemaNode,
-            final DataSchemaNode dataSchemaNode) {
-        return ((DerivableSchemaNode) schemaNode).getOriginal().isPresent()
-                && (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath().equals(dataSchemaNode.getPath()));
-    }
-
-    private static boolean isEqualsSchemaTreeLastComponents(final SchemaTree st, final SchemaTree tree) {
-        return st.getSchemaNode().getPath().getLastComponent()
-                .equals(tree.getSchemaNode().getPath().getLastComponent());
-    }
-
-    private boolean isStAugmentOrStParentEqualsToAugmPath(final SchemaTree st,
-            final AugmentationSchemaNode augmentation) {
-        return st.isAugmenting()
-                && st.getSchemaNode().getPath().getParent().equals(augmentation.getTargetPath().asSchemaPath());
+    private boolean isStAugmentOrStParentEqualsToAugmPath(final SchemaTree st, final AugmentationSchemaNode augmSN) {
+        if (st.isAugmenting()) {
+            final List<QName> qnamePath = st.getAbsolutePath().getNodeIdentifiers();
+            if (qnamePath.size() > 1) {
+                final Absolute parentPath = Absolute.of(qnamePath.subList(0, qnamePath.size() - 1));
+                return parentPath.equals(augmSN.getTargetPath());
+            }
+        }
+        return false;
     }
 
 }
