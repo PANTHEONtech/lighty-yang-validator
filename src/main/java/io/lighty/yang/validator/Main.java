@@ -52,7 +52,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.parser.api.YangParserException;
 import org.opendaylight.yangtools.yang.parser.spi.source.SourceException;
 import org.slf4j.Logger;
@@ -128,7 +127,7 @@ public final class Main {
 
             final String yangtoolsVersion;
             try {
-                yangtoolsVersion = getYangtoolsVersion(SchemaContext.class);
+                yangtoolsVersion = getYangtoolsVersion(EffectiveModelContext.class);
             } catch (LyvApplicationException e) {
                 LOG.error("Exception in LYV application", e);
                 return;

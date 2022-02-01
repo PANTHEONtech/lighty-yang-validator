@@ -14,19 +14,19 @@ import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerLike;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 
 public class LyvNodeData {
 
     private final boolean isKey;
-    private final SchemaContext context;
+    private final EffectiveModelContext context;
     private final SchemaNode node;
 
-    public LyvNodeData(@NonNull final SchemaContext context, @NonNull final SchemaNode node,
+    public LyvNodeData(@NonNull final EffectiveModelContext context, @NonNull final SchemaNode node,
             @Nullable final List<QName> keys) {
         this.context = context;
         this.node = node;
@@ -37,7 +37,7 @@ public class LyvNodeData {
         }
     }
 
-    public SchemaContext getContext() {
+    public EffectiveModelContext getContext() {
         return this.context;
     }
 

@@ -30,6 +30,7 @@ import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerLike;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DerivableSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.GroupingDefinition;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
@@ -37,7 +38,6 @@ import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
@@ -66,7 +66,7 @@ public class ModulePrinter {
 
     private final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTreesMap = new HashMap<>();
 
-    public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
+    public ModulePrinter(final Set<SchemaTree> schemaTree, final EffectiveModelContext schemaContext,
             final QNameModule moduleName, final OutputStream out, final Set<TypeDefinition<?>> usedTypes,
             final Set<String> usedImports) {
         this(schemaTree, schemaContext, moduleName,
@@ -74,13 +74,13 @@ public class ModulePrinter {
                 usedTypes, usedImports);
     }
 
-    public ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
+    public ModulePrinter(final Set<SchemaTree> schemaTree, final EffectiveModelContext schemaContext,
             final QNameModule moduleName, final Logger out, final Set<TypeDefinition<?>> usedTypes,
             final Set<String> usedImports) {
         this(schemaTree, schemaContext, moduleName, new IndentingLogger(out), usedTypes, usedImports);
     }
 
-    private ModulePrinter(final Set<SchemaTree> schemaTree, final SchemaContext schemaContext,
+    private ModulePrinter(final Set<SchemaTree> schemaTree, final EffectiveModelContext schemaContext,
             final QNameModule moduleName, final Indenting printer, final Set<TypeDefinition<?>> usedTypes,
             final Set<String> usedImports) {
         this.usedImports = usedImports;

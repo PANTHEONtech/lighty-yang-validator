@@ -14,8 +14,8 @@ import java.util.Map;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.stmt.IfFeatureStatement;
 
@@ -31,7 +31,7 @@ public class ConsoleLine extends Line {
         this.isConnected = isConnected;
     }
 
-    protected void resolveFlag(SchemaNode node, SchemaContext context) {
+    protected void resolveFlag(SchemaNode node, EffectiveModelContext context) {
         if (node instanceof CaseSchemaNode) {
             this.flag = "";
         } else if (node instanceof NotificationDefinition) {

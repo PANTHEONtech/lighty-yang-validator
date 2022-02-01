@@ -19,9 +19,9 @@ import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
@@ -89,7 +89,7 @@ public class HtmlLine extends Line {
     }
 
     private static String createPath(final Iterable<QName> pathFromRoot,
-            final Map<XMLNamespace, String> namespacePrefix, final SchemaContext context) {
+            final Map<XMLNamespace, String> namespacePrefix, final EffectiveModelContext context) {
         final StringBuilder pathBuilder = new StringBuilder();
         for (QName path : pathFromRoot) {
             final String prefix = namespacePrefix.getOrDefault(path.getNamespace(),
@@ -170,7 +170,7 @@ public class HtmlLine extends Line {
     }
 
     @Override
-    protected void resolveFlag(SchemaNode node, SchemaContext context) {
+    protected void resolveFlag(SchemaNode node, EffectiveModelContext context) {
         if (node instanceof CaseSchemaNode || node instanceof RpcDefinition || node instanceof NotificationDefinition
                 || node instanceof ActionDefinition) {
             // do not emit the "config/no config" for rpc/action/notification/case SchemaNode

@@ -20,9 +20,9 @@ import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Status;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
@@ -78,9 +78,9 @@ abstract class Line {
         resolveIfFeatures(node);
     }
 
-    protected abstract void resolveFlag(SchemaNode node, SchemaContext context);
+    protected abstract void resolveFlag(SchemaNode node, EffectiveModelContext context);
 
-    protected void resolveFlagForDataSchemaNode(final SchemaNode node, final SchemaContext context,
+    protected void resolveFlagForDataSchemaNode(final SchemaNode node, final EffectiveModelContext context,
             final String config, final String noConfig) {
         final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
         final ListIterator<Integer> integerListIterator
