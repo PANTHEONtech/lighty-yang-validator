@@ -82,7 +82,7 @@ public class SchemaSelector {
 
     private void resolveChildNodes(final SchemaTree schemaTree, DataSchemaNode node, boolean rootNode,
                                    boolean augNode) {
-        SchemaTree childSchemaTree = schemaTree.addChild(node, rootNode, augNode);
+        SchemaTree childSchemaTree = schemaTree.addChild(node, rootNode, augNode, node.getPath().asAbsolute());
         if (node instanceof DataNodeContainer) {
             for (DataSchemaNode schemaNode : ((DataNodeContainer) node).getChildNodes()) {
                 resolveChildNodes(childSchemaTree, schemaNode, false, false);
@@ -97,7 +97,7 @@ public class SchemaSelector {
         if (node instanceof ActionNodeContainer) {
             final Collection<? extends ActionDefinition> actions = ((ActionNodeContainer) node).getActions();
             for (ActionDefinition action : actions) {
-                childSchemaTree = childSchemaTree.addChild(action, false, false);
+                childSchemaTree = childSchemaTree.addChild(action, false, false, node.getPath().asAbsolute());
                 if (action.getInput() != null) {
                     resolveChildNodes(childSchemaTree, action.getInput(), false, false);
                 }

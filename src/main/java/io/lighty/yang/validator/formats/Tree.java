@@ -43,7 +43,7 @@ import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,8 +92,8 @@ public class Tree extends FormatPlugin {
             putSchemaContextModuleMatchedWithUsedModuleToNamespacePrefix();
 
             AtomicInteger rootNodes = new AtomicInteger(0);
-            for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
-                if (st.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())
+            for (Map.Entry<SchemaNodeIdentifier, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
+                if (st.getKey().lastNodeIdentifier().getModule().equals(usedModule.getQNameModule())
                         && !st.getValue().isAugmenting()) {
                     rootNodes.incrementAndGet();
                 }
@@ -157,8 +157,8 @@ public class Tree extends FormatPlugin {
 
     private List<Line> getSchemaNodeLines(AtomicInteger rootNodes, List<Integer> removeChoiceQnames) {
         List<Line> lines = new ArrayList<>();
-        for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
-            if (st.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())
+        for (Map.Entry<SchemaNodeIdentifier, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
+            if (st.getKey().lastNodeIdentifier().getModule().equals(usedModule.getQNameModule())
                     && !st.getValue().isAugmenting()) {
                 DataSchemaNode node = st.getValue().getSchemaNode();
                 LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
@@ -242,10 +242,10 @@ public class Tree extends FormatPlugin {
 
     private Map<List<QName>, Set<SchemaTree>> getAugmentationMap() {
         final Map<List<QName>, Set<SchemaTree>> augments = new LinkedHashMap<>();
-        for (Map.Entry<SchemaPath, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
-            if (st.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())
+        for (Map.Entry<SchemaNodeIdentifier, SchemaTree> st : this.schemaTree.getChildren().entrySet()) {
+            if (st.getKey().lastNodeIdentifier().getModule().equals(usedModule.getQNameModule())
                     && st.getValue().isAugmenting()) {
-                final Iterator<QName> iterator = st.getKey().getPathFromRoot().iterator();
+                final Iterator<QName> iterator = st.getKey().getNodeIdentifiers().iterator();
                 List<QName> qnames = new ArrayList<>();
                 while (iterator.hasNext()) {
                     final QName next = iterator.next();
@@ -285,7 +285,7 @@ public class Tree extends FormatPlugin {
         // If action is in container or list
         if (!st.getActionDefinitionChildren().isEmpty()) {
             isConnected.add(hasNext);
-            final Iterator<Map.Entry<SchemaPath, SchemaTree>> actions =
+            final Iterator<Map.Entry<SchemaNodeIdentifier, SchemaTree>> actions =
                     st.getActionDefinitionChildren().entrySet().iterator();
             while (actions.hasNext()) {
                 resolveActions(lines, isConnected, hasNext, removeChoiceQnames, actions);
@@ -356,16 +356,16 @@ public class Tree extends FormatPlugin {
     }
 
     private void resolveActions(final List<Line> lines, final List<Boolean> isConnected, boolean hasNext,
-            final List<Integer> removeChoiceQnames, final Iterator<Map.Entry<SchemaPath, SchemaTree>> actions) {
-        final Map.Entry<SchemaPath, SchemaTree> nextST = actions.next();
-        if (nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
+            final List<Integer> removeChoiceQnames, final Iterator<Map.Entry<SchemaNodeIdentifier, SchemaTree>> actions) {
+        final Map.Entry<SchemaNodeIdentifier, SchemaTree> nextST = actions.next();
+        if (nextST.getKey().lastNodeIdentifier().getModule().equals(usedModule.getQNameModule())) {
             final SchemaTree actionSchemaTree = nextST.getValue();
             resolveActions(lines, isConnected, hasNext, removeChoiceQnames, actions, actionSchemaTree);
         }
     }
 
     private void resolveActions(final List<Line> lines, final List<Boolean> isConnected, boolean hasNext,
-            final List<Integer> removeChoiceQnames, final Iterator<Map.Entry<SchemaPath, SchemaTree>> actions,
+            final List<Integer> removeChoiceQnames, final Iterator<Map.Entry<SchemaNodeIdentifier, SchemaTree>> actions,
             final SchemaTree actionSchemaTree) {
         final ActionDefinition action = actionSchemaTree.getActionNode();
         LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, action, Collections.emptyList());
@@ -376,12 +376,12 @@ public class Tree extends FormatPlugin {
         boolean outputExists = false;
         SchemaTree inValue = null;
         SchemaTree outValue = null;
-        for (Map.Entry<SchemaPath, SchemaTree> inOut : actionSchemaTree.getChildren().entrySet()) {
-            if ("input".equals(inOut.getKey().getLastComponent().getLocalName())
+        for (Map.Entry<SchemaNodeIdentifier, SchemaTree> inOut : actionSchemaTree.getChildren().entrySet()) {
+            if ("input".equals(inOut.getKey().lastNodeIdentifier().getLocalName())
                     && !inOut.getValue().getChildren().isEmpty()) {
                 inputExists = true;
                 inValue = inOut.getValue();
-            } else if ("output".equals(inOut.getKey().getLastComponent().getLocalName())
+            } else if ("output".equals(inOut.getKey().lastNodeIdentifier().getLocalName())
                     && !inOut.getValue().getChildren().isEmpty()) {
                 outputExists = true;
                 outValue = inOut.getValue();
@@ -414,12 +414,12 @@ public class Tree extends FormatPlugin {
     private void resolveChoiceSchemaNode(final List<Line> lines, final List<Boolean> isConnected, final SchemaTree st,
             final RpcInputOutput inputOutput, final List<Integer> removeChoiceQnames, final boolean actionExists,
             final DataSchemaNode node) {
-        final Iterator<Map.Entry<SchemaPath, SchemaTree>> caseNodes
+        final Iterator<Map.Entry<SchemaNodeIdentifier, SchemaTree>> caseNodes
                 = st.getDataSchemaNodeChildren().entrySet().iterator();
         removeChoiceQnames.add(((List) node.getPath().getPathFromRoot()).size() - 1);
         while (caseNodes.hasNext()) {
-            final Map.Entry<SchemaPath, SchemaTree> nextST = caseNodes.next();
-            if (nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
+            final Map.Entry<SchemaNodeIdentifier, SchemaTree> nextST = caseNodes.next();
+            if (nextST.getKey().lastNodeIdentifier().getModule().equals(usedModule.getQNameModule())) {
                 final SchemaTree caseValue = nextST.getValue();
                 final DataSchemaNode child = caseValue.getSchemaNode();
                 removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
@@ -460,11 +460,11 @@ public class Tree extends FormatPlugin {
     private void resolveDataNodeContainer(final List<Line> lines, final List<Boolean> isConnected, final SchemaTree st,
             final RpcInputOutput inputOutput, final List<Integer> removeChoiceQnames, final List<QName> keys,
             final boolean actionExists) {
-        final Iterator<Map.Entry<SchemaPath, SchemaTree>> childNodes =
+        final Iterator<Map.Entry<SchemaNodeIdentifier, SchemaTree>> childNodes =
                 st.getDataSchemaNodeChildren().entrySet().iterator();
         while (childNodes.hasNext()) {
-            final Map.Entry<SchemaPath, SchemaTree> nextST = childNodes.next();
-            if (nextST.getKey().getLastComponent().getModule().equals(usedModule.getQNameModule())) {
+            final Map.Entry<SchemaNodeIdentifier, SchemaTree> nextST = childNodes.next();
+            if (nextST.getKey().lastNodeIdentifier().getModule().equals(usedModule.getQNameModule())) {
                 final SchemaTree childSchemaTree = nextST.getValue();
                 final DataSchemaNode child = childSchemaTree.getSchemaNode();
                 LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, keys);

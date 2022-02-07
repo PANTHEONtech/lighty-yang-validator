@@ -38,7 +38,6 @@ import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
@@ -46,6 +45,7 @@ import org.opendaylight.yangtools.yang.model.api.stmt.DescriptionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ReferenceStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.RevisionStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 import org.opendaylight.yangtools.yang.xpath.api.YangXPathExpression.QualifiedBound;
 import org.slf4j.Logger;
 
@@ -243,9 +243,9 @@ public class ModulePrinter {
         for (final SchemaTree st : schemaTrees) {
             if (st.getSchemaNode() instanceof ChoiceSchemaNode && isEqualsSchemaTreeLastComponents(st, tree)) {
                 extendedTree = true;
-                for (Map.Entry<SchemaPath, SchemaTree> entry : tree.getChildren().entrySet()) {
+                for (Map.Entry<SchemaNodeIdentifier, SchemaTree> entry : tree.getChildren().entrySet()) {
                     if (!st.getChildren().containsKey(entry.getKey())) {
-                        st.addChild(entry.getValue());
+                        st.addChild(entry.getValue(), entry.getKey());
                     }
                 }
             }

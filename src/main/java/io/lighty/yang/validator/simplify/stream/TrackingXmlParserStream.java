@@ -66,6 +66,7 @@ import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 import org.opendaylight.yangtools.yang.model.util.SchemaInferenceStack;
 import org.w3c.dom.Document;
 
@@ -353,7 +354,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
              If yes, the node is not from another module.
              */
             if (Iterables.size(less.getPath().getPathFromRoot()) == 1) {
-                schemaTree = schemaTree.addChild(less, true, false);
+                schemaTree = schemaTree.addChild(less, true, false, SchemaNodeIdentifier.Absolute.of(less.getQName()));
             /*
              If not, the node can be augmented, we need to check if the modules
              of it's parent and grand parent. If they are not the same, the node is from another module,
@@ -365,9 +366,9 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
                 final QName first = iterator.next();
                 final QName second = iterator.next();
                 if (second.getModule().equals(first.getModule())) {
-                    schemaTree = schemaTree.addChild(less, false, false);
+                    schemaTree = schemaTree.addChild(less, false, false, less.getPath().asAbsolute());
                 } else {
-                    schemaTree = schemaTree.addChild(less, true, true);
+                    schemaTree = schemaTree.addChild(less, true, true, less.getPath().asAbsolute());
                 }
             }
         }

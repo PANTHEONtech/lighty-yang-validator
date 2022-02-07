@@ -13,7 +13,7 @@ import java.util.Objects;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 
 public class SchemaTree implements Comparable<SchemaTree> {
     private final QName qname;
@@ -22,7 +22,7 @@ public class SchemaTree implements Comparable<SchemaTree> {
     private final boolean isAugmenting;
     private final ActionDefinition actionNode;
 
-    private final Map<SchemaPath, SchemaTree> children = new LinkedHashMap<>();
+    private final Map<SchemaNodeIdentifier, SchemaTree> children = new LinkedHashMap<>();
 
     SchemaTree(final QName qname, final DataSchemaNode schemaNode,
                final boolean isRootNode, final boolean isAugmenting,
@@ -54,33 +54,33 @@ public class SchemaTree implements Comparable<SchemaTree> {
         return actionNode;
     }
 
-    public void addChild(final SchemaTree tree) {
-        children.putIfAbsent(tree.getSchemaNode().getPath(), tree);
+    public void addChild(final SchemaTree tree, final SchemaNodeIdentifier identifier) {
+        children.putIfAbsent(identifier, tree);
     }
 
     public SchemaTree addChild(final DataSchemaNode schemaNodeInput, final boolean isRootNodeInput,
-                               final boolean isAugmentingInput) {
+                               final boolean isAugmentingInput, final SchemaNodeIdentifier identifier) {
         final SchemaTree tree = new SchemaTree(schemaNodeInput.getQName(), schemaNodeInput,
                 isRootNodeInput, isAugmentingInput, null);
-        final SchemaTree prev = children.putIfAbsent(tree.getSchemaNode().getPath(), tree);
+        final SchemaTree prev = children.putIfAbsent(identifier, tree);
         return prev == null ? tree : prev;
     }
 
     SchemaTree addChild(final ActionDefinition schemaNodeInput, final boolean isRootNodeInput,
-                        final boolean augmentation) {
+                        final boolean isAugmentingInput, final SchemaNodeIdentifier identifier) {
         final SchemaTree tree = new SchemaTree(schemaNodeInput.getQName(), null,
-                isRootNodeInput, augmentation, schemaNodeInput);
-        final SchemaTree prev = children.putIfAbsent(tree.getActionNode().getPath(), tree);
+                isRootNode, isAugmenting, schemaNodeInput);
+        final SchemaTree prev = children.putIfAbsent(identifier, tree);
         return prev == null ? tree : prev;
     }
 
-    public Map<SchemaPath, SchemaTree> getChildren() {
+    public Map<SchemaNodeIdentifier, SchemaTree> getChildren() {
         return children;
     }
 
-    public Map<SchemaPath, SchemaTree> getDataSchemaNodeChildren() {
-        Map<SchemaPath, SchemaTree> ret = new LinkedHashMap<>();
-        for (Map.Entry<SchemaPath, SchemaTree> child : children.entrySet()) {
+    public Map<SchemaNodeIdentifier, SchemaTree> getDataSchemaNodeChildren() {
+        Map<SchemaNodeIdentifier, SchemaTree> ret = new LinkedHashMap<>();
+        for (Map.Entry<SchemaNodeIdentifier, SchemaTree> child : children.entrySet()) {
             if (child.getValue().getSchemaNode() != null) {
                 ret.put(child.getKey(), child.getValue());
             }
@@ -88,9 +88,9 @@ public class SchemaTree implements Comparable<SchemaTree> {
         return ret;
     }
 
-    public Map<SchemaPath, SchemaTree> getActionDefinitionChildren() {
-        Map<SchemaPath, SchemaTree> ret = new LinkedHashMap<>();
-        for (Map.Entry<SchemaPath, SchemaTree> child : children.entrySet()) {
+    public Map<SchemaNodeIdentifier, SchemaTree> getActionDefinitionChildren() {
+        Map<SchemaNodeIdentifier, SchemaTree> ret = new LinkedHashMap<>();
+        for (Map.Entry<SchemaNodeIdentifier, SchemaTree> child : children.entrySet()) {
             if (child.getValue().getActionNode() != null) {
                 ret.put(child.getKey(), child.getValue());
             }
