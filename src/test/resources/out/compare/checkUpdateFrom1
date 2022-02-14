@@ -101,7 +101,11 @@ must: []
 must: . > 50 | Old module-> Absolute{qnames=[(urn:ietf:params:xml:ns:yang:ietf-interfaces?revision=2018-02-20)interfaces-state, interface, statistics, in-multicast-pkts]}
 must: [. > 60]
 
-35 status error: According to RFC 6020 a "status" statement may be added, or changed from "current" to "deprecated" or "obsolete", or from "deprecated" to "obsolete", but not other way arround New module-> Absolute{qnames=[(changed:urn:ietf:params:xml:ns:yang:ietf-interfaces?revision=2019-02-20)interface-state-ref]}
+35 type error: According to RFC 6020 a "type" statement may not be replaced with another type statement that changes syntax or semantics of the type New module-> TypeDefinition: [(changed:urn:ietf:params:xml:ns:yang:ietf-interfaces?revision=2019-02-20)test-type]
+type: string | Old module-> TypeDefinition: [(urn:ietf:params:xml:ns:yang:ietf-interfaces?revision=2018-02-20)test-type]
+type: leafref
+
+36 status error: According to RFC 6020 a "status" statement may be added, or changed from "current" to "deprecated" or "obsolete", or from "deprecated" to "obsolete", but not other way arround New module-> Absolute{qnames=[(changed:urn:ietf:params:xml:ns:yang:ietf-interfaces?revision=2019-02-20)interface-state-ref]}
 status: DEPRECATED | Old module-> Absolute{qnames=[(urn:ietf:params:xml:ns:yang:ietf-interfaces?revision=2018-02-20)interface-state-ref]}
 status: OBSOLETE
 

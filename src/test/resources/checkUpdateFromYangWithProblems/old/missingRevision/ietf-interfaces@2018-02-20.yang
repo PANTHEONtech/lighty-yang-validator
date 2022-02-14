@@ -61,6 +61,13 @@ module ietf-interfaces {
        interfaces.";
   }
 
+  typedef test-type {
+    type leafref {
+      path "/if:interfaces/if:interface/if:name";
+    }
+    description "This type is changed to string since new revision";
+  }
+
   /*
    * Identities
    */
