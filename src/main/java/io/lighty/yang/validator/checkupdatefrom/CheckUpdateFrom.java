@@ -75,7 +75,6 @@ import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.RevisionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
-import org.opendaylight.yangtools.yang.model.api.stmt.TypedefEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.type.BitsTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.EnumTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
@@ -758,15 +757,13 @@ public class CheckUpdateFrom {
 
     private String buildTypeDefinitionPath(final TypeDefinition<?> typeDefinition,
             final SchemaInferenceStack schemaIS) {
-        if (schemaIS.toInference().statementPath().size() == 1
-                && schemaIS.toInference().statementPath().get(0) instanceof TypedefEffectiveStatement) {
-            return schemaIS.toString();
-        } else {
-            if (schemaIS.toSchemaNodeIdentifier().lastNodeIdentifier().equals(typeDefinition.getQName())) {
-                return schemaIS.toSchemaNodeIdentifier().toString();
-            }
-            return String.format("%s TypeDefinition: [%s]", schemaIS.toSchemaNodeIdentifier(),
-                    typeDefinition.getQName());
+        if (schemaIS.isEmpty()) {
+            return String.format("TypeDefinition: [%s]", typeDefinition.getQName());
         }
+        if (schemaIS.toSchemaNodeIdentifier().lastNodeIdentifier().equals(typeDefinition.getQName())) {
+            return schemaIS.toSchemaNodeIdentifier().toString();
+        }
+        return String.format("%s TypeDefinition: [%s]", schemaIS.toSchemaNodeIdentifier(),
+                typeDefinition.getQName());
     }
 }
