@@ -91,8 +91,8 @@ public class SchemaTree implements Comparable<SchemaTree> {
     }
 
     public Set<SchemaTree> getDataSchemaNodeChildren() {
-        Set<SchemaTree> ret = new LinkedHashSet<>();
-        for (SchemaTree child : children) {
+        final Set<SchemaTree> ret = new LinkedHashSet<>();
+        for (final SchemaTree child : children) {
             if (child.getSchemaNode() != null) {
                 ret.add(child);
             }
@@ -101,8 +101,8 @@ public class SchemaTree implements Comparable<SchemaTree> {
     }
 
     public Set<SchemaTree> getActionDefinitionChildren() {
-        Set<SchemaTree> ret = new LinkedHashSet<>();
-        for (SchemaTree child : children) {
+        final Set<SchemaTree> ret = new LinkedHashSet<>();
+        for (final SchemaTree child : children) {
             if (child.getActionNode() != null) {
                 ret.add(child);
             }

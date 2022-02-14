@@ -67,15 +67,15 @@ public class SchemaSelector {
     }
 
     public void noXml() {
-        SchemaInferenceStack schemaInferenceStack = SchemaInferenceStack.of(effectiveModelContext);
-        for (Module module : effectiveModelContext.getModules()) {
-            for (DataSchemaNode node : module.getChildNodes()) {
+        final SchemaInferenceStack schemaInferenceStack = SchemaInferenceStack.of(effectiveModelContext);
+        for (final Module module : effectiveModelContext.getModules()) {
+            for (final DataSchemaNode node : module.getChildNodes()) {
                 resolveChildNodes(tree, node, true, false, schemaInferenceStack);
             }
 
-            for (AugmentationSchemaNode aug : module.getAugmentations()) {
+            for (final AugmentationSchemaNode aug : module.getAugmentations()) {
                 schemaInferenceStack.enterSchemaTree(aug.getTargetPath());
-                for (DataSchemaNode node : aug.getChildNodes()) {
+                for (final DataSchemaNode node : aug.getChildNodes()) {
                     resolveChildNodes(tree, node, true, true, schemaInferenceStack);
                 }
                 schemaInferenceStack.clear();

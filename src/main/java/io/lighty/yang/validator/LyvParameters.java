@@ -98,7 +98,7 @@ public class LyvParameters {
             Preconditions.checkArgument(!yangModules.isEmpty(), errorMessage);
             final String pathIsNotFile = "Path %s is not a file";
             for (final String yang : yangModules) {
-                File file = new File(yang);
+                final File file = new File(yang);
                 Preconditions.checkArgument(file.exists(), String.format(pathDoesNotExist, yang));
                 Preconditions.checkArgument(file.isFile(), String.format(pathIsNotFile, yang));
             }
@@ -117,7 +117,7 @@ public class LyvParameters {
         }
         final List<String> paths = namespace.getList("path");
         for (final String path : paths) {
-            File file = new File(path);
+            final File file = new File(path);
             Preconditions.checkArgument(file.exists(), String.format(pathDoesNotExist, path));
             Preconditions.checkArgument(file.isDirectory(), String.format("Path %s is not a directory", path));
         }
@@ -125,7 +125,7 @@ public class LyvParameters {
         return namespace;
     }
 
-    public void addFormatArgument(String formats) {
+    public void addFormatArgument(final String formats) {
         lyvArgumentParser.addArgument("-f", "--format")
                 .nargs("?")
                 .help("output format of the yang. Supported formats: " + formats);
@@ -135,8 +135,8 @@ public class LyvParameters {
         final List<GroupArguments.SingleOptionInGroup> options = groupArguments.getOptions();
         final ArgumentGroup argGroup = lyvArgumentParser.addArgumentGroup(groupArguments.getGroupName())
                 .description(groupArguments.getGroupDescription());
-        for (GroupArguments.SingleOptionInGroup option : options) {
-            Argument arg;
+        for (final GroupArguments.SingleOptionInGroup option : options) {
+            final Argument arg;
             if (option.getName().size() == 1) {
                 arg = argGroup.addArgument(option.getName().get(0))
                         .type(option.getType())

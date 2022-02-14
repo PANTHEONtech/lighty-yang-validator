@@ -58,7 +58,7 @@ abstract class Line {
 
     Line(final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
             final Map<XMLNamespace, String> namespacePrefix) {
-        SchemaNode node = lyvNodeData.getNode();
+        final SchemaNode node = lyvNodeData.getNode();
         this.status = node.getStatus();
         this.isMandatory = lyvNodeData.isNodeMandatory();
         this.isListOrLeafList = node instanceof LeafListSchemaNode || node instanceof ListSchemaNode;
@@ -102,7 +102,7 @@ abstract class Line {
 
     private void resolveKeys(final SchemaNode node) {
         if (node instanceof ListSchemaNode) {
-            for (QName qname : ((ListSchemaNode) node).getKeyDefinition()) {
+            for (final QName qname : ((ListSchemaNode) node).getKeyDefinition()) {
                 keys.add(qname.getLocalName());
             }
         }
@@ -110,7 +110,7 @@ abstract class Line {
 
     private void resolvePathAndType(final SchemaNode node) {
         if (node instanceof TypedDataSchemaNode) {
-            TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).getType();
+            final TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).getType();
             resolvePathAndTypeForDataSchemaNode(type);
         } else if (node instanceof AnydataEffectiveStatement) {
             typeName = ANYDATA;
@@ -135,7 +135,7 @@ abstract class Line {
             if (nodeName.equals(type.getQName().getLocalName())) {
                 type = type.getBaseType();
             }
-            String prefix = namespacePrefix.get(type.getQName().getNamespace());
+            final String prefix = namespacePrefix.get(type.getQName().getNamespace());
             if (prefix == null || isBaseType(type)) {
                 typeName = type.getQName().getLocalName();
             } else {

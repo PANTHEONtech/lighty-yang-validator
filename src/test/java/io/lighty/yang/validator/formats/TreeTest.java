@@ -34,7 +34,7 @@ public class TreeTest extends FormatTest {
     @Test
     public void treePrefixMainModuleTest() throws Exception {
         setFormat();
-        this.builder.setTreeConfiguration(0, 0, false, false,true);
+        this.builder.setTreeConfiguration(0, 0, false, false, true);
         final String module = Paths.get(this.yangPath).resolve("ietf-ip@2018-02-22.yang").toString();
         runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
         runTreeTest("ip-prefix-main-module.tree");

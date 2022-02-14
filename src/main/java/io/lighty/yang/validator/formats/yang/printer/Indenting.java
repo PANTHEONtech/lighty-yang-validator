@@ -41,10 +41,11 @@ abstract class Indenting {
         return builder.toString();
     }
 
-    private static StringBuilder getBuilderForEachTextLine(int level, boolean separately, String[] textLines) {
-        StringBuilder builder = new StringBuilder();
+    private static StringBuilder getBuilderForEachTextLine(final int level, final boolean separately,
+            final String[] textLines) {
+        final StringBuilder builder = new StringBuilder();
         boolean firstLine = true;
-        for (String line : textLines) {
+        for (final String line : textLines) {
             if (separately && !line.isEmpty()) {
                 for (int i = 0; i <= level; i++) {
                     builder.append("    ");

@@ -54,7 +54,7 @@ public class MultiModulePrinter extends FormatPlugin {
         if (this.output != null) {
             try {
                 Files.createDirectories(this.output);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 LOG.error("Can not create directory {}", this.output, e);
             }
         }
@@ -93,7 +93,7 @@ public class MultiModulePrinter extends FormatPlugin {
                             this.usedImportedTypeDefs.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()),
                             this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()));
                     modulePrinter.printYang();
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     LOG.error("Can not create file {}", this.output.resolve(name).toFile().getAbsolutePath(), e);
                 }
             }
@@ -104,15 +104,16 @@ public class MultiModulePrinter extends FormatPlugin {
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.schemaContext.findModule(entry.getKey())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, entry.getKey().toString()));
-            for (SchemaTree singleEntry : entry.getValue()) {
+            for (final SchemaTree singleEntry : entry.getValue()) {
                 gatherUsedTypeDefs(singleEntry, module);
             }
-            for (AugmentationSchemaNode aug : module.getAugmentations()) {
-                for (QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
+            for (final AugmentationSchemaNode aug : module.getAugmentations()) {
+                for (final QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                             .add(this.schemaContext.findModule(pathQname.getModule())
                                     .orElseThrow(
-                                        () -> new NotFoundException(MODULE_STRING, pathQname.getModule().toString()))
+                                            () -> new NotFoundException(MODULE_STRING,
+                                                    pathQname.getModule().toString()))
                                     .getName());
                 }
             }
@@ -154,7 +155,7 @@ public class MultiModulePrinter extends FormatPlugin {
         }
         if (type instanceof UnionTypeDefinition) {
             final List<TypeDefinition<?>> types = ((UnionTypeDefinition) type).getTypes();
-            for (TypeDefinition<?> t : types) {
+            for (final TypeDefinition<?> t : types) {
                 resolveType(t, module);
             }
         }

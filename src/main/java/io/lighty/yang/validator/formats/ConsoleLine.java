@@ -26,7 +26,7 @@ public class ConsoleLine extends Line {
     private static final String RO = "ro";
     private final List<Boolean> isConnected;
 
-    ConsoleLine(final List<Boolean> isConnected, final LyvNodeData lyvNodeData, RpcInputOutput inputOutput,
+    ConsoleLine(final List<Boolean> isConnected, final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
             final Map<XMLNamespace, String> namespacePrefix) {
         super(lyvNodeData, inputOutput, namespacePrefix);
         this.isConnected = isConnected;
@@ -132,7 +132,7 @@ public class ConsoleLine extends Line {
 
     private StringBuilder getConnectionStringBuilder() {
         final StringBuilder builder = new StringBuilder();
-        for (boolean connection : isConnected) {
+        for (final boolean connection : isConnected) {
             if (connection) {
                 builder.append('|');
             } else {

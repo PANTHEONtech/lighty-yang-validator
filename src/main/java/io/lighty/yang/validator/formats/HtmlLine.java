@@ -44,7 +44,7 @@ public class HtmlLine extends Line {
             final Map<XMLNamespace, String> namespacePrefix) {
         super(lyvND, inputOutput, namespacePrefix);
         this.ids = ids;
-        SchemaNode node = lyvND.getNode();
+        final SchemaNode node = lyvND.getNode();
         description = node.getDescription().orElse("");
         schema = getSchemaBySchemaNode(node);
         path = createPath(lyvND.getAbsolutePath().getNodeIdentifiers(), namespacePrefix, lyvND.getContext());
@@ -54,7 +54,7 @@ public class HtmlLine extends Line {
             final Map<XMLNamespace, String> namespacePrefix, final AugmentationSchemaNode augment) {
         super(lyvNodeData, inputOutput, namespacePrefix);
         this.ids = ids;
-        Iterable<QName> pathFromRoot;
+        final Iterable<QName> pathFromRoot;
         description = augment.getDescription().orElse("");
         schema = SchemaHtmlEnum.AUGMENT;
         pathFromRoot = augment.getTargetPath().getNodeIdentifiers();
@@ -89,7 +89,7 @@ public class HtmlLine extends Line {
     private static String createPath(final Iterable<QName> pathFromRoot,
             final Map<XMLNamespace, String> namespacePrefix, final EffectiveModelContext context) {
         final StringBuilder pathBuilder = new StringBuilder();
-        for (QName path : pathFromRoot) {
+        for (final QName path : pathFromRoot) {
             final String prefix = namespacePrefix.getOrDefault(path.getNamespace(),
                     context.findModule(path.getModule())
                             .orElseThrow(() -> new NotFoundException("Module", path.getModule().toString()))

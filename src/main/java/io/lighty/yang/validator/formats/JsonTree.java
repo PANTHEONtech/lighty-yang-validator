@@ -88,7 +88,7 @@ public class JsonTree extends FormatPlugin {
 
     @Override
     void init(final EffectiveModelContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
-              final SchemaTree schemaTree, final Configuration config) {
+            final SchemaTree schemaTree, final Configuration config) {
         super.init(context, testFilesSchemaSources, schemaTree, config);
     }
 
@@ -101,7 +101,7 @@ public class JsonTree extends FormatPlugin {
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.getName()));
             final JSONObject moduleMetadata = resolveModuleMetadata(module);
             final JSONObject jsonTree = new JSONObject();
-            SchemaInferenceStack schemaInferenceStack = SchemaInferenceStack.of(this.schemaContext);
+            final SchemaInferenceStack schemaInferenceStack = SchemaInferenceStack.of(this.schemaContext);
             appendChildNodesToJsonTree(module, jsonTree, schemaInferenceStack);
             appendNotificationsToJsonTree(module, jsonTree, schemaInferenceStack);
             appendRpcsToJsonTree(module, jsonTree, schemaInferenceStack);
@@ -139,8 +139,8 @@ public class JsonTree extends FormatPlugin {
         }
     }
 
-    private void appendNotificationsToAugmentationJson(Module module, JSONObject augmentationJson,
-            SchemaInferenceStack schemaInferenceStack) {
+    private void appendNotificationsToAugmentationJson(final Module module, final JSONObject augmentationJson,
+            final SchemaInferenceStack schemaInferenceStack) {
         for (final NotificationDefinition notification : module.getNotifications()) {
             final JSONObject jsonNotification = new JSONObject();
             for (final DataSchemaNode node : notification.getChildNodes()) {
@@ -151,8 +151,9 @@ public class JsonTree extends FormatPlugin {
         }
     }
 
-    private void appendActionsToAugmentationJson(AugmentationSchemaNode augmentation, JSONObject augmentationJson,
-            SchemaInferenceStack schemaInferenceStack) {
+    private void appendActionsToAugmentationJson(final AugmentationSchemaNode augmentation,
+            final JSONObject augmentationJson,
+            final SchemaInferenceStack schemaInferenceStack) {
         for (final ActionDefinition child : augmentation.getActions()) {
             schemaInferenceStack.enterSchemaTree(child.getQName());
             final JSONObject jsonModuleChildAction = new JSONObject();
@@ -171,7 +172,8 @@ public class JsonTree extends FormatPlugin {
         }
     }
 
-    private void appendRpcsToJsonTree(Module module, JSONObject jsonTree, SchemaInferenceStack schemaInferenceStack) {
+    private void appendRpcsToJsonTree(final Module module, final JSONObject jsonTree,
+            final SchemaInferenceStack schemaInferenceStack) {
         for (final RpcDefinition rpc : module.getRpcs()) {
             schemaInferenceStack.enterSchemaTree(rpc.getQName());
             final JSONObject jsonRpc = new JSONObject();
@@ -188,8 +190,8 @@ public class JsonTree extends FormatPlugin {
         }
     }
 
-    private void appendNotificationsToJsonTree(Module module, JSONObject jsonTree,
-            SchemaInferenceStack schemaInferenceStack) {
+    private void appendNotificationsToJsonTree(final Module module, final JSONObject jsonTree,
+            final SchemaInferenceStack schemaInferenceStack) {
         for (final NotificationDefinition notification : module.getNotifications()) {
             schemaInferenceStack.enterSchemaTree(notification.getQName());
             final JSONObject jsonNotification = new JSONObject();
@@ -203,7 +205,7 @@ public class JsonTree extends FormatPlugin {
     }
 
     private void putNotificationDataToJsonNotification(final NotificationDefinition notification,
-            final JSONObject jsonNotification, SchemaInferenceStack schemaInferenceStack) {
+            final JSONObject jsonNotification, final SchemaInferenceStack schemaInferenceStack) {
         jsonNotification.put(NAME, notification.getQName().getLocalName());
         jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
         jsonNotification.put(STATUS, notification.getStatus().name());
@@ -212,14 +214,14 @@ public class JsonTree extends FormatPlugin {
         jsonNotification.put(PATH, schemaInferenceStack.toSchemaNodeIdentifier());
     }
 
-    private void appendChildNodesToJsonTree(Module module, JSONObject jsonTree,
-            SchemaInferenceStack schemaInferenceStack) {
+    private void appendChildNodesToJsonTree(final Module module, final JSONObject jsonTree,
+            final SchemaInferenceStack schemaInferenceStack) {
         for (final DataSchemaNode node : module.getChildNodes()) {
             jsonTree.append(CHILDREN, resolveChildMetadata(node, Optional.empty(), schemaInferenceStack));
         }
     }
 
-    private Boolean isAugmentConfig(AugmentationSchemaNode augmentation) {
+    private Boolean isAugmentConfig(final AugmentationSchemaNode augmentation) {
         final List<QName> qNames = new ArrayList<>();
         Collection<? extends ActionDefinition> actions = new HashSet<>();
         boolean isAction = false;
@@ -269,7 +271,7 @@ public class JsonTree extends FormatPlugin {
     }
 
     private JSONObject resolveChildMetadata(final DataSchemaNode node, final Optional<Boolean> isConfig,
-            SchemaInferenceStack schemaInferenceStack) {
+            final SchemaInferenceStack schemaInferenceStack) {
         final JSONObject jsonModuleChild = new JSONObject();
         jsonModuleChild.put(NAME, node.getQName().getLocalName());
         jsonModuleChild.put(CONFIG, isConfig.orElse(node.isConfiguration()));
@@ -313,11 +315,11 @@ public class JsonTree extends FormatPlugin {
         return jsonModuleChild;
     }
 
-    private JSONObject resolveType(TypeDefinition<? extends TypeDefinition<?>> nodeType) {
+    private JSONObject resolveType(final TypeDefinition<? extends TypeDefinition<?>> nodeType) {
         final JSONObject jsonLeafType = new JSONObject();
         final QName typeqName = nodeType.getQName();
-        int  equals = typeqName.getNamespace().compareTo(XMLNamespace.of(BASETYPENAMESPACE));
-        String type;
+        final int equals = typeqName.getNamespace().compareTo(XMLNamespace.of(BASETYPENAMESPACE));
+        final String type;
         if (equals == 0) {
             type = typeqName.getLocalName();
         } else if (nodeType instanceof IdentityrefTypeDefinition) {
@@ -374,7 +376,7 @@ public class JsonTree extends FormatPlugin {
     private String resolvePath(final SchemaNodeIdentifier schemaNodeIdentifier) {
         final Iterable<QName> pathFromRoot = schemaNodeIdentifier.getNodeIdentifiers();
         final StringBuilder path = new StringBuilder(SLASH);
-        for (QName pathQname : pathFromRoot) {
+        for (final QName pathQname : pathFromRoot) {
             schemaContext.findModule(pathQname.getModule()).ifPresent(module1 -> path.append(module1.getPrefix()));
             path.append(COLON)
                     .append(pathQname.getLocalName())

@@ -88,7 +88,7 @@ public class JsTree extends FormatPlugin {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     private void printLines(final List<Line> lines) {
-        for (Line line : lines) {
+        for (final Line line : lines) {
             LOG.info("{}", line);
         }
     }
@@ -202,11 +202,11 @@ public class JsTree extends FormatPlugin {
             final DataSchemaNode node = nodes.next();
             schemaIS.enterSchemaTree(node.getQName());
             final List<QName> qnames = schemaIS.toSchemaNodeIdentifier().getNodeIdentifiers();
-            RpcInputOutput inputOutputOther = getAugmentationRpcInputOutput(qnames);
+            final RpcInputOutput inputOutputOther = getAugmentationRpcInputOutput(qnames);
             ids.add(modelAugmentationNumber++);
             lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList(),
                     schemaIS.toSchemaNodeIdentifier());
-            HtmlLine line = new HtmlLine(new ArrayList<>(ids), lyvNodeData, inputOutputOther, namespacePrefix);
+            final HtmlLine line = new HtmlLine(new ArrayList<>(ids), lyvNodeData, inputOutputOther, namespacePrefix);
             lines.add(line);
             resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, Collections.emptyList(),
                     schemaIS);
@@ -221,7 +221,7 @@ public class JsTree extends FormatPlugin {
         Collection<? extends ActionDefinition> actions = new HashSet<>();
         RpcInputOutput inputOutputOther = RpcInputOutput.OTHER;
         for (int i = 1; i <= qnames.size(); i++) {
-            List<QName> qnamesCopy = qnames.subList(0, i);
+            final List<QName> qnamesCopy = qnames.subList(0, i);
             inputOutputOther = getRpcInputOutput(qnames, actions, inputOutputOther, i, qnamesCopy);
             if (this.schemaContext.findDataTreeChild(qnamesCopy).get() instanceof ActionNodeContainer) {
                 final ActionNodeContainer actionSchemaNode =
@@ -238,7 +238,7 @@ public class JsTree extends FormatPlugin {
         if (actions.isEmpty()) {
             return inputOutputOther;
         }
-        for (ActionDefinition action : actions) {
+        for (final ActionDefinition action : actions) {
             if (action.getQName().getLocalName().equals(qnamesCopy.get(qnamesCopy.size() - 1).getLocalName())) {
                 if (INPUT.equals(qnames.get(iteration).getLocalName())) {
                     return RpcInputOutput.INPUT;
@@ -251,11 +251,11 @@ public class JsTree extends FormatPlugin {
     }
 
     private String loadJS() {
-        URL url = Resources.getResource("js");
+        final URL url = Resources.getResource("js");
         String text = "";
         try {
             text = Resources.toString(url, StandardCharsets.UTF_8);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             LOG.error("Can not load text from js file");
         }
 
@@ -265,14 +265,14 @@ public class JsTree extends FormatPlugin {
     private String prepareHeader(final Module module) {
         final StringBuilder nameRevision = new StringBuilder(module.getName());
         module.getRevision().ifPresent(value -> nameRevision.append("@").append(value));
-        URL url = Resources.getResource("header");
+        final URL url = Resources.getResource("header");
         String text = "";
         try {
             text = Resources.toString(url, StandardCharsets.UTF_8);
             text = text.replace("<NAME_REVISION>", nameRevision);
             text = text.replace("<NAMESPACE>", module.getNamespace().toString());
             text = text.replace("<PREFIX>", module.getPrefix());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             LOG.error("Can not load text from header file");
         }
 
@@ -288,7 +288,7 @@ public class JsTree extends FormatPlugin {
             connections.add(0);
             final Collection<? extends CaseSchemaNode> cases = ((ChoiceSchemaNode) node).getCases();
             final Iterator<? extends CaseSchemaNode> iterator = cases.iterator();
-            resolveChoiceSchemaNode(iterator, lines, connections, node, inputOutput, schemaInferenceStack);
+            resolveChoiceSchemaNode(iterator, lines, connections, inputOutput, schemaInferenceStack);
         }
         // If action is in container or list
         if (node instanceof ActionNodeContainer) {
@@ -298,8 +298,8 @@ public class JsTree extends FormatPlugin {
 
     private void resolveActionNodeContainer(final List<Line> lines, final List<Integer> connections,
             final SchemaNode node, final SchemaInferenceStack schemaIS) {
-        for (ActionDefinition action : ((ActionNodeContainer) node).getActions()) {
-            int id = 1;
+        for (final ActionDefinition action : ((ActionNodeContainer) node).getActions()) {
+            final int id = 1;
             connections.add(0);
             connections.set(connections.size() - 1, id);
             schemaIS.enterSchemaTree(action.getQName());
@@ -342,16 +342,16 @@ public class JsTree extends FormatPlugin {
     }
 
     private void resolveChoiceSchemaNode(final Iterator<? extends CaseSchemaNode> iterator, final List<Line> lines,
-            final List<Integer> connections, final SchemaNode node, final RpcInputOutput inputOutput,
-            final SchemaInferenceStack schemaIS) {
+            final List<Integer> connections, final RpcInputOutput inputOutput, final SchemaInferenceStack schemaIS) {
         int id = 1;
         while (iterator.hasNext()) {
             final DataSchemaNode child = iterator.next();
             schemaIS.enterSchemaTree(child.getQName());
             connections.set(connections.size() - 1, id++);
-            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, Collections.emptyList(),
+            final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, Collections.emptyList(),
                     schemaIS.toSchemaNodeIdentifier());
-            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput, namespacePrefix);
+            final HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput,
+                    namespacePrefix);
             lines.add(htmlLine);
             resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, Collections.emptyList(),
                     schemaIS);
@@ -370,9 +370,10 @@ public class JsTree extends FormatPlugin {
             final DataSchemaNode child = childNodes.next();
             schemaIS.enterSchemaTree(child.getQName());
             connections.set(connections.size() - 1, id++);
-            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, keys,
+            final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, keys,
                     schemaIS.toSchemaNodeIdentifier());
-            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput, namespacePrefix);
+            final HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput,
+                    namespacePrefix);
             lines.add(htmlLine);
             List<QName> keyDefinitions = Collections.emptyList();
             if (child instanceof ListSchemaNode) {
@@ -401,7 +402,7 @@ public class JsTree extends FormatPlugin {
 
         private int id;
 
-        SingletonListInitializer(int initialValue) {
+        SingletonListInitializer(final int initialValue) {
             this.id = initialValue;
         }
 

@@ -15,8 +15,8 @@ public class TreeConfiguration {
     private final boolean modulePrefix;
     private final boolean prefixMainModule;
 
-    TreeConfiguration(final int treeDepth, final int lineLength, final boolean help,
-                      final boolean modulePrefix, final boolean prefixMainModule) {
+    TreeConfiguration(final int treeDepth, final int lineLength, final boolean help, final boolean modulePrefix,
+            final boolean prefixMainModule) {
         this.treeDepth = treeDepth;
         this.lineLength = lineLength;
         this.help = help;

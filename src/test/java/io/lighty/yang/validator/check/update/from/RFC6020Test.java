@@ -96,7 +96,7 @@ public class RFC6020Test implements Cleanable {
     }
 
     private void testCheckUpdateFrom(final String yangDirPart, final String oldModule,
-                                     final String newModule, String comapreFile) throws Exception {
+            final String newModule, final String comapreFile) throws Exception {
         final String newMissing = NEW + yangDirPart;
         final String oldMissing = OLD + yangDirPart;
         final String newFile = RFC6020Test.class.getResource(newMissing + newModule).getFile();

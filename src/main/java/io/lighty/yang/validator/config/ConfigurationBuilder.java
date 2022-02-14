@@ -23,8 +23,8 @@ public class ConfigurationBuilder {
     }
 
     public ConfigurationBuilder setTreeConfiguration(final int treeDepth, final int lineLength,
-                                                     final boolean help, final boolean modulePrefix,
-                                                     final boolean treePrefixMainModule) {
+            final boolean help, final boolean modulePrefix,
+            final boolean treePrefixMainModule) {
         final TreeConfiguration treeConfiguration = new TreeConfiguration(treeDepth, lineLength, help,
                 modulePrefix, treePrefixMainModule);
         this.configuration.setTreeConfiguration(treeConfiguration);
@@ -32,9 +32,9 @@ public class ConfigurationBuilder {
     }
 
     public ConfigurationBuilder setDependConfiguration(final boolean moduleDependentsOnly,
-                                                       final boolean moduleImportsOnly,
-                                                       final boolean moduleIncludesOnly,
-                                                       final Set<String> excludedModuleNames) {
+            final boolean moduleImportsOnly,
+            final boolean moduleIncludesOnly,
+            final Set<String> excludedModuleNames) {
         final DependConfiguration dependConfiguration = new DependConfiguration(moduleDependentsOnly,
                 moduleImportsOnly, moduleIncludesOnly, excludedModuleNames);
         this.configuration.setDependConfiguration(dependConfiguration);
@@ -47,7 +47,7 @@ public class ConfigurationBuilder {
     }
 
     public ConfigurationBuilder setCheckUpdateFromConfiguration(final int rfcVersion,
-                                                                final List<String> checkUpdateFromPath) {
+            final List<String> checkUpdateFromPath) {
         final CheckUpdateFromConfiguration checkUpdateFromConfiguration =
                 new CheckUpdateFromConfiguration(rfcVersion, checkUpdateFromPath);
         this.configuration.setCheckUpdateFromConfiguration(checkUpdateFromConfiguration);
@@ -144,7 +144,7 @@ public class ConfigurationBuilder {
         return this;
     }
 
-    private Set<QName> resolveSupportedFeatures(List<Object> features) {
+    private Set<QName> resolveSupportedFeatures(final List<Object> features) {
         Set<QName> supportedFeatures = null;
         if (features != null) {
             supportedFeatures = new HashSet<>();

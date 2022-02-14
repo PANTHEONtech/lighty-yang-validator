@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.parser.api.YangParserException;
+import org.opendaylight.yangtools.yang.parser.api.YangParserException;
 import org.opendaylight.yangtools.yang.parser.spi.source.SourceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,11 +87,11 @@ public final class Main {
     }
 
     public static void main(final String[] args) {
-        Format format = getFormat();
+        final Format format = getFormat();
         final Configuration configuration;
         try {
             configuration = getConfiguration(format, args);
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             LOG.error("Exception while setting configurationBuilder", e);
             return;
         }
@@ -107,7 +107,7 @@ public final class Main {
             yangFiles.addAll(configuration.getYang());
             try {
                 runLYV(yangFiles, configuration, format);
-            } catch (LyvApplicationException e) {
+            } catch (final LyvApplicationException e) {
                 LOG.error("Exception in LYV application: {}", formatLyvExceptionMessage(e));
                 return;
             }
@@ -118,7 +118,7 @@ public final class Main {
                             .map(Path::toString)
                             .collect(Collectors.toList());
                     yangFiles.addAll(collect);
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     LOG.error("Could not Collect files from provided ({}) directory",
                             String.join(",", parseAllDir), e);
                     return;
@@ -128,7 +128,7 @@ public final class Main {
             final String yangtoolsVersion;
             try {
                 yangtoolsVersion = getYangtoolsVersion(EffectiveModelContext.class);
-            } catch (LyvApplicationException e) {
+            } catch (final LyvApplicationException e) {
                 LOG.error("Exception in LYV application", e);
                 return;
             }
@@ -171,15 +171,15 @@ public final class Main {
     }
 
     private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration configuration,
-                                              final CompilationTableAppender newAppender, final CompilationTable table,
-                                              final Format formatter) {
-        for (String yangFile : yangFiles) {
+            final CompilationTableAppender newAppender, final CompilationTable table,
+            final Format formatter) {
+        for (final String yangFile : yangFiles) {
             final String name = yangFile.split("/")[yangFile.split("/").length - 1];
             try {
                 newAppender.setYangName(name);
                 runLYV(Collections.singletonList(yangFile), configuration, formatter);
                 table.addRow(name, null, CompilationStatus.PASSED);
-            } catch (LyvApplicationException e) {
+            } catch (final LyvApplicationException e) {
                 final String message = formatLyvExceptionMessage(e);
                 table.addRow(name, message, CompilationStatus.FAILED);
                 LOG.error("name : {}, message: {}", name, message);
@@ -214,35 +214,35 @@ public final class Main {
         return messageBuilder.toString();
     }
 
-    private static String getYangtoolsVersion(Class<?> clazz) throws LyvApplicationException {
-        String className = clazz.getSimpleName() + ".class";
-        String classPath = clazz.getResource(className).toString();
+    private static String getYangtoolsVersion(final Class<?> clazz) throws LyvApplicationException {
+        final String className = clazz.getSimpleName() + ".class";
+        final String classPath = clazz.getResource(className).toString();
         if (!classPath.startsWith("jar")) {
             // Class not from JAR
             throw new LyvApplicationException("Class is not from jar file");
         }
-        String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1)
+        final String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1)
                 + "/META-INF/MANIFEST.MF";
-        Manifest manifest = null;
+        final Manifest manifest;
         try {
             manifest = new Manifest(new URL(manifestPath).openStream());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new LyvApplicationException("Could not read manifest", e);
         }
-        Attributes attr = manifest.getMainAttributes();
+        final Attributes attr = manifest.getMainAttributes();
 
         String version = attr.getValue("Bundle-Version");
         if (version == null) {
-            String propertiesPath = classPath.substring(0, classPath.lastIndexOf("!") + 1)
+            final String propertiesPath = classPath.substring(0, classPath.lastIndexOf("!") + 1)
                     + "/META-INF/maven/org.opendaylight.yangtools/yang-model-api/pom.properties";
-            Properties properties = new Properties();
+            final Properties properties = new Properties();
             try {
-                InputStream is = new URL(propertiesPath).openStream();
+                final InputStream is = new URL(propertiesPath).openStream();
                 if (is != null) {
                     properties.load(is);
                     version = properties.getProperty("version", "");
                 }
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 throw new LyvApplicationException("Could not read properties file", e);
             }
         }
@@ -272,7 +272,7 @@ public final class Main {
             logFile.start();
             MAIN_LOGGER.addAppender(logFile);
         } else {
-            ConsoleAppender<ILoggingEvent> logConsole = new ConsoleAppender<>();
+            final ConsoleAppender<ILoggingEvent> logConsole = new ConsoleAppender<>();
             logConsole.setContext(MAIN_LOGGER.getLoggerContext());
             logConsole.setEncoder(encoder);
             logConsole.start();
@@ -289,13 +289,14 @@ public final class Main {
 
     @SuppressWarnings("checkstyle:illegalCatch")
     public static void runLYV(final List<String> yangFiles, final Configuration config,
-                              final Emitter format) throws LyvApplicationException {
+            final Emitter format) throws LyvApplicationException {
         final List<String> yangLibDirs = initYangDirsPath(config.getPath());
         LOG.debug("Yang models dirs: {} ", yangLibDirs);
         LOG.debug("Yang models files: {} ", yangFiles);
         LOG.debug("Supported features: {} ", config.getSupportedFeatures());
 
-        boolean yangFileIsNotEmptyAndHelpIsNotSet = !(yangFiles.isEmpty() && config.getTreeConfiguration().isHelp());
+        final boolean yangFileIsNotEmptyAndHelpIsNotSet
+                = !(yangFiles.isEmpty() && config.getTreeConfiguration().isHelp());
         final Stopwatch stopWatch = Stopwatch.createStarted();
         final YangContextFactory contextFactory;
         try {
@@ -309,7 +310,7 @@ public final class Main {
         if (yangFileIsNotEmptyAndHelpIsNotSet) {
             try {
                 effectiveModelContext = contextFactory.createContext(config.getSimplify() != null);
-            } catch (IOException | YangParserException e) {
+            } catch (final IOException | YangParserException e) {
                 throw new LyvApplicationException("Failed to create SchemaContext", e);
             }
         }
@@ -356,12 +357,12 @@ public final class Main {
             schemaSelector.noXml();
         } else {
             try (Stream<Path> path = Files.list(Paths.get(simplifyDir))) {
-                List<File> xmlFiles = path
+                final List<File> xmlFiles = path
                         .map(Path::toFile)
                         .collect(Collectors.toList());
 
                 addXmlFilesToSchemaSelector(schemaSelector, xmlFiles);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 throw new LyvApplicationException("Failed to open xml files", e);
             }
         }
@@ -373,9 +374,9 @@ public final class Main {
         for (final File xmlFile : xmlFiles) {
             try (FileInputStream fis = new FileInputStream(xmlFile)) {
                 schemaSelector.addXml(fis);
-            } catch (IOException | XMLStreamException | URISyntaxException e) {
+            } catch (final IOException | XMLStreamException | URISyntaxException e) {
                 throw new LyvApplicationException(
-                        String.format("Failed to fill schema from %s", xmlFile.toString()), e);
+                        String.format("Failed to fill schema from %s", xmlFile), e);
             }
         }
     }
@@ -391,11 +392,12 @@ public final class Main {
     }
 
     private static class CompilationTableAppender extends AppenderBase<ILoggingEvent> {
+
         private CompilationTable compilationTable = null;
         private String yangName;
 
         @Override
-        protected void append(ILoggingEvent loggingEvent) {
+        protected void append(final ILoggingEvent loggingEvent) {
             if (loggingEvent.getLevel().equals(Level.WARN)) {
                 String proxyMessage = "";
                 if (loggingEvent.getThrowableProxy() != null) {

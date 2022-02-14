@@ -22,9 +22,5 @@ final class Util {
         }
         return typeDef;
     }
-
-    static boolean isBaseType(final TypeDefinition<? extends TypeDefinition<?>> type) {
-        return type.getQName().getNamespace().toString().equals("urn:ietf:params:xml:ns:yang:1");
-    }
 }
 

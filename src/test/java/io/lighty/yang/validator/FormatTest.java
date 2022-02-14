@@ -46,7 +46,7 @@ public abstract class FormatTest implements Cleanable {
     public void setUpOutput() throws Exception {
         this.constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
         this.constructor.setAccessible(true);
-        Main mainClass = this.constructor.newInstance();
+        final Main mainClass = this.constructor.newInstance();
 
         this.method = Main.class.getDeclaredMethod("setMainLoggerOutput", Configuration.class);
         this.method.setAccessible(true);
@@ -104,7 +104,7 @@ public abstract class FormatTest implements Cleanable {
          */
         setFormat();
         final String module = Paths.get(this.yangPath).resolve("test_model@2020-12-03.yang").toString();
-        runLYV(ImmutableList.of(module),this.builder.build(), this.formatter);
+        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
         runCustomModuleTest();
     }
 

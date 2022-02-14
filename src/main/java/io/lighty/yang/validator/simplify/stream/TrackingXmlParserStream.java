@@ -72,12 +72,14 @@ import org.w3c.dom.Document;
 /**
  * This class provides functionality for parsing an XML source containing YANG-modeled data. It disallows multiple
  * instances of the same element except for leaf-list and list entries. It also expects that the YANG-modeled data in
- * the XML source are wrapped in a root element.
- * This class is copied from ODL XmlParserStream and adjusted to fill in our SchemaTree class in read function
+ * the XML source are wrapped in a root element. This class is copied from ODL XmlParserStream and adjusted to fill in
+ * our SchemaTree class in read function
  */
 @Beta
 public final class TrackingXmlParserStream implements Closeable, Flushable {
+
     private static final TransformerFactory TRANSFORMER_FACTORY;
+    private static final String XML_STANDARD_VERSION = "1.0";
 
     static {
         final TransformerFactory fa = TransformerFactory.newInstance();
@@ -88,7 +90,6 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         TRANSFORMER_FACTORY = fa;
     }
 
-    private static final String XML_STANDARD_VERSION = "1.0";
     private final NormalizedNodeStreamWriter writer;
     private final XmlCodecFactory codecs;
     private final DataSchemaNode parentNode;
@@ -111,10 +112,10 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
      *
      * @param reader StAX reader which is to used to walk through the XML source
      * @return instance of XmlParserStream
-     * @throws XMLStreamException           if a well-formedness error or an unexpected processing condition occurs
-     *                                      while parsing the XML
-     * @throws URISyntaxException           if the namespace URI of an XML element contains a syntax error
-     * @throws IOException                  if an error occurs while parsing the value of an anyxml node
+     * @throws XMLStreamException if a well-formedness error or an unexpected processing condition occurs while parsing
+     *                            the XML
+     * @throws URISyntaxException if the namespace URI of an XML element contains a syntax error
+     * @throws IOException        if an error occurs while parsing the value of an anyxml node
      */
     public TrackingXmlParserStream parse(final XMLStreamReader reader) throws XMLStreamException, URISyntaxException,
             IOException {
@@ -191,19 +192,19 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     /**
-     * Recursive method which constructs the {@code parent} tree and sets the values of
-     * it's {@link SimpleNodeDataWithSchema} (leaf-list entry, leaf, anyxml) based on the parsed xml.
+     * Recursive method which constructs the {@code parent} tree and sets the values of it's {@link
+     * SimpleNodeDataWithSchema} (leaf-list entry, leaf, anyxml) based on the parsed xml.
      * <br>
-     * Method also populates the {@link SchemaTree} {@code  tree} which we then use
-     * for formatting the outputs of lighty-yang-validator.
+     * Method also populates the {@link SchemaTree} {@code  tree} which we then use for formatting the outputs of
+     * lighty-yang-validator.
      *
-     * @param in            StAX based XML reader
-     * @param parent        The data node parent of the schema tree of the current nest level
-     * @param rootElement   root xml element
-     * @param schemaTree          SchemaTree which we are constructing as we parse the xml
-     * @throws XMLStreamException   if a well-formedness error or an unexpected processing condition occurs
-     *                              while parsing the XML
-     * @throws URISyntaxException   if the namespace URI of an XML element contains a syntax error
+     * @param in          StAX based XML reader
+     * @param parent      The data node parent of the schema tree of the current nest level
+     * @param rootElement root xml element
+     * @param schemaTree  SchemaTree which we are constructing as we parse the xml
+     * @throws XMLStreamException if a well-formedness error or an unexpected processing condition occurs while parsing
+     *                            the XML
+     * @throws URISyntaxException if the namespace URI of an XML element contains a syntax error
      */
 
     private void read(final XMLStreamReader in, final AbstractNodeDataWithSchema<?> parent, final String rootElement,
@@ -328,7 +329,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
                 continue;
             }
             final SchemaTree parentTree = schemaTree;
-            final int countOfSchemaISLevels  = childDataSchemaNodes.size();
+            final int countOfSchemaISLevels = childDataSchemaNodes.size();
             schemaTree = getSchemaTreeWithAddedChildren(schemaTree, childDataSchemaNodes, schemaIS);
             read(in, ((CompositeNodeDataWithSchema) parent).addChild(childDataSchemaNodes, ChildReusePolicy.NOOP),
                     rootElement, schemaTree, schemaIS);
@@ -359,7 +360,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
              If yes, the node is not from another module.
              */
             schemaIS.enterSchemaTree(less.getQName());
-            List<QName> nodeIdentifiers = schemaIS.toSchemaNodeIdentifier().getNodeIdentifiers();
+            final List<QName> nodeIdentifiers = schemaIS.toSchemaNodeIdentifier().getNodeIdentifiers();
             if (nodeIdentifiers.size() == 1) {
                 schemaTree = schemaTree.addChild(less, true, false,
                         schemaIS.toSchemaNodeIdentifier());
@@ -423,11 +424,10 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     /**
      * Sets the {@code SimpleNodeDataWithSchema} value based on the provided value from xml.
      *
-     * @param parent node for which we are setting the value.
-     * @param value provided value
+     * @param parent    node for which we are setting the value.
+     * @param value     provided value
      * @param nsContext namespace context of the xml node which contains the {@code value}
      */
-
     private void setValue(final AbstractNodeDataWithSchema<?> parent, final Object value,
             final NamespaceContext nsContext, final SchemaInferenceStack schemaIS) {
         checkArgument(parent instanceof SimpleNodeDataWithSchema, "Node %s is not a simple type",

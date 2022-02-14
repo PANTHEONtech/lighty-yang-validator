@@ -61,8 +61,8 @@ class TypePrinter {
             final StringTypeDefinition stringType = (StringTypeDefinition) type;
             printStringType(rootName, stringType);
         } else if (type instanceof RangeRestrictedTypeDefinition) {
-            final RangeRestrictedTypeDefinition<?,?> rangeRestrictedTypeDefinition
-                    = ((RangeRestrictedTypeDefinition<?,?>) type);
+            final RangeRestrictedTypeDefinition<?, ?> rangeRestrictedTypeDefinition
+                    = ((RangeRestrictedTypeDefinition<?, ?>) type);
             printRangeRestictedType(rootName, rangeRestrictedTypeDefinition);
         } else {
             printer.printSimple("type", rootName);

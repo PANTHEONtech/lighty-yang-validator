@@ -10,8 +10,10 @@ package io.lighty.yang.validator.formats;
 import io.lighty.yang.validator.LyvParameters;
 
 public interface CommandLineOptions {
+
     /**
      * Add option to "options" instance.
+     *
      * @param options options that exists for this tool.
      */
     void createOptions(LyvParameters options);

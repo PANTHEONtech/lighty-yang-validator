@@ -21,11 +21,6 @@ class StatementPrinter {
         indentation++;
     }
 
-    void openStatement(final String name) {
-        printer.println(indentation, name + " {");
-        indentation++;
-    }
-
     void closeStatement() {
         indentation--;
         printer.println(indentation, "}");

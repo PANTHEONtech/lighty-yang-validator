@@ -26,7 +26,7 @@ public abstract class FormatPlugin {
     Configuration configuration;
 
     void init(final EffectiveModelContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
-              final SchemaTree tree, final Configuration config) {
+            final SchemaTree tree, final Configuration config) {
         this.schemaContext = context;
         this.sources = testFilesSchemaSources;
         this.schemaTree = tree;
@@ -45,8 +45,7 @@ public abstract class FormatPlugin {
     abstract void emitFormat();
 
     /**
-     * This serves to generate help about current plugin,
-     * in case that user will use --help option with `lyv` command.
+     * This serves to generate help about current plugin, in case that user will use --help option with `lyv` command.
      *
      * @return instance of Help object that will contain name of the format with its description
      */

@@ -80,7 +80,7 @@ public enum SchemaHtmlEnum {
         }
     };
 
-    private String schemaName;
+    private final String schemaName;
 
     SchemaHtmlEnum(final String schemaName) {
         this.schemaName = schemaName;
@@ -91,7 +91,7 @@ public enum SchemaHtmlEnum {
     }
 
     public static SchemaHtmlEnum getSchemaHtmlEnumByName(final String value) {
-        for (SchemaHtmlEnum schemaHtmlEnum : values()) {
+        for (final SchemaHtmlEnum schemaHtmlEnum : values()) {
             if (schemaHtmlEnum.getSchemaName().equals(value)) {
                 return schemaHtmlEnum;
             }

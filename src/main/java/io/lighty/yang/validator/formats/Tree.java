@@ -289,7 +289,7 @@ public class Tree extends FormatPlugin {
             isConnected.remove(isConnected.size() - 1);
         } else if (node instanceof ChoiceSchemaNode) {
             isConnected.add(hasNext);
-            resolveChoiceSchemaNode(lines, isConnected, st, inputOutput, actionExists, node);
+            resolveChoiceSchemaNode(lines, isConnected, st, inputOutput, actionExists);
             isConnected.remove(isConnected.size() - 1);
         }
         // If action is in container or list
@@ -375,8 +375,7 @@ public class Tree extends FormatPlugin {
             final Iterator<SchemaTree> actions) {
         final SchemaTree nextST = actions.next();
         if (nextST.getQname().getModule().equals(usedModule.getQNameModule())) {
-            final SchemaTree actionSchemaTree = nextST;
-            resolveActions(lines, isConnected, hasNext, actions, actionSchemaTree);
+            resolveActions(lines, isConnected, hasNext, actions, nextST);
         }
     }
 
@@ -428,7 +427,7 @@ public class Tree extends FormatPlugin {
     }
 
     private void resolveChoiceSchemaNode(final List<Line> lines, final List<Boolean> isConnected, final SchemaTree st,
-            final RpcInputOutput inputOutput, final boolean actionExists, final DataSchemaNode node) {
+            final RpcInputOutput inputOutput, final boolean actionExists) {
         final Iterator<SchemaTree> caseNodes = st.getDataSchemaNodeChildren().iterator();
         while (caseNodes.hasNext()) {
             final SchemaTree nextST = caseNodes.next();

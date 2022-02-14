@@ -23,8 +23,8 @@ public class GroupArguments {
     }
 
     public void addOption(final String description, final List<String> name, final boolean action,
-                          final String nargs, final Object defaultArg, final ArgumentChoice argumentChoice,
-                          final Class<?> type) {
+            final String nargs, final Object defaultArg, final ArgumentChoice argumentChoice,
+            final Class<?> type) {
         arguments.add(new SingleOptionInGroup(description, name, action, nargs, defaultArg, argumentChoice, type));
     }
 
@@ -41,6 +41,7 @@ public class GroupArguments {
     }
 
     public static class SingleOptionInGroup {
+
         private final String description;
         private final List<String> name;
         private final boolean action;
@@ -50,8 +51,8 @@ public class GroupArguments {
         private final Class<?> type;
 
         public SingleOptionInGroup(final String description, final List<String> name, final boolean action,
-                                   final String nargs, final Object defaultArg, final ArgumentChoice choices,
-                                   final Class<?> type) {
+                final String nargs, final Object defaultArg, final ArgumentChoice choices,
+                final Class<?> type) {
             this.description = description;
             this.name = name;
             this.action = action;
