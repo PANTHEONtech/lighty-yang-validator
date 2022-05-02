@@ -103,21 +103,21 @@ public final class ItUtils {
         return text.substring(0, cut);
     }
 
-    public static void compareModulesAndAugmentData(final String expected, final String output) {
-        compareMixedOutput(expected, output, "module: |augment ");
+    public static void compareModulesAndAugmentData(final String output, final String expected) {
+        compareMixedOutput(output, expected,"module: |augment ");
     }
 
-    public static void compareSimplifyYangOutput(final String expected, final String output) {
+    public static void compareSimplifyYangOutput(final String output, final String expected) {
         final String expectedWithoutEndBracelet = expected.substring(0, expected.length() - 2);
         final String outputWithoutEndBracelet = output.substring(0, output.length() - 2);
-        compareMixedOutput(expectedWithoutEndBracelet, outputWithoutEndBracelet, "grouping");
+        compareMixedOutput(outputWithoutEndBracelet, expectedWithoutEndBracelet, "grouping");
     }
 
-    public static void compareDependFormatOutput(final String expected, final String output) {
-        compareMixedOutput(expected, output, " ");
+    public static void compareDependFormatOutput(final String output, final String expected) {
+        compareMixedOutput(output, expected, " ");
     }
 
-    public static void compareMixedOutput(final String expected, final String output, final String splitFormat) {
+    public static void compareMixedOutput(final String output, final String expected, final String splitFormat) {
         final List<String> splitExp = Arrays.stream(expected.split(splitFormat))
                 .map(String::trim)
                 .filter(t -> !(t.isBlank() || t.isEmpty()))
@@ -126,11 +126,11 @@ public final class ItUtils {
                 .map(String::trim)
                 .filter(t -> !(t.isBlank() || t.isEmpty()))
                 .collect(Collectors.toList());
-        verifyTwoUnsortedArrays(splitExp, splitOut);
+        verifyTwoUnsortedArrays(splitOut, splitExp);
     }
 
-    public static void verifyTwoUnsortedArrays(final List<String> splitExp, final List<String> splitOut) {
-        verifyLengthOfElements(splitExp, splitOut);
+    public static void verifyTwoUnsortedArrays(final List<String> splitOut, final List<String> splitExp) {
+        verifyLengthOfElements(splitOut, splitExp);
         Collections.sort(splitExp);
         Collections.sort(splitOut);
         for (int i = 0; i < splitExp.size(); i++) {
@@ -138,7 +138,7 @@ public final class ItUtils {
         }
     }
 
-    private static void verifyLengthOfElements(final List<String> expected, final List<String> output) {
+    private static void verifyLengthOfElements(final List<String> output, final List<String> expected) {
         if (expected.size() > output.size()) {
             final String result = expected.stream()
                     .filter(t -> !output.contains(t))
