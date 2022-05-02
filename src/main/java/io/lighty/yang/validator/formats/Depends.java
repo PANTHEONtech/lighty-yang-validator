@@ -138,6 +138,7 @@ public class Depends extends FormatPlugin {
                 continue;
             }
             modules.add(moduleWithRevision);
+            dependantsBuilder.setLength(0);
             if (!dependConfiguration.isModuleDependentsOnly()) {
                 if (!dependConfiguration.isModuleIncludesOnly()) {
                     resolveImports(subModule, dependConfiguration);
