@@ -19,10 +19,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,20 +33,13 @@ import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 import org.opendaylight.yangtools.yang.parser.api.YangParser;
 import org.opendaylight.yangtools.yang.parser.api.YangParserException;
 import org.opendaylight.yangtools.yang.parser.api.YangParserFactory;
+import org.opendaylight.yangtools.yang.parser.impl.DefaultYangParserFactory;
 
 final class YangContextFactory {
 
     private static final Pattern MODULE_PATTERN = Pattern.compile("module(.*?)\\{");
     private static final Pattern WHITESPACES = Pattern.compile("\\s+");
-    private static final YangParserFactory PARSER_FACTORY;
-
-    static {
-        final Iterator<YangParserFactory> it = ServiceLoader.load(YangParserFactory.class).iterator();
-        if (!it.hasNext()) {
-            throw new IllegalStateException("No YangParserFactory found");
-        }
-        PARSER_FACTORY = it.next();
-    }
+    private static final YangParserFactory PARSER_FACTORY = new DefaultYangParserFactory();
 
     private final List<File> testFiles = new ArrayList<>();
     private final List<File> libFiles = new ArrayList<>();
@@ -85,7 +76,7 @@ final class YangContextFactory {
     @SuppressWarnings("UnstableApiUsage")
     EffectiveModelContext createContext(final boolean useAllFiles) throws IOException, YangParserException {
         final YangParser parser = PARSER_FACTORY.createParser();
-        if (supportedFeatures != null) {
+        if (supportedFeatures != null && !supportedFeatures.isEmpty()) {
             parser.setSupportedFeatures(supportedFeatures);
         }
 
