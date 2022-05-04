@@ -7,13 +7,10 @@
  */
 package io.lighty.yang.validator.formats;
 
-import com.google.common.collect.Lists;
-import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
@@ -32,6 +29,7 @@ import org.opendaylight.yangtools.yang.model.api.stmt.AnydataEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.AnyxmlEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.IfFeatureAwareDeclaredStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.IfFeatureStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
 import org.opendaylight.yangtools.yang.model.api.type.BooleanTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.LeafrefTypeDefinition;
@@ -45,22 +43,20 @@ abstract class Line {
     private static final String ANYDATA = "<anydata>";
 
     final RpcInputOutput inputOutput;
-    final List<Integer> removeChoiceQname;
-    private final Map<XMLNamespace, String> namespacePrefix;
-
     final List<IfFeatureStatement> ifFeatures = new ArrayList<>();
     final List<String> keys = new ArrayList<>();
     final boolean isMandatory;
     final boolean isListOrLeafList;
     final boolean isChoice;
     final boolean isCase;
+    private final Map<XMLNamespace, String> namespacePrefix;
     Status status;
     String nodeName;
     String flag;
     String path;
     String typeName;
 
-    Line(final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput, final List<Integer> removeChoiceQname,
+    Line(final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
             final Map<XMLNamespace, String> namespacePrefix) {
         SchemaNode node = lyvNodeData.getNode();
         this.status = node.getStatus();
@@ -70,45 +66,25 @@ abstract class Line {
         this.isCase = node instanceof CaseSchemaNode;
         this.nodeName = node.getQName().getLocalName();
         this.inputOutput = inputOutput;
-        this.removeChoiceQname = removeChoiceQname;
         this.namespacePrefix = namespacePrefix;
-        resolveFlag(node, lyvNodeData.getContext());
+        resolveFlag(node, lyvNodeData.getAbsolutePath(), lyvNodeData.getContext());
         resolvePathAndType(node);
         resolveKeys(node);
         resolveIfFeatures(node);
     }
 
-    protected abstract void resolveFlag(SchemaNode node, EffectiveModelContext context);
+    protected abstract void resolveFlag(SchemaNode node, Absolute absolutePath, EffectiveModelContext context);
 
-    protected void resolveFlagForDataSchemaNode(final SchemaNode node, final EffectiveModelContext context,
-            final String config, final String noConfig) {
-        final ArrayList<QName> qNames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
-        final ListIterator<Integer> integerListIterator
-                = this.removeChoiceQname.listIterator(this.removeChoiceQname.size());
-        while (integerListIterator.hasPrevious()) {
-            qNames.remove(integerListIterator.previous().intValue());
-        }
-        if (node instanceof ChoiceSchemaNode) {
-            qNames.remove(qNames.size() - 1);
-            // TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
-            DataSchemaNode dataSchemaNode = context.findDataTreeChild(qNames)
-                    .orElseThrow(() -> new NotFoundException("Data tree child", qNames.toString()));
-            if (dataSchemaNode.isConfiguration() && ((ChoiceSchemaNode) node).isConfiguration()) {
-                this.flag = config;
-            } else {
-                this.flag = noConfig;
-            }
-            // TODO Rework this orElseThrow to schemaInterferenceStack when upstream will be current ODL master
-        } else if (context.findDataTreeChild(qNames)
-                .orElseThrow(() -> new NotFoundException("Data tree child", qNames.toString()))
-                .isConfiguration()) {
+    protected void resolveFlagForDataSchemaNode(final DataSchemaNode dataSchemaNode, final String config,
+            final String noConfig) {
+        if (dataSchemaNode.isConfiguration()) {
             this.flag = config;
         } else {
             this.flag = noConfig;
         }
     }
 
-    private void resolveIfFeatures(SchemaNode node) {
+    private void resolveIfFeatures(final SchemaNode node) {
         final DeclaredStatement<?> declared = getDeclared(node);
         if (declared instanceof IfFeatureAwareDeclaredStatement) {
             final Collection<IfFeatureStatement> ifFeature
@@ -124,7 +100,7 @@ abstract class Line {
         return null;
     }
 
-    private void resolveKeys(SchemaNode node) {
+    private void resolveKeys(final SchemaNode node) {
         if (node instanceof ListSchemaNode) {
             for (QName qname : ((ListSchemaNode) node).getKeyDefinition()) {
                 keys.add(qname.getLocalName());
@@ -132,7 +108,7 @@ abstract class Line {
         }
     }
 
-    private void resolvePathAndType(SchemaNode node) {
+    private void resolvePathAndType(final SchemaNode node) {
         if (node instanceof TypedDataSchemaNode) {
             TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).getType();
             resolvePathAndTypeForDataSchemaNode(type);
@@ -173,7 +149,7 @@ abstract class Line {
         }
     }
 
-    private boolean isBaseType(TypeDefinition<? extends TypeDefinition<?>> type) {
+    private boolean isBaseType(final TypeDefinition<? extends TypeDefinition<?>> type) {
         TypeDefinition<?> baseType = type.getBaseType();
         if (baseType == null) {
             return true;
