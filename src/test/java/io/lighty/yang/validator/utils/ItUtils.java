@@ -7,6 +7,10 @@
  */
 package io.lighty.yang.validator.utils;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
+
 import io.lighty.yang.validator.Main;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +21,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
-import org.testng.Assert;
 
 public final class ItUtils {
 
@@ -31,11 +34,11 @@ public final class ItUtils {
     public static String startLyvWithFileOutput(final String xmlFolder, final String yangImports,
             final String modelPath, final String format) throws IOException {
         final URL xmlFolderURL = ItUtils.class.getClassLoader().getResource(xmlFolder);
-        Assert.assertNotNull(xmlFolderURL);
+        assertNotNull(xmlFolderURL);
         final URL yangImportsURL = ItUtils.class.getClassLoader().getResource(yangImports);
-        Assert.assertNotNull(yangImportsURL);
+        assertNotNull(yangImportsURL);
         final URL moduleURL = ItUtils.class.getClassLoader().getResource(modelPath);
-        Assert.assertNotNull(moduleURL);
+        assertNotNull(moduleURL);
 
         final String outPath = ItUtils.class.getResource(OUTPUT_FOLDER).getFile();
         final String[] args = {"-o", outPath, "-s", xmlFolderURL.getPath(), "-p", yangImportsURL.getPath(), "-f",
@@ -45,7 +48,7 @@ public final class ItUtils {
 
     public static String startLyvWithFileOutput(final String modelPath, final String format) throws IOException {
         final URL resource = ItUtils.class.getClassLoader().getResource(modelPath);
-        Assert.assertNotNull(resource);
+        assertNotNull(resource);
         final String outPath = ItUtils.class.getResource(OUTPUT_FOLDER).getFile();
         final String[] args = {"-o", outPath, "-f", format, resource.getPath()};
         return startLyvWithFileOutput(args);
@@ -59,9 +62,9 @@ public final class ItUtils {
     public static String startRecursivelyLyvWithFileOutput(final String yangImports, final String modelPath,
             final String format) throws IOException {
         final URL yangImportsURL = ItUtils.class.getClassLoader().getResource(yangImports);
-        Assert.assertNotNull(yangImportsURL);
+        assertNotNull(yangImportsURL);
         final URL moduleURL = ItUtils.class.getClassLoader().getResource(modelPath);
-        Assert.assertNotNull(moduleURL);
+        assertNotNull(moduleURL);
 
         final String outPath = ItUtils.class.getResource(OUTPUT_FOLDER).getFile();
         final String[] args = {"-r", "-o", outPath, "-p", yangImportsURL.getPath(), "-f",
@@ -71,14 +74,14 @@ public final class ItUtils {
 
     public static String loadLyvOutput(final String path) throws IOException {
         final InputStream out = ItUtils.class.getResourceAsStream(path);
-        Assert.assertNotNull(out);
+        assertNotNull(out);
         return IOUtils.toString(out, StandardCharsets.UTF_8);
     }
 
     public static String startLyvParseAllWithFileOutput(final String modelFolder, final String format)
             throws IOException {
         final URL resource = ItUtils.class.getClassLoader().getResource(modelFolder);
-        Assert.assertNotNull(resource);
+        assertNotNull(resource);
         final String outPath = ItUtils.class.getResource(OUTPUT_FOLDER).getFile();
         final String[] args = {"-o", outPath, "-f", format, "-a", resource.getPath()};
         return startLyvWithFileOutput(args);
@@ -87,7 +90,7 @@ public final class ItUtils {
     public static String getExpectedOutput(final String fileName) throws IOException {
         final InputStream inputStream = ItUtils.class.getClassLoader()
                 .getResourceAsStream(String.format("integration/compare/%s", fileName));
-        Assert.assertNotNull(inputStream);
+        assertNotNull(inputStream);
         return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
     }
 
@@ -133,9 +136,7 @@ public final class ItUtils {
         verifyLengthOfElements(splitOut, splitExp);
         Collections.sort(splitExp);
         Collections.sort(splitOut);
-        for (int i = 0; i < splitExp.size(); i++) {
-            Assert.assertEquals(splitExp.get(i), splitOut.get(i));
-        }
+        assertEquals(splitOut, splitExp);
     }
 
     private static void verifyLengthOfElements(final List<String> output, final List<String> expected) {
@@ -143,13 +144,13 @@ public final class ItUtils {
             final String result = expected.stream()
                     .filter(t -> !output.contains(t))
                     .collect(Collectors.joining("\nAdditional element:\n"));
-            Assert.fail(String.format("Expected elements are not contained in output:\n %s", result));
+            fail(String.format("Expected elements are not contained in output:\n %s", result));
         }
         if (expected.size() < output.size()) {
             final String result = output.stream()
                     .filter(t -> !expected.contains(t))
                     .collect(Collectors.joining("\nAdditional element:\n"));
-            Assert.fail(String.format("Additional elements contained in LYV output:\n %s", result));
+            fail(String.format("Additional elements contained in LYV output:\n %s", result));
         }
     }
 }
