@@ -14,7 +14,7 @@ import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 
 public class Format implements Emitter, CommandLineOptions {
@@ -27,8 +27,8 @@ public class Format implements Emitter, CommandLineOptions {
     }
 
     public void createOptions(final LyvParameters lyvParameters) {
-        StringBuilder helpBuilder = new StringBuilder();
-        for (FormatPlugin plugin : this.formatPlugins) {
+        final StringBuilder helpBuilder = new StringBuilder();
+        for (final FormatPlugin plugin : this.formatPlugins) {
             final Help help = plugin.getHelp();
             helpBuilder.append(help.generateFromatHelp());
             final Optional<GroupArguments> groupArguments = plugin.getGroupArguments();
@@ -40,9 +40,9 @@ public class Format implements Emitter, CommandLineOptions {
     }
 
     @Override
-    public void init(final Configuration config, final SchemaContext context,
-                     final List<RevisionSourceIdentifier> testFilesSchemaSources,
-                     final SchemaTree schemaTree) {
+    public void init(final Configuration config, final EffectiveModelContext context,
+            final List<RevisionSourceIdentifier> testFilesSchemaSources,
+            final SchemaTree schemaTree) {
         final String format = config.getFormat();
         for (final FormatPlugin plugin : this.formatPlugins) {
             if (plugin.getHelp().getName().equals(format)) {

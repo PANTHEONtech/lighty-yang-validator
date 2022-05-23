@@ -161,7 +161,7 @@ class CheckUpdateFromErrorRFC6020 {
 
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
-    void print(int order) {
+    void print(final int order) {
         LOG.error("{} {}: {}{}{}{}\n", order, name, PRETEXT, description, newInformation, oldInformation);
     }
 }

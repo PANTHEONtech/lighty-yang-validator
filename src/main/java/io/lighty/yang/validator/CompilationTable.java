@@ -41,7 +41,7 @@ final class CompilationTable {
     private int numOfWarn;
 
     CompilationTable(@Nullable final String outputDir, final List<String> yangDirectory,
-                     final String yangtoolsVersion) {
+            final String yangtoolsVersion) {
         tableRowBuilder = new StringBuilder();
         if (outputDir == null) {
             this.outputDir = System.getProperty("java.io.tmpdir");
@@ -108,12 +108,12 @@ final class CompilationTable {
 
     private void build() {
         if (htmlFile == null) {
-            URL url = Resources.getResource("table");
+            final URL url = Resources.getResource("table");
             String text;
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd@HH:mm:ss");
-            Date date = new Date(System.currentTimeMillis());
-            String outputFile = outputDir + "/" + "compilation_results" + formatter.format(date) + ".html";
-            try (FileWriter writer = new FileWriter(outputFile,  StandardCharsets.UTF_8)) {
+            final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd@HH:mm:ss");
+            final Date date = new Date(System.currentTimeMillis());
+            final String outputFile = outputDir + "/" + "compilation_results" + formatter.format(date) + ".html";
+            try (FileWriter writer = new FileWriter(outputFile, StandardCharsets.UTF_8)) {
                 text = Resources.toString(url, StandardCharsets.UTF_8);
                 text = text.replace("<DIRECTORY>", yangDirectory);
                 text = text.replace("<YANGTOOLS_VERSION>", yangtoolsVersion);
@@ -122,7 +122,7 @@ final class CompilationTable {
                 text = text.replace("<ERROR_COMP>", Integer.toString(numOfFailed));
                 text = text.replace("<WARN_COMP>", Integer.toString(numOfWarn));
                 writer.write(text);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 LOG.error("Can not load text from table file");
             }
             LOG.info("html generated to {}", outputFile);
@@ -133,7 +133,7 @@ final class CompilationTable {
     private static class YangResult {
 
         private CompilationStatus status;
-        private StringBuilder result = new StringBuilder();
+        private final StringBuilder result = new StringBuilder();
 
         YangResult(String result, final CompilationStatus status) {
             if (result == null) {

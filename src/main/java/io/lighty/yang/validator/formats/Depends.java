@@ -79,7 +79,7 @@ public class Depends extends FormatPlugin {
     }
 
     private void resolveImports(final ModuleLike module, final DependConfiguration dependConfiguration) {
-        for (ModuleImport moduleImport : module.getImports()) {
+        for (final ModuleImport moduleImport : module.getImports()) {
             final String moduleName = moduleImport.getModuleName();
             if (dependConfiguration.getExcludedModuleNames().contains(moduleName)) {
                 continue;
@@ -90,7 +90,7 @@ public class Depends extends FormatPlugin {
 
     private void resolveImportsInSchemaContextModules(final DependConfiguration dependConfiguration,
             final ModuleImport moduleImport, final String moduleName) {
-        for (Module contextModule : this.schemaContext.getModules()) {
+        for (final Module contextModule : this.schemaContext.getModules()) {
             if (moduleName.equals(contextModule.getName()) && isRevisionsEqualsOrNull(moduleImport, contextModule)) {
                 addContextModuleToModulesAndResolveImports(dependConfiguration, contextModule);
                 break;
@@ -110,15 +110,15 @@ public class Depends extends FormatPlugin {
     }
 
     private boolean isRevisionsEqualsOrNull(final ModuleImport moduleImport, final Module contextModule) {
-        Revision moduleImportRevision = moduleImport.getRevision().orElse(null);
-        Revision contextModuleRevision = contextModule.getRevision().orElse(null);
+        final Revision moduleImportRevision = moduleImport.getRevision().orElse(null);
+        final Revision contextModuleRevision = contextModule.getRevision().orElse(null);
         return (moduleImportRevision == null || contextModuleRevision == null)
                 || (contextModuleRevision.toString().equals(moduleImportRevision.toString()));
     }
 
     private void resolveSubmodules(final ModuleLike module, final DependConfiguration dependConfiguration) {
         final StringBuilder dependantsBuilder = new StringBuilder();
-        for (ModuleLike subModule : module.getSubmodules()) {
+        for (final ModuleLike subModule : module.getSubmodules()) {
             final String moduleName = subModule.getName();
             if (dependConfiguration.getExcludedModuleNames().contains(moduleName)) {
                 continue;
@@ -131,13 +131,14 @@ public class Depends extends FormatPlugin {
             if (revision.isPresent()) {
                 dependantsBuilder
                         .append(AT)
-                        .append(revision.get().toString());
+                        .append(revision.get());
             }
             final String moduleWithRevision = dependantsBuilder.toString();
             if (dependConfiguration.getExcludedModuleNames().contains(moduleWithRevision)) {
                 continue;
             }
             modules.add(moduleWithRevision);
+            dependantsBuilder.setLength(0);
             if (!dependConfiguration.isModuleDependentsOnly()) {
                 if (!dependConfiguration.isModuleIncludesOnly()) {
                     resolveImports(subModule, dependConfiguration);

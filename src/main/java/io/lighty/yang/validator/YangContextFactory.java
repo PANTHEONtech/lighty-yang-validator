@@ -19,10 +19,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,34 +28,26 @@ import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.YangConstants;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
-import org.opendaylight.yangtools.yang.model.parser.api.YangParser;
-import org.opendaylight.yangtools.yang.model.parser.api.YangParserException;
-import org.opendaylight.yangtools.yang.model.parser.api.YangParserFactory;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.opendaylight.yangtools.yang.parser.api.YangParser;
+import org.opendaylight.yangtools.yang.parser.api.YangParserException;
+import org.opendaylight.yangtools.yang.parser.api.YangParserFactory;
+import org.opendaylight.yangtools.yang.parser.impl.DefaultYangParserFactory;
 
 final class YangContextFactory {
 
     private static final Pattern MODULE_PATTERN = Pattern.compile("module(.*?)\\{");
     private static final Pattern WHITESPACES = Pattern.compile("\\s+");
-    private static final YangParserFactory PARSER_FACTORY;
+    private static final YangParserFactory PARSER_FACTORY = new DefaultYangParserFactory();
 
     private final List<File> testFiles = new ArrayList<>();
     private final List<File> libFiles = new ArrayList<>();
-    private final List<File> libDirs = new ArrayList<>();
     private final Set<QName> supportedFeatures;
     private final List<RevisionSourceIdentifier> sourceIdentifiers = new ArrayList<>();
 
-    static {
-        final Iterator<YangParserFactory> it = ServiceLoader.load(YangParserFactory.class).iterator();
-        if (!it.hasNext()) {
-            throw new IllegalStateException("No YangParserFactory found");
-        }
-        PARSER_FACTORY = it.next();
-    }
-
     YangContextFactory(final List<String> yangLibDirs, final List<String> yangTestFiles,
-                       final Set<QName> supportedFeatures, final boolean recursiveSearch) throws IOException {
+            final Set<QName> supportedFeatures, final boolean recursiveSearch) throws IOException {
         this.supportedFeatures = supportedFeatures;
 
         final Set<String> yangLibDirsSet = new HashSet<>();
@@ -74,7 +64,6 @@ final class YangContextFactory {
         }
         yangLibDirsSet.addAll(yangLibDirs);
         for (final String yangLibDir : yangLibDirsSet) {
-            libDirs.add(new File(yangLibDir));
             libFiles.addAll(getYangFiles(yangLibDir, recursiveSearch));
         }
     }
@@ -87,32 +76,32 @@ final class YangContextFactory {
     @SuppressWarnings("UnstableApiUsage")
     EffectiveModelContext createContext(final boolean useAllFiles) throws IOException, YangParserException {
         final YangParser parser = PARSER_FACTORY.createParser();
-        if (supportedFeatures != null) {
+        if (supportedFeatures != null && !supportedFeatures.isEmpty()) {
             parser.setSupportedFeatures(supportedFeatures);
         }
 
         final List<String> names = new ArrayList<>();
-        for (File file : testFiles) {
-            final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forFile(file);
+        for (final File file : testFiles) {
+            final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forPath(file.toPath());
             names.add(yangTextSchemaSource.getIdentifier().getName());
             parser.addSource(yangTextSchemaSource);
         }
-        for (File file : libFiles) {
+        for (final File file : libFiles) {
             if (useAllFiles) {
-                final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forFile(file);
+                final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forPath(file.toPath());
                 final String name = yangTextSchemaSource.getIdentifier().getName();
 
                 if (!names.contains(name)) {
                     parser.addSource(yangTextSchemaSource);
                 }
             } else {
-                parser.addLibSource(YangTextSchemaSource.forFile(file));
+                parser.addLibSource(YangTextSchemaSource.forPath(file.toPath()));
             }
         }
 
         final EffectiveModelContext effectiveModelContext = parser.buildEffectiveModel();
-        for (Module next : effectiveModelContext.getModules()) {
-            for (String name : names) {
+        for (final Module next : effectiveModelContext.getModules()) {
+            for (final String name : names) {
                 if (next.getName().equals(name)) {
                     sourceIdentifiers.add(RevisionSourceIdentifier.create(name, next.getRevision()));
                 }
@@ -144,14 +133,13 @@ final class YangContextFactory {
         return new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
     }
 
-    private static Collection<File> getYangFiles(final String yangSourcesDirectoryPath, final boolean recursiveSearch)
-            throws FileNotFoundException {
+    private static Collection<File> getYangFiles(final String yangSourcesDirectoryPath, final boolean recursiveSearch) {
         final File testSourcesDir = new File(yangSourcesDirectoryPath);
 
         if (recursiveSearch) {
             return iterateYangFilesRecursively(testSourcesDir);
         } else {
-            File[] files = testSourcesDir.listFiles(YANG_FILE_FILTER);
+            final File[] files = testSourcesDir.listFiles(YANG_FILE_FILTER);
             if (files == null) {
                 return Collections.emptyList();
             }
@@ -161,7 +149,7 @@ final class YangContextFactory {
 
     private static List<File> iterateYangFilesRecursively(final File dir) {
         final List<File> yangFiles = new ArrayList<>();
-        File[] files = dir.listFiles();
+        final File[] files = dir.listFiles();
         if (files == null) {
             return Collections.emptyList();
         }

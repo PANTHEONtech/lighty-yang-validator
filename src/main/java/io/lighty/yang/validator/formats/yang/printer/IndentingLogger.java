@@ -20,7 +20,7 @@ class IndentingLogger extends Indenting {
 
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
-    void println(int level, final String name, final String text, final boolean separately) {
+    void println(final int level, final String name, final String text, final boolean separately) {
         final String indent = indent(level, name, text, separately);
         this.log.info("{}", indent);
     }

@@ -7,7 +7,6 @@
  */
 package io.lighty.yang.validator.formats;
 
-import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
@@ -23,7 +22,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.QName;
@@ -41,6 +39,7 @@ import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.util.SchemaInferenceStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,23 +60,22 @@ public class JsTree extends FormatPlugin {
         for (final RevisionSourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
                     .orElseThrow(() -> new NotFoundException("Module", source.getName()));
-            final List<Integer> removeChoiceQnames = new ArrayList<>();
-            SingletonListInitializer singletonListInitializer = new SingletonListInitializer(1);
+            final SingletonListInitializer singletonListInitializer = new SingletonListInitializer(1);
 
             // Nodes
-            printLines(getChildNodesLines(singletonListInitializer, module, removeChoiceQnames));
+            printLines(getChildNodesLines(singletonListInitializer, module));
 
             // Augmentations
-            for (AugmentationSchemaNode augNode : module.getAugmentations()) {
+            for (final AugmentationSchemaNode augNode : module.getAugmentations()) {
                 printLines(getAugmentationNodesLines(singletonListInitializer.getSingletonListWithIncreasedValue(),
-                        augNode, removeChoiceQnames));
+                        augNode));
             }
 
             // Rpcs
-            printLines(getRpcsLines(singletonListInitializer, module, removeChoiceQnames));
+            printLines(getRpcsLines(singletonListInitializer, module));
 
             // Notifications
-            printLines(getNotificationsLines(singletonListInitializer, module, removeChoiceQnames));
+            printLines(getNotificationsLines(singletonListInitializer, module));
         }
 
         LOG.info("</table>");
@@ -90,46 +88,53 @@ public class JsTree extends FormatPlugin {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     private void printLines(final List<Line> lines) {
-        for (Line line : lines) {
+        for (final Line line : lines) {
             LOG.info("{}", line);
         }
     }
 
     private List<Line> getNotificationsLines(final SingletonListInitializer singletonListInitializer,
-            final Module module, final List<Integer> removeChoiceQnames) {
-        List<Line> lines = new ArrayList<>();
-        for (NotificationDefinition node : module.getNotifications()) {
-            final ArrayList<Integer> ids = singletonListInitializer.getSingletonListWithIncreasedValue();
-            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
-            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OTHER,
-                    removeChoiceQnames, namespacePrefix);
+            final Module module) {
+        final List<Line> lines = new ArrayList<>();
+        final SchemaInferenceStack schemaIS = SchemaInferenceStack.of(this.schemaContext);
+        for (final NotificationDefinition node : module.getNotifications()) {
+            schemaIS.enterSchemaTree(node.getQName());
+            final List<Integer> ids = singletonListInitializer.getSingletonListWithIncreasedValue();
+            final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList(),
+                    schemaIS.toSchemaNodeIdentifier());
+            final HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OTHER,
+                    namespacePrefix);
             lines.add(htmlLine);
-            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
-                    Collections.emptyList());
+            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, Collections.emptyList(),
+                    schemaIS);
+            schemaIS.exit();
         }
         return lines;
     }
 
-    private List<Line> getRpcsLines(final SingletonListInitializer singletonListInitializer,
-            final Module module, final List<Integer> removeChoiceQnames) {
-        List<Line> lines = new ArrayList<>();
-        for (RpcDefinition node : module.getRpcs()) {
-            final ArrayList<Integer> rpcId = singletonListInitializer.getSingletonListWithIncreasedValue();
-            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
-            HtmlLine htmlLine = new HtmlLine(rpcId, lyvNodeData, RpcInputOutput.OTHER, removeChoiceQnames,
-                    namespacePrefix);
+    private List<Line> getRpcsLines(final SingletonListInitializer singletonListInitializer, final Module module) {
+        final List<Line> lines = new ArrayList<>();
+        final SchemaInferenceStack schemaIS = SchemaInferenceStack.of(this.schemaContext);
+        for (final RpcDefinition node : module.getRpcs()) {
+            schemaIS.enterSchemaTree(node.getQName());
+            final List<Integer> rpcId = singletonListInitializer.getSingletonListWithIncreasedValue();
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList(),
+                    schemaIS.toSchemaNodeIdentifier());
+            HtmlLine htmlLine = new HtmlLine(rpcId, lyvNodeData, RpcInputOutput.OTHER, namespacePrefix);
             lines.add(htmlLine);
             final boolean inputExists = !node.getInput().getChildNodes().isEmpty();
             final boolean outputExists = !node.getOutput().getChildNodes().isEmpty();
-            ArrayList<Integer> ids = new ArrayList<>(rpcId);
+            List<Integer> ids = new ArrayList<>(rpcId);
             if (inputExists) {
                 ids.add(1);
-                lyvNodeData = new LyvNodeData(this.schemaContext, node.getInput(), Collections.emptyList());
-                htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.INPUT, removeChoiceQnames,
-                        namespacePrefix);
+                schemaIS.enterSchemaTree(node.getInput().getQName());
+                lyvNodeData = new LyvNodeData(this.schemaContext, node.getInput(), Collections.emptyList(),
+                        schemaIS.toSchemaNodeIdentifier());
+                htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.INPUT, namespacePrefix);
                 lines.add(htmlLine);
                 resolveChildNodes(lines, new ArrayList<>(ids), node.getInput(), RpcInputOutput.INPUT,
-                        removeChoiceQnames, Collections.emptyList());
+                        Collections.emptyList(), schemaIS);
+                schemaIS.exit();
             }
             ids = new ArrayList<>(rpcId);
             if (outputExists) {
@@ -138,13 +143,16 @@ public class JsTree extends FormatPlugin {
                 } else {
                     ids.add(2);
                 }
-                lyvNodeData = new LyvNodeData(this.schemaContext, node.getOutput(), Collections.emptyList());
-                htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OUTPUT, removeChoiceQnames,
-                        namespacePrefix);
+                schemaIS.enterSchemaTree(node.getOutput().getQName());
+                lyvNodeData = new LyvNodeData(this.schemaContext, node.getOutput(), Collections.emptyList(),
+                        schemaIS.toSchemaNodeIdentifier());
+                htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OUTPUT, namespacePrefix);
                 lines.add(htmlLine);
                 resolveChildNodes(lines, new ArrayList<>(ids), node.getOutput(), RpcInputOutput.OUTPUT,
-                        removeChoiceQnames, Collections.emptyList());
+                        Collections.emptyList(), schemaIS);
+                schemaIS.exit();
             }
+            schemaIS.exit();
         }
         return lines;
     }
@@ -152,69 +160,70 @@ public class JsTree extends FormatPlugin {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     private List<Line> getChildNodesLines(final SingletonListInitializer singletonListInitializer,
-            final Module module, final List<Integer> removeChoiceQnames) {
-        List<Line> lines = new ArrayList<>();
+            final Module module) {
+        final List<Line> lines = new ArrayList<>();
         final String headerText = prepareHeader(module);
         LOG.info("{}", headerText);
-        for (Module m : this.schemaContext.getModules()) {
+        for (final Module m : this.schemaContext.getModules()) {
             if (!m.getPrefix().equals(module.getPrefix())) {
                 namespacePrefix.put(m.getNamespace(), m.getPrefix());
             }
         }
-        for (DataSchemaNode node : module.getChildNodes()) {
-            final ArrayList<Integer> ids = singletonListInitializer.getSingletonListWithIncreasedValue();
-            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
-            HtmlLine htmlLine = new HtmlLine(ids, lyvNodeData, RpcInputOutput.OTHER, removeChoiceQnames,
-                    namespacePrefix);
+        final SchemaInferenceStack schemaIS = SchemaInferenceStack.of(this.schemaContext);
+        for (final DataSchemaNode node : module.getChildNodes()) {
+            schemaIS.enterSchemaTree(node.getQName());
+            final List<Integer> ids = singletonListInitializer.getSingletonListWithIncreasedValue();
+            final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList(),
+                    schemaIS.toSchemaNodeIdentifier());
+            final HtmlLine htmlLine = new HtmlLine(ids, lyvNodeData, RpcInputOutput.OTHER, namespacePrefix);
             lines.add(htmlLine);
-            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
-                    Collections.emptyList());
+            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, Collections.emptyList(),
+                    schemaIS);
+            schemaIS.exit();
         }
         return lines;
     }
 
-    private List<Line> getAugmentationNodesLines(final ArrayList<Integer> ids, final AugmentationSchemaNode augNode,
-            final List<Integer> removeChoiceQnames) {
-        List<Line> lines = new ArrayList<>();
-        LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, augNode.getChildNodes().iterator().next(),
-                Collections.emptyList());
-        HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OTHER, removeChoiceQnames,
-                namespacePrefix, augNode);
+    private List<Line> getAugmentationNodesLines(final List<Integer> ids, final AugmentationSchemaNode augNode) {
+        final List<Line> lines = new ArrayList<>();
+        final SchemaInferenceStack schemaIS = SchemaInferenceStack.of(this.schemaContext);
+        schemaIS.enterSchemaTree(augNode.getTargetPath());
+        final DataSchemaNode dataSchemaNode = augNode.getChildNodes().iterator().next();
+        schemaIS.enterSchemaTree(dataSchemaNode.getQName());
+        LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, dataSchemaNode,
+                Collections.emptyList(), schemaIS.toSchemaNodeIdentifier());
+        final HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OTHER, namespacePrefix,
+                augNode);
         lines.add(htmlLine);
+        schemaIS.exit();
         final Iterator<? extends DataSchemaNode> nodes = augNode.getChildNodes().iterator();
         int modelAugmentationNumber = 1;
         while (nodes.hasNext()) {
-            removeChoiceQnames.clear();
             final DataSchemaNode node = nodes.next();
-            final ArrayList<QName> qnames = Lists.newArrayList(node.getPath().getPathFromRoot().iterator());
-            RpcInputOutput inputOutputOther = getAugmentationRpcInputOutput(removeChoiceQnames, qnames);
+            schemaIS.enterSchemaTree(node.getQName());
+            final List<QName> qnames = schemaIS.toSchemaNodeIdentifier().getNodeIdentifiers();
+            final RpcInputOutput inputOutputOther = getAugmentationRpcInputOutput(qnames);
             ids.add(modelAugmentationNumber++);
-            lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList());
-            HtmlLine line = new HtmlLine(new ArrayList<>(ids), lyvNodeData, inputOutputOther, removeChoiceQnames,
-                    namespacePrefix);
+            lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList(),
+                    schemaIS.toSchemaNodeIdentifier());
+            final HtmlLine line = new HtmlLine(new ArrayList<>(ids), lyvNodeData, inputOutputOther, namespacePrefix);
             lines.add(line);
-            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, removeChoiceQnames,
-                    Collections.emptyList());
+            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, Collections.emptyList(),
+                    schemaIS);
             ids.remove(ids.size() - 1);
+            schemaIS.exit();
         }
+        schemaIS.clear();
         return lines;
     }
 
-    private RpcInputOutput getAugmentationRpcInputOutput(final List<Integer> removeChoiceQnames,
-            final ArrayList<QName> qnames) {
+    private RpcInputOutput getAugmentationRpcInputOutput(final List<QName> qnames) {
         Collection<? extends ActionDefinition> actions = new HashSet<>();
         RpcInputOutput inputOutputOther = RpcInputOutput.OTHER;
         for (int i = 1; i <= qnames.size(); i++) {
-            List<QName> qnamesCopy = new ArrayList<>(qnames);
-            qnamesCopy = qnamesCopy.subList(0, i);
+            final List<QName> qnamesCopy = qnames.subList(0, i);
             inputOutputOther = getRpcInputOutput(qnames, actions, inputOutputOther, i, qnamesCopy);
-
-            final ListIterator<Integer> integerListIterator =
-                    removeChoiceQnames.listIterator(removeChoiceQnames.size());
-            removeQnameCopyByIntegerListValues(qnamesCopy, integerListIterator);
-            if (!this.schemaContext.findDataTreeChild(qnamesCopy).isPresent()) {
-                removeChoiceQnames.add(i - 1);
-            } else if (this.schemaContext.findDataTreeChild(qnamesCopy).get() instanceof ActionNodeContainer) {
+            if (this.schemaContext.findDataTreeChild(qnamesCopy).get() instanceof ActionNodeContainer) {
                 final ActionNodeContainer actionSchemaNode =
                         (ActionNodeContainer) this.schemaContext.findDataTreeChild(qnamesCopy).get();
                 actions = actionSchemaNode.getActions();
@@ -223,20 +232,13 @@ public class JsTree extends FormatPlugin {
         return inputOutputOther;
     }
 
-    private void removeQnameCopyByIntegerListValues(final List<QName> qnamesCopy,
-            final ListIterator<Integer> integerListIterator) {
-        while (integerListIterator.hasPrevious()) {
-            qnamesCopy.remove(integerListIterator.previous().intValue());
-        }
-    }
-
-    private RpcInputOutput getRpcInputOutput(final ArrayList<QName> qnames,
+    private RpcInputOutput getRpcInputOutput(final List<QName> qnames,
             final Collection<? extends ActionDefinition> actions, final RpcInputOutput inputOutputOther,
             final int iteration, final List<QName> qnamesCopy) {
         if (actions.isEmpty()) {
             return inputOutputOther;
         }
-        for (ActionDefinition action : actions) {
+        for (final ActionDefinition action : actions) {
             if (action.getQName().getLocalName().equals(qnamesCopy.get(qnamesCopy.size() - 1).getLocalName())) {
                 if (INPUT.equals(qnames.get(iteration).getLocalName())) {
                     return RpcInputOutput.INPUT;
@@ -249,11 +251,11 @@ public class JsTree extends FormatPlugin {
     }
 
     private String loadJS() {
-        URL url = Resources.getResource("js");
+        final URL url = Resources.getResource("js");
         String text = "";
         try {
             text = Resources.toString(url, StandardCharsets.UTF_8);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             LOG.error("Can not load text from js file");
         }
 
@@ -263,115 +265,122 @@ public class JsTree extends FormatPlugin {
     private String prepareHeader(final Module module) {
         final StringBuilder nameRevision = new StringBuilder(module.getName());
         module.getRevision().ifPresent(value -> nameRevision.append("@").append(value));
-        URL url = Resources.getResource("header");
+        final URL url = Resources.getResource("header");
         String text = "";
         try {
             text = Resources.toString(url, StandardCharsets.UTF_8);
             text = text.replace("<NAME_REVISION>", nameRevision);
             text = text.replace("<NAMESPACE>", module.getNamespace().toString());
             text = text.replace("<PREFIX>", module.getPrefix());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             LOG.error("Can not load text from header file");
         }
 
         return text;
     }
 
-    private void resolveChildNodes(List<Line> lines, List<Integer> connections, SchemaNode node,
-            RpcInputOutput inputOutput, List<Integer> removeChoiceQnames, List<QName> keys) {
+    private void resolveChildNodes(final List<Line> lines, final List<Integer> connections, final SchemaNode node,
+            final RpcInputOutput inputOutput, final List<QName> keys, final SchemaInferenceStack schemaInferenceStack) {
         if (node instanceof DataNodeContainer) {
             final Iterator<? extends DataSchemaNode> childNodes = ((DataNodeContainer) node).getChildNodes().iterator();
-            resolveDataNodeContainer(childNodes, lines, connections, inputOutput, removeChoiceQnames, keys);
-
+            resolveDataNodeContainer(childNodes, lines, connections, inputOutput, keys, schemaInferenceStack);
         } else if (node instanceof ChoiceSchemaNode) {
             connections.add(0);
             final Collection<? extends CaseSchemaNode> cases = ((ChoiceSchemaNode) node).getCases();
             final Iterator<? extends CaseSchemaNode> iterator = cases.iterator();
-            resolveChoiceSchemaNode(iterator, lines, connections, node, inputOutput, removeChoiceQnames);
-
+            resolveChoiceSchemaNode(iterator, lines, connections, inputOutput, schemaInferenceStack);
         }
         // If action is in container or list
         if (node instanceof ActionNodeContainer) {
-            resolveActionNodeContainer(lines, connections, node, removeChoiceQnames);
+            resolveActionNodeContainer(lines, connections, node, schemaInferenceStack);
         }
     }
 
     private void resolveActionNodeContainer(final List<Line> lines, final List<Integer> connections,
-            final SchemaNode node, final List<Integer> removeChoiceQnames) {
-        for (ActionDefinition action : ((ActionNodeContainer) node).getActions()) {
-            int id = 1;
+            final SchemaNode node, final SchemaInferenceStack schemaIS) {
+        for (final ActionDefinition action : ((ActionNodeContainer) node).getActions()) {
+            final int id = 1;
             connections.add(0);
             connections.set(connections.size() - 1, id);
-            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, action, Collections.emptyList());
+            schemaIS.enterSchemaTree(action.getQName());
+            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, action, Collections.emptyList(),
+                    schemaIS.toSchemaNodeIdentifier());
             HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, RpcInputOutput.OTHER,
-                    removeChoiceQnames, namespacePrefix);
+                    namespacePrefix);
             lines.add(htmlLine);
             final boolean inputExists = !action.getInput().getChildNodes().isEmpty();
             final boolean outputExists = !action.getOutput().getChildNodes().isEmpty();
             if (inputExists) {
                 connections.add(1);
-                lyvNodeData = new LyvNodeData(this.schemaContext, action.getInput(), Collections.emptyList());
+                schemaIS.enterSchemaTree(action.getInput().getQName());
+                lyvNodeData = new LyvNodeData(this.schemaContext, action.getInput(), Collections.emptyList(),
+                        schemaIS.toSchemaNodeIdentifier());
                 htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, RpcInputOutput.INPUT,
-                        removeChoiceQnames, namespacePrefix);
+                        namespacePrefix);
                 lines.add(htmlLine);
                 resolveChildNodes(lines, new ArrayList<>(connections), action.getInput(), RpcInputOutput.INPUT,
-                        removeChoiceQnames, Collections.emptyList());
+                        Collections.emptyList(), schemaIS);
                 connections.remove(connections.size() - 1);
+                schemaIS.exit();
             }
             if (outputExists) {
                 connections.add(1);
-                lyvNodeData = new LyvNodeData(this.schemaContext, action.getOutput(), Collections.emptyList());
+                schemaIS.enterSchemaTree(action.getOutput().getQName());
+                lyvNodeData = new LyvNodeData(this.schemaContext, action.getOutput(), Collections.emptyList(),
+                        schemaIS.toSchemaNodeIdentifier());
                 htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, RpcInputOutput.OUTPUT,
-                        removeChoiceQnames, namespacePrefix);
+                        namespacePrefix);
                 lines.add(htmlLine);
                 resolveChildNodes(lines, new ArrayList<>(connections), action.getOutput(), RpcInputOutput.OUTPUT,
-                        removeChoiceQnames, Collections.emptyList());
+                        Collections.emptyList(), schemaIS);
                 connections.remove(connections.size() - 1);
+                schemaIS.exit();
             }
             connections.remove(connections.size() - 1);
+            schemaIS.exit();
         }
     }
 
     private void resolveChoiceSchemaNode(final Iterator<? extends CaseSchemaNode> iterator, final List<Line> lines,
-            final List<Integer> connections, final SchemaNode node, final RpcInputOutput inputOutput,
-            final List<Integer> removeChoiceQnames) {
+            final List<Integer> connections, final RpcInputOutput inputOutput, final SchemaInferenceStack schemaIS) {
         int id = 1;
-        removeChoiceQnames.add(((List) node.getPath().getPathFromRoot()).size() - 1);
         while (iterator.hasNext()) {
             final DataSchemaNode child = iterator.next();
-            removeChoiceQnames.add(((List) child.getPath().getPathFromRoot()).size() - 1);
+            schemaIS.enterSchemaTree(child.getQName());
             connections.set(connections.size() - 1, id++);
-            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, Collections.emptyList());
-            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput, removeChoiceQnames,
+            final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, Collections.emptyList(),
+                    schemaIS.toSchemaNodeIdentifier());
+            final HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput,
                     namespacePrefix);
             lines.add(htmlLine);
-            resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, removeChoiceQnames,
-                    Collections.emptyList());
-            removeChoiceQnames.remove(Integer.valueOf(((List) child.getPath().getPathFromRoot()).size() - 1));
+            resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, Collections.emptyList(),
+                    schemaIS);
+            schemaIS.exit();
         }
-        removeChoiceQnames.remove(Integer.valueOf(((List) node.getPath().getPathFromRoot()).size() - 1));
         // remove last
         connections.remove(connections.size() - 1);
     }
 
     private void resolveDataNodeContainer(final Iterator<? extends DataSchemaNode> childNodes,
             final List<Line> lines, final List<Integer> connections, final RpcInputOutput inputOutput,
-            final List<Integer> removeChoiceQnames, final List<QName> keys) {
+            final List<QName> keys, final SchemaInferenceStack schemaIS) {
         int id = 1;
         connections.add(0);
         while (childNodes.hasNext()) {
             final DataSchemaNode child = childNodes.next();
+            schemaIS.enterSchemaTree(child.getQName());
             connections.set(connections.size() - 1, id++);
-            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, keys);
-            HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput, removeChoiceQnames,
+            final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, keys,
+                    schemaIS.toSchemaNodeIdentifier());
+            final HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput,
                     namespacePrefix);
             lines.add(htmlLine);
             List<QName> keyDefinitions = Collections.emptyList();
             if (child instanceof ListSchemaNode) {
                 keyDefinitions = ((ListSchemaNode) child).getKeyDefinition();
             }
-            resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, removeChoiceQnames,
-                    keyDefinitions);
+            resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, keyDefinitions, schemaIS);
+            schemaIS.exit();
         }
         // remove last only if the conatiner is not root container
         if (connections.size() > 1) {
@@ -393,11 +402,11 @@ public class JsTree extends FormatPlugin {
 
         private int id;
 
-        SingletonListInitializer(int initialValue) {
+        SingletonListInitializer(final int initialValue) {
             this.id = initialValue;
         }
 
-        ArrayList<Integer> getSingletonListWithIncreasedValue() {
+        List<Integer> getSingletonListWithIncreasedValue() {
             return new ArrayList<>(Collections.singletonList(this.id++));
         }
     }

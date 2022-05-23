@@ -14,10 +14,11 @@ import java.util.Map;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.stmt.IfFeatureStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
 
 public class ConsoleLine extends Line {
 
@@ -25,25 +26,25 @@ public class ConsoleLine extends Line {
     private static final String RO = "ro";
     private final List<Boolean> isConnected;
 
-    ConsoleLine(final List<Boolean> isConnected, final LyvNodeData lyvNodeData, RpcInputOutput inputOutput,
-            final List<Integer> removeChoiceQname, final Map<XMLNamespace, String> namespacePrefix) {
-        super(lyvNodeData, inputOutput, removeChoiceQname, namespacePrefix);
+    ConsoleLine(final List<Boolean> isConnected, final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
+            final Map<XMLNamespace, String> namespacePrefix) {
+        super(lyvNodeData, inputOutput, namespacePrefix);
         this.isConnected = isConnected;
     }
 
-    protected void resolveFlag(SchemaNode node, SchemaContext context) {
+    protected void resolveFlag(SchemaNode node, final Absolute absolutePath, EffectiveModelContext context) {
         if (node instanceof CaseSchemaNode) {
             this.flag = "";
         } else if (node instanceof NotificationDefinition) {
             this.flag = "-n";
-        } else if (context.findNotification(node.getPath().getPathFromRoot().iterator().next()).isPresent()) {
+        } else if (context.findNotification(absolutePath.firstNodeIdentifier()).isPresent()) {
             this.flag = RO;
         } else if (this.inputOutput == RpcInputOutput.INPUT) {
             this.flag = "-w";
         } else if (this.inputOutput == RpcInputOutput.OUTPUT) {
             this.flag = RO;
         } else if (node instanceof DataSchemaNode) {
-            resolveFlagForDataSchemaNode(node, context, RW, RO);
+            resolveFlagForDataSchemaNode((DataSchemaNode) node, RW, RO);
         } else {
             this.flag = "-x";
         }
@@ -131,7 +132,7 @@ public class ConsoleLine extends Line {
 
     private StringBuilder getConnectionStringBuilder() {
         final StringBuilder builder = new StringBuilder();
-        for (boolean connection : isConnected) {
+        for (final boolean connection : isConnected) {
             if (connection) {
                 builder.append('|');
             } else {

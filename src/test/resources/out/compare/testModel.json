@@ -110,7 +110,7 @@
       "type_info": {},
       "children": [
         {
-          "path": "/test:server/",
+          "path": "/test:server/test:reset/",
           "type_info": {},
           "children": [
             {
@@ -350,7 +350,7 @@
   ],
   "notifications": [
     {
-      "path": "AbsoluteSchemaPath{path=[(test:testspace?revision=2020-12-03)testNotification]}",
+      "path": "Absolute{qnames=[(test:testspace?revision=2020-12-03)testNotification]}",
       "type_info": {},
       "name": "testNotification",
       "description": "Indicates that the toaster has run of out bread.",
@@ -358,7 +358,7 @@
       "status": "CURRENT"
     },
     {
-      "path": "AbsoluteSchemaPath{path=[(test:testspace?revision=2020-12-03)testNotificationWithData]}",
+      "path": "Absolute{qnames=[(test:testspace?revision=2020-12-03)testNotificationWithData]}",
       "type_info": {},
       "children": [{
         "path": "/test:testNotificationWithData/test:notificationData/",

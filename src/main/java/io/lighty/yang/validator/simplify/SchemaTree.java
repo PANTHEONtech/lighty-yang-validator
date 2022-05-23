@@ -7,35 +7,41 @@
  */
 package io.lighty.yang.validator.simplify;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
 
 public class SchemaTree implements Comparable<SchemaTree> {
-    private final QName qname;
+
+    public static final Absolute ROOT = Absolute.of(QName.create("root", "root"));
+
+    private final Absolute absolutePath;
     private final DataSchemaNode schemaNode;
     private final boolean isRootNode;
     private final boolean isAugmenting;
     private final ActionDefinition actionNode;
+    private final Set<SchemaTree> children = new LinkedHashSet<>();
 
-    private final Map<SchemaPath, SchemaTree> children = new LinkedHashMap<>();
-
-    SchemaTree(final QName qname, final DataSchemaNode schemaNode,
-               final boolean isRootNode, final boolean isAugmenting,
-               final ActionDefinition actionNode) {
-        this.qname = qname;
+    SchemaTree(final Absolute absolutePath, final DataSchemaNode schemaNode,
+            final boolean isRootNode, final boolean isAugmenting,
+            final ActionDefinition actionNode) {
+        this.absolutePath = absolutePath;
         this.schemaNode = schemaNode;
         this.isRootNode = isRootNode;
         this.isAugmenting = isAugmenting;
         this.actionNode = actionNode;
     }
 
-    private QName getQname() {
-        return qname;
+    public QName getQname() {
+        return absolutePath.lastNodeIdentifier();
+    }
+
+    public Absolute getAbsolutePath() {
+        return absolutePath;
     }
 
     public boolean isRootNode() {
@@ -54,45 +60,51 @@ public class SchemaTree implements Comparable<SchemaTree> {
         return actionNode;
     }
 
-    public void addChild(final SchemaTree tree) {
-        children.putIfAbsent(tree.getSchemaNode().getPath(), tree);
+    public SchemaTree addChild(final SchemaTree tree) {
+        if (children.add(tree)) {
+            return tree;
+        } else {
+            return children.stream()
+                    .filter(schemaTree -> schemaTree.equals(tree))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException(
+                            String.format("Failed to add SchemaNode [%s] to SchemaTree path", absolutePath)));
+        }
     }
 
     public SchemaTree addChild(final DataSchemaNode schemaNodeInput, final boolean isRootNodeInput,
-                               final boolean isAugmentingInput) {
-        final SchemaTree tree = new SchemaTree(schemaNodeInput.getQName(), schemaNodeInput,
+            final boolean isAugmentingInput, final Absolute absolute) {
+        final SchemaTree tree = new SchemaTree(absolute, schemaNodeInput,
                 isRootNodeInput, isAugmentingInput, null);
-        final SchemaTree prev = children.putIfAbsent(tree.getSchemaNode().getPath(), tree);
-        return prev == null ? tree : prev;
+        return addChild(tree);
     }
 
     SchemaTree addChild(final ActionDefinition schemaNodeInput, final boolean isRootNodeInput,
-                        final boolean augmentation) {
-        final SchemaTree tree = new SchemaTree(schemaNodeInput.getQName(), null,
+            final boolean augmentation, final Absolute absolute) {
+        final SchemaTree tree = new SchemaTree(absolute, null,
                 isRootNodeInput, augmentation, schemaNodeInput);
-        final SchemaTree prev = children.putIfAbsent(tree.getActionNode().getPath(), tree);
-        return prev == null ? tree : prev;
+        return addChild(tree);
     }
 
-    public Map<SchemaPath, SchemaTree> getChildren() {
+    public Set<SchemaTree> getChildren() {
         return children;
     }
 
-    public Map<SchemaPath, SchemaTree> getDataSchemaNodeChildren() {
-        Map<SchemaPath, SchemaTree> ret = new LinkedHashMap<>();
-        for (Map.Entry<SchemaPath, SchemaTree> child : children.entrySet()) {
-            if (child.getValue().getSchemaNode() != null) {
-                ret.put(child.getKey(), child.getValue());
+    public Set<SchemaTree> getDataSchemaNodeChildren() {
+        final Set<SchemaTree> ret = new LinkedHashSet<>();
+        for (final SchemaTree child : children) {
+            if (child.getSchemaNode() != null) {
+                ret.add(child);
             }
         }
         return ret;
     }
 
-    public Map<SchemaPath, SchemaTree> getActionDefinitionChildren() {
-        Map<SchemaPath, SchemaTree> ret = new LinkedHashMap<>();
-        for (Map.Entry<SchemaPath, SchemaTree> child : children.entrySet()) {
-            if (child.getValue().getActionNode() != null) {
-                ret.put(child.getKey(), child.getValue());
+    public Set<SchemaTree> getActionDefinitionChildren() {
+        final Set<SchemaTree> ret = new LinkedHashSet<>();
+        for (final SchemaTree child : children) {
+            if (child.getActionNode() != null) {
+                ret.add(child);
             }
         }
         return ret;
@@ -107,13 +119,12 @@ public class SchemaTree implements Comparable<SchemaTree> {
             return false;
         }
         final SchemaTree that = (SchemaTree) obj;
-        return Objects.equals(qname, that.qname)
-                && Objects.equals(schemaNode, that.schemaNode);
+        return Objects.equals(absolutePath, that.absolutePath);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(qname, schemaNode);
+        return Objects.hash(absolutePath);
     }
 
     @Override

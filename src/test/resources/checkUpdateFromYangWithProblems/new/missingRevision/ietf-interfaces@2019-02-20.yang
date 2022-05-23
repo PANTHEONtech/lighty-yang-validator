@@ -61,6 +61,11 @@ module ietf-interfaces {
        interfaces.";
   }
 
+  typedef test-type {
+    type string;
+    description "This type is changed to string since new revision";
+  }
+
   /*
    * Identities
    */

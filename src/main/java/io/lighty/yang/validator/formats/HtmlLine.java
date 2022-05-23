@@ -19,14 +19,15 @@ import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.InputEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.OutputEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
 import org.opendaylight.yangtools.yang.model.spi.meta.AbstractUndeclaredEffectiveStatement;
 
 public class HtmlLine extends Line {
@@ -39,28 +40,25 @@ public class HtmlLine extends Line {
     private final SchemaHtmlEnum schema;
 
 
-    HtmlLine(final List<Integer> ids, final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
-            final List<Integer> removeChoiceQname, final Map<XMLNamespace, String> namespacePrefix) {
-        super(lyvNodeData, inputOutput, removeChoiceQname, namespacePrefix);
+    HtmlLine(final List<Integer> ids, final LyvNodeData lyvND, final RpcInputOutput inputOutput,
+            final Map<XMLNamespace, String> namespacePrefix) {
+        super(lyvND, inputOutput, namespacePrefix);
         this.ids = ids;
-        Iterable<QName> pathFromRoot;
-        SchemaNode node = lyvNodeData.getNode();
+        final SchemaNode node = lyvND.getNode();
         description = node.getDescription().orElse("");
-        pathFromRoot = node.getPath().getPathFromRoot();
         schema = getSchemaBySchemaNode(node);
-        path = createPath(pathFromRoot, namespacePrefix, lyvNodeData.getContext());
+        path = createPath(lyvND.getAbsolutePath().getNodeIdentifiers(), namespacePrefix, lyvND.getContext());
     }
 
     HtmlLine(final List<Integer> ids, final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
-            final List<Integer> removeChoiceQname, final Map<XMLNamespace, String> namespacePrefix,
-            final AugmentationSchemaNode augment) {
-        super(lyvNodeData, inputOutput, removeChoiceQname, namespacePrefix);
+            final Map<XMLNamespace, String> namespacePrefix, final AugmentationSchemaNode augment) {
+        super(lyvNodeData, inputOutput, namespacePrefix);
         this.ids = ids;
-        Iterable<QName> pathFromRoot;
+        final Iterable<QName> pathFromRoot;
         description = augment.getDescription().orElse("");
         schema = SchemaHtmlEnum.AUGMENT;
         pathFromRoot = augment.getTargetPath().getNodeIdentifiers();
-        nodeName = augment.getTargetPath().asSchemaPath().getLastComponent().getLocalName();
+        nodeName = augment.getTargetPath().lastNodeIdentifier().getLocalName();
         status = augment.getStatus();
         flag = "";
         path = createPath(pathFromRoot, namespacePrefix, lyvNodeData.getContext());
@@ -89,9 +87,9 @@ public class HtmlLine extends Line {
     }
 
     private static String createPath(final Iterable<QName> pathFromRoot,
-            final Map<XMLNamespace, String> namespacePrefix, final SchemaContext context) {
+            final Map<XMLNamespace, String> namespacePrefix, final EffectiveModelContext context) {
         final StringBuilder pathBuilder = new StringBuilder();
-        for (QName path : pathFromRoot) {
+        for (final QName path : pathFromRoot) {
             final String prefix = namespacePrefix.getOrDefault(path.getNamespace(),
                     context.findModule(path.getModule())
                             .orElseThrow(() -> new NotFoundException("Module", path.getModule().toString()))
@@ -170,19 +168,19 @@ public class HtmlLine extends Line {
     }
 
     @Override
-    protected void resolveFlag(SchemaNode node, SchemaContext context) {
+    protected void resolveFlag(SchemaNode node, final Absolute absolutePath, EffectiveModelContext context) {
         if (node instanceof CaseSchemaNode || node instanceof RpcDefinition || node instanceof NotificationDefinition
                 || node instanceof ActionDefinition) {
             // do not emit the "config/no config" for rpc/action/notification/case SchemaNode
             this.flag = "";
-        } else if (context.findNotification(node.getPath().getPathFromRoot().iterator().next()).isPresent()) {
+        } else if (context.findNotification(absolutePath.firstNodeIdentifier()).isPresent()) {
             this.flag = NO_CONFIG;
         } else if (this.inputOutput == RpcInputOutput.INPUT) {
             this.flag = CONFIG;
         } else if (this.inputOutput == RpcInputOutput.OUTPUT) {
             this.flag = NO_CONFIG;
         } else if (node instanceof DataSchemaNode) {
-            resolveFlagForDataSchemaNode(node, context, CONFIG, NO_CONFIG);
+            resolveFlagForDataSchemaNode((DataSchemaNode) node, CONFIG, NO_CONFIG);
         } else {
             this.flag = CONFIG;
         }

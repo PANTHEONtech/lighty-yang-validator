@@ -2,11 +2,11 @@ package io.lighty.yang.validator.exceptions;
 
 public class LyvApplicationException extends Exception {
 
-    public LyvApplicationException(String message) {
+    public LyvApplicationException(final String message) {
         super(message);
     }
 
-    public LyvApplicationException(String message, Throwable cause) {
+    public LyvApplicationException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

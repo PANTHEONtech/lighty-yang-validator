@@ -10,13 +10,14 @@ package io.lighty.yang.validator.formats.yang.printer;
 import java.io.PrintStream;
 
 class IndentingPrinter extends Indenting {
+
     private final PrintStream printStream;
 
     IndentingPrinter(final PrintStream printStream) {
         this.printStream = printStream;
     }
 
-    void println(int level, final String name, final String text, final boolean separately) {
+    void println(final int level, final String name, final String text, final boolean separately) {
         printStream.println(indent(level, name, text, separately));
     }
 

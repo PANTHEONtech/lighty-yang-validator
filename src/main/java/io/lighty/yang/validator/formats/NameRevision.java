@@ -35,7 +35,7 @@ public class NameRevision extends FormatPlugin {
             final Optional<Revision> revision = module.getRevision();
             String moduleName = module.getName();
             if (revision.isPresent()) {
-                moduleName += ET + revision.get().toString();
+                moduleName += ET + revision.get();
             }
             LOG.info("{}", moduleName);
         }

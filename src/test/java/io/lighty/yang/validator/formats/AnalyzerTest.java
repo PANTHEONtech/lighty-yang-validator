@@ -51,7 +51,7 @@ public class AnalyzerTest implements Cleanable {
     public void setUpOutput() throws Exception {
         this.constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
         this.constructor.setAccessible(true);
-        Main mainClass = this.constructor.newInstance();
+        final Main mainClass = this.constructor.newInstance();
 
         this.method = Main.class.getDeclaredMethod("setMainLoggerOutput", Configuration.class);
         this.method.setAccessible(true);

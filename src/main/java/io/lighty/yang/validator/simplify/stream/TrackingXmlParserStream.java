@@ -14,7 +14,6 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.Closeable;
 import java.io.Flushable;
@@ -23,8 +22,8 @@ import java.net.URISyntaxException;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -73,12 +72,14 @@ import org.w3c.dom.Document;
 /**
  * This class provides functionality for parsing an XML source containing YANG-modeled data. It disallows multiple
  * instances of the same element except for leaf-list and list entries. It also expects that the YANG-modeled data in
- * the XML source are wrapped in a root element.
- * This class is copied from ODL XmlParserStream and adjusted to fill in our SchemaTree class in read function
+ * the XML source are wrapped in a root element. This class is copied from ODL XmlParserStream and adjusted to fill in
+ * our SchemaTree class in read function
  */
 @Beta
 public final class TrackingXmlParserStream implements Closeable, Flushable {
+
     private static final TransformerFactory TRANSFORMER_FACTORY;
+    private static final String XML_STANDARD_VERSION = "1.0";
 
     static {
         final TransformerFactory fa = TransformerFactory.newInstance();
@@ -89,7 +90,6 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         TRANSFORMER_FACTORY = fa;
     }
 
-    private static final String XML_STANDARD_VERSION = "1.0";
     private final NormalizedNodeStreamWriter writer;
     private final XmlCodecFactory codecs;
     private final DataSchemaNode parentNode;
@@ -112,10 +112,10 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
      *
      * @param reader StAX reader which is to used to walk through the XML source
      * @return instance of XmlParserStream
-     * @throws XMLStreamException           if a well-formedness error or an unexpected processing condition occurs
-     *                                      while parsing the XML
-     * @throws URISyntaxException           if the namespace URI of an XML element contains a syntax error
-     * @throws IOException                  if an error occurs while parsing the value of an anyxml node
+     * @throws XMLStreamException if a well-formedness error or an unexpected processing condition occurs while parsing
+     *                            the XML
+     * @throws URISyntaxException if the namespace URI of an XML element contains a syntax error
+     * @throws IOException        if an error occurs while parsing the value of an anyxml node
      */
     public TrackingXmlParserStream parse(final XMLStreamReader reader) throws XMLStreamException, URISyntaxException,
             IOException {
@@ -135,8 +135,8 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
             } else {
                 throw new IllegalStateException("Unsupported schema node type " + parentNode.getClass() + ".");
             }
-
-            read(reader, nodeDataWithSchema, reader.getLocalName(), tree);
+            final SchemaInferenceStack schemaIS = SchemaInferenceStack.of(codecs.getEffectiveModelContext());
+            read(reader, nodeDataWithSchema, reader.getLocalName(), tree, schemaIS);
             nodeDataWithSchema.write(writer);
         }
 
@@ -192,30 +192,31 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     /**
-     * Recursive method which constructs the {@code parent} tree and sets the values of
-     * it's {@link SimpleNodeDataWithSchema} (leaf-list entry, leaf, anyxml) based on the parsed xml.
+     * Recursive method which constructs the {@code parent} tree and sets the values of it's {@link
+     * SimpleNodeDataWithSchema} (leaf-list entry, leaf, anyxml) based on the parsed xml.
      * <br>
-     * Method also populates the {@link SchemaTree} {@code  tree} which we then use
-     * for formatting the outputs of lighty-yang-validator.
+     * Method also populates the {@link SchemaTree} {@code  tree} which we then use for formatting the outputs of
+     * lighty-yang-validator.
      *
-     * @param in            StAX based XML reader
-     * @param parent        The data node parent of the schema tree of the current nest level
-     * @param rootElement   root xml element
-     * @param schemaTree          SchemaTree which we are constructing as we parse the xml
-     * @throws XMLStreamException   if a well-formedness error or an unexpected processing condition occurs
-     *                              while parsing the XML
-     * @throws URISyntaxException   if the namespace URI of an XML element contains a syntax error
+     * @param in          StAX based XML reader
+     * @param parent      The data node parent of the schema tree of the current nest level
+     * @param rootElement root xml element
+     * @param schemaTree  SchemaTree which we are constructing as we parse the xml
+     * @throws XMLStreamException if a well-formedness error or an unexpected processing condition occurs while parsing
+     *                            the XML
+     * @throws URISyntaxException if the namespace URI of an XML element contains a syntax error
      */
 
-    private void read(final XMLStreamReader in, final AbstractNodeDataWithSchema<?> parent,
-            final String rootElement, SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
+    private void read(final XMLStreamReader in, final AbstractNodeDataWithSchema<?> parent, final String rootElement,
+            final SchemaTree schemaTree, final SchemaInferenceStack schemaIS)
+            throws XMLStreamException, URISyntaxException {
         if (!in.hasNext()) {
             return;
         }
 
         if (parent instanceof LeafNodeDataWithSchema || parent instanceof LeafListEntryNodeDataWithSchema) {
             parent.setAttributes(getElementAttributes(in));
-            setValue(parent, in.getElementText().trim(), in.getNamespaceContext());
+            setValue(parent, in.getElementText().trim(), in.getNamespaceContext(), schemaIS);
             if (!isNextEndDocument(in) && !isAtElement(in)) {
                 in.nextTag();
             }
@@ -227,26 +228,27 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         }
 
         if (parent instanceof LeafListNodeDataWithSchema || parent instanceof ListNodeDataWithSchema) {
-            readLeafData(in, parent, rootElement, schemaTree);
+            readLeafData(in, parent, rootElement, schemaTree, schemaIS);
             return;
         }
 
         if (parent instanceof AnyXmlNodeDataWithSchema) {
-            setValue(parent, readAnyXmlValue(in), in.getNamespaceContext());
+            setValue(parent, readAnyXmlValue(in), in.getNamespaceContext(), schemaIS);
             if (!isNextEndDocument(in) && !isAtElement(in)) {
                 in.nextTag();
             }
             return;
         }
 
-        readTaggedData(in, parent, rootElement, schemaTree);
+        readTaggedData(in, parent, rootElement, schemaTree, schemaIS);
     }
 
-    private void readLeafData(XMLStreamReader in, AbstractNodeDataWithSchema<?> parent, String rootElement,
-            SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
+    private void readLeafData(final XMLStreamReader in, final AbstractNodeDataWithSchema<?> parent,
+            final String rootElement, final SchemaTree schemaTree, final SchemaInferenceStack schemaIS)
+            throws XMLStreamException, URISyntaxException {
         String xmlElementName = in.getLocalName();
         while (xmlElementName.equals(parent.getSchema().getQName().getLocalName())) {
-            read(in, newEntryNode(parent), rootElement, schemaTree);
+            read(in, newEntryNode(parent), rootElement, schemaTree, schemaIS);
             if (in.getEventType() == XMLStreamConstants.END_DOCUMENT
                     || in.getEventType() == XMLStreamConstants.END_ELEMENT) {
                 break;
@@ -255,8 +257,9 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         }
     }
 
-    private void readTaggedData(XMLStreamReader in, AbstractNodeDataWithSchema<?> parent, String rootElement,
-            SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
+    private void readTaggedData(final XMLStreamReader in, final AbstractNodeDataWithSchema<?> parent,
+            final String rootElement, final SchemaTree schemaTree, final SchemaInferenceStack schemaIS)
+            throws XMLStreamException, URISyntaxException {
         switch (in.nextTag()) {
             case XMLStreamConstants.START_ELEMENT:
                 /*
@@ -271,7 +274,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
                  Is not valid
                  */
                 // FIXME: Upstream yangtools from which this code is copied has this FIXME, so wait for solution
-                readDataWithStartedElementTag(in, parent, rootElement, schemaTree);
+                readDataWithStartedElementTag(in, parent, rootElement, schemaTree, schemaIS);
                 break;
 
             case XMLStreamConstants.END_ELEMENT:
@@ -286,14 +289,14 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     private void readDataWithStartedElementTag(final XMLStreamReader in, final AbstractNodeDataWithSchema<?> parent,
-            final String rootElement, SchemaTree schemaTree) throws XMLStreamException, URISyntaxException {
+            final String rootElement, SchemaTree schemaTree, final SchemaInferenceStack schemaIS)
+            throws XMLStreamException, URISyntaxException {
 
         final Set<Entry<String, String>> namesakes = new HashSet<>();
+        final DataSchemaNode parentSchema = parent.getSchema();
+        final String parentSchemaName = parentSchema.getQName().getLocalName();
         while (in.hasNext()) {
             final String xmlElementName = in.getLocalName();
-            DataSchemaNode parentSchema = parent.getSchema();
-
-            final String parentSchemaName = parentSchema.getQName().getLocalName();
             if (parentSchemaName.equals(xmlElementName) && in.getEventType() == XMLStreamConstants.END_ELEMENT) {
                 if (!isNextEndDocument(in) && !isAtElement(in)) {
                     in.nextTag();
@@ -320,16 +323,20 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
 
             if (childDataSchemaNodes.isEmpty()) {
                 checkState(!strictParsing, "Schema for node with name %s and namespace %s does not exist at %s",
-                        xmlElementName, xmlElementNamespace, parentSchema.getPath());
+                        xmlElementName, xmlElementNamespace, schemaIS.toSchemaNodeIdentifier());
                 skipUnknownNode(in);
+                schemaIS.exit();
                 continue;
             }
-
             final SchemaTree parentTree = schemaTree;
-            schemaTree = getSchemaTreeWithAddedChildren(schemaTree, childDataSchemaNodes);
+            final int countOfSchemaISLevels = childDataSchemaNodes.size();
+            schemaTree = getSchemaTreeWithAddedChildren(schemaTree, childDataSchemaNodes, schemaIS);
             read(in, ((CompositeNodeDataWithSchema) parent).addChild(childDataSchemaNodes, ChildReusePolicy.NOOP),
-                    rootElement, schemaTree);
+                    rootElement, schemaTree, schemaIS);
             schemaTree = parentTree;
+            for (int i = 0; i < countOfSchemaISLevels; i++) {
+                schemaIS.exit();
+            }
         }
     }
 
@@ -346,28 +353,31 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     }
 
     private SchemaTree getSchemaTreeWithAddedChildren(SchemaTree schemaTree,
-            final Deque<DataSchemaNode> childDataSchemaNodes) {
+            final Deque<DataSchemaNode> childDataSchemaNodes, final SchemaInferenceStack schemaIS) {
         for (final DataSchemaNode less : childDataSchemaNodes) {
             /*
              Check if SchemaNode found based on the xmlElementName is direct child of the root node.
              If yes, the node is not from another module.
              */
-            if (Iterables.size(less.getPath().getPathFromRoot()) == 1) {
-                schemaTree = schemaTree.addChild(less, true, false);
+            schemaIS.enterSchemaTree(less.getQName());
+            final List<QName> nodeIdentifiers = schemaIS.toSchemaNodeIdentifier().getNodeIdentifiers();
+            if (nodeIdentifiers.size() == 1) {
+                schemaTree = schemaTree.addChild(less, true, false,
+                        schemaIS.toSchemaNodeIdentifier());
             /*
              If not, the node can be augmented, we need to check if the modules
              of it's parent and grand parent. If they are not the same, the node is from another module,
              therefore we treat it as augment.
              */
             } else {
-                final Iterator<QName> iterator = less.getPath().getPathTowardsRoot().iterator();
-
-                final QName first = iterator.next();
-                final QName second = iterator.next();
+                final QName first = nodeIdentifiers.get(nodeIdentifiers.size() - 1);
+                final QName second = nodeIdentifiers.get(nodeIdentifiers.size() - 2);
                 if (second.getModule().equals(first.getModule())) {
-                    schemaTree = schemaTree.addChild(less, false, false);
+                    schemaTree = schemaTree.addChild(less, false, false,
+                            schemaIS.toSchemaNodeIdentifier());
                 } else {
-                    schemaTree = schemaTree.addChild(less, true, true);
+                    schemaTree = schemaTree.addChild(less, true, true,
+                            schemaIS.toSchemaNodeIdentifier());
                 }
             }
         }
@@ -414,24 +424,24 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
     /**
      * Sets the {@code SimpleNodeDataWithSchema} value based on the provided value from xml.
      *
-     * @param parent node for which we are setting the value.
-     * @param value provided value
+     * @param parent    node for which we are setting the value.
+     * @param value     provided value
      * @param nsContext namespace context of the xml node which contains the {@code value}
      */
-
     private void setValue(final AbstractNodeDataWithSchema<?> parent, final Object value,
-            final NamespaceContext nsContext) {
+            final NamespaceContext nsContext, final SchemaInferenceStack schemaIS) {
         checkArgument(parent instanceof SimpleNodeDataWithSchema, "Node %s is not a simple type",
                 parent.getSchema().getQName());
         final SimpleNodeDataWithSchema<?> parentSimpleNode = (SimpleNodeDataWithSchema<?>) parent;
         checkArgument(parentSimpleNode.getValue() == null, "Node '%s' has already set its value to '%s'",
                 parentSimpleNode.getSchema().getQName(), parentSimpleNode.getValue());
 
-        parentSimpleNode.setValue(translateValueByType(value, parentSimpleNode.getSchema(), nsContext));
+        parentSimpleNode.setValue(translateValueByType(value, parentSimpleNode.getSchema(), nsContext,
+                schemaIS));
     }
 
     private Object translateValueByType(final Object value, final DataSchemaNode node,
-            final NamespaceContext namespaceCtx) {
+            final NamespaceContext namespaceCtx, final SchemaInferenceStack schemaIS) {
         if (node instanceof AnyxmlSchemaNode) {
 
             checkArgument(value instanceof Document);
@@ -446,10 +456,8 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
 
         checkArgument(node instanceof TypedDataSchemaNode);
         checkArgument(value instanceof String);
-        SchemaInferenceStack schemaInferenceStack
-                = SchemaInferenceStack.ofSchemaPath(codecs.getEffectiveModelContext(), node.getPath());
         final TypeAwareCodec<?, NamespaceContext, ?> xmlCodec
-                = codecs.codecFor((TypedDataSchemaNode) node, schemaInferenceStack);
+                = codecs.codecFor((TypedDataSchemaNode) node, schemaIS);
         return xmlCodec.parseValue(namespaceCtx, (String) value);
     }
 

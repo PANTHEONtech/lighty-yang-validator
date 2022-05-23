@@ -31,19 +31,19 @@ public class Analyzer extends FormatPlugin {
 
     @Override
     void emitFormat() {
-        Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(this.schemaContext.getModules());
-        for (DeclaredStatement<?> declaredStatement : statements) {
+        final Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(this.schemaContext.getModules());
+        for (final DeclaredStatement<?> declaredStatement : statements) {
             analyzeSubstatement(declaredStatement);
         }
         printOut();
     }
 
     private Set<DeclaredStatement<?>> getRecursivelyDeclaredStatements(final Collection<? extends ModuleLike> modules) {
-        Set<DeclaredStatement<?>> declaredStatements = new HashSet<>();
-        for (ModuleLike module : modules) {
+        final Set<DeclaredStatement<?>> declaredStatements = new HashSet<>();
+        for (final ModuleLike module : modules) {
             declaredStatements.add(((EffectiveStatement<?, ?>) module).getDeclared());
 
-            Collection<? extends ModuleLike> submodules = module.getSubmodules();
+            final Collection<? extends ModuleLike> submodules = module.getSubmodules();
             if (submodulesAreNotEmpty(submodules)) {
                 declaredStatements.addAll(getRecursivelyDeclaredStatements(submodules));
             }
@@ -51,20 +51,20 @@ public class Analyzer extends FormatPlugin {
         return declaredStatements;
     }
 
-    private boolean submodulesAreNotEmpty(Collection<? extends ModuleLike> submodules) {
+    private boolean submodulesAreNotEmpty(final Collection<? extends ModuleLike> submodules) {
         return submodules != null && !submodules.isEmpty();
     }
 
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     private void printOut() {
-        for (Map.Entry<String, Integer> entry : new TreeMap<>(this.counter).entrySet()) {
+        for (final Map.Entry<String, Integer> entry : new TreeMap<>(this.counter).entrySet()) {
             LOG.info("{}: {}", entry.getKey(), entry.getValue());
         }
     }
 
     private void analyzeSubstatement(final DeclaredStatement<?> subStatement) {
-        String name = subStatement.statementDefinition().getStatementName().getLocalName();
+        final String name = subStatement.statementDefinition().getStatementName().getLocalName();
         counter.compute(name, (key, val) -> (val == null) ? 1 : val + 1);
         final Collection<? extends DeclaredStatement<?>> substatements = subStatement.declaredSubstatements();
         for (final DeclaredStatement<?> nextSubstatement : substatements) {

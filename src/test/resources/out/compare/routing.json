@@ -116,7 +116,7 @@
             "type_info": {},
             "children": [
               {
-                "path": "/rt:routing/rt:ribs/rt:rib/",
+                "path": "/rt:routing/rt:ribs/rt:rib/rt:active-route/",
                 "type_info": {},
                 "children": [
                   {
@@ -643,7 +643,7 @@
             "type_info": {},
             "children": [
               {
-                "path": "/rt:routing-state/rt:ribs/rt:rib/",
+                "path": "/rt:routing-state/rt:ribs/rt:rib/rt:active-route/",
                 "type_info": {},
                 "children": [
                   {

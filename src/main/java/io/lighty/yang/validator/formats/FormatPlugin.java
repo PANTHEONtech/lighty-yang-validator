@@ -14,19 +14,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 
 public abstract class FormatPlugin {
 
-    SchemaContext schemaContext;
+    EffectiveModelContext schemaContext;
     List<RevisionSourceIdentifier> sources;
     SchemaTree schemaTree;
     Path output;
     Configuration configuration;
 
-    void init(final SchemaContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
-              final SchemaTree tree, final Configuration config) {
+    void init(final EffectiveModelContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
+            final SchemaTree tree, final Configuration config) {
         this.schemaContext = context;
         this.sources = testFilesSchemaSources;
         this.schemaTree = tree;
@@ -45,8 +45,7 @@ public abstract class FormatPlugin {
     abstract void emitFormat();
 
     /**
-     * This serves to generate help about current plugin,
-     * in case that user will use --help option with `lyv` command.
+     * This serves to generate help about current plugin, in case that user will use --help option with `lyv` command.
      *
      * @return instance of Help object that will contain name of the format with its description
      */

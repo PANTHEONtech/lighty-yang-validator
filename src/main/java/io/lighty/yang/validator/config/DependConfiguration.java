@@ -17,7 +17,7 @@ public class DependConfiguration {
     private final Set<String> excludedModuleNames;
 
     DependConfiguration(final boolean moduleDependentsOnly, final boolean moduleImportsOnly,
-                        final boolean moduleIncludesOnly, final Set<String> excludedModuleNames) {
+            final boolean moduleIncludesOnly, final Set<String> excludedModuleNames) {
         this.moduleIncludesOnly = moduleIncludesOnly;
         this.moduleDependentsOnly = moduleDependentsOnly;
         this.moduleImportsOnly = moduleImportsOnly;

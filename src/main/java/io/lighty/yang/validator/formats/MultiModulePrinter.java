@@ -30,7 +30,6 @@ import org.opendaylight.yangtools.yang.common.QNameModule;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.type.UnionTypeDefinition;
@@ -55,7 +54,7 @@ public class MultiModulePrinter extends FormatPlugin {
         if (this.output != null) {
             try {
                 Files.createDirectories(this.output);
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 LOG.error("Can not create directory {}", this.output, e);
             }
         }
@@ -94,7 +93,7 @@ public class MultiModulePrinter extends FormatPlugin {
                             this.usedImportedTypeDefs.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()),
                             this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()));
                     modulePrinter.printYang();
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     LOG.error("Can not create file {}", this.output.resolve(name).toFile().getAbsolutePath(), e);
                 }
             }
@@ -105,15 +104,16 @@ public class MultiModulePrinter extends FormatPlugin {
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.schemaContext.findModule(entry.getKey())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, entry.getKey().toString()));
-            for (SchemaTree singleEntry : entry.getValue()) {
+            for (final SchemaTree singleEntry : entry.getValue()) {
                 gatherUsedTypeDefs(singleEntry, module);
             }
-            for (AugmentationSchemaNode aug : module.getAugmentations()) {
-                for (QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
+            for (final AugmentationSchemaNode aug : module.getAugmentations()) {
+                for (final QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                             .add(this.schemaContext.findModule(pathQname.getModule())
                                     .orElseThrow(
-                                        () -> new NotFoundException(MODULE_STRING, pathQname.getModule().toString()))
+                                            () -> new NotFoundException(MODULE_STRING,
+                                                    pathQname.getModule().toString()))
                                     .getName());
                 }
             }
@@ -135,7 +135,7 @@ public class MultiModulePrinter extends FormatPlugin {
             resolveType(type, module);
 
         }
-        for (final SchemaTree child : tree.getChildren().values()) {
+        for (final SchemaTree child : tree.getChildren()) {
             gatherUsedTypeDefs(child, module);
         }
     }
@@ -155,19 +155,19 @@ public class MultiModulePrinter extends FormatPlugin {
         }
         if (type instanceof UnionTypeDefinition) {
             final List<TypeDefinition<?>> types = ((UnionTypeDefinition) type).getTypes();
-            for (TypeDefinition<?> t : types) {
+            for (final TypeDefinition<?> t : types) {
                 resolveType(t, module);
             }
         }
     }
 
     private void splitTree(final SchemaTree tree) {
-        for (final Map.Entry<SchemaPath, SchemaTree> child : tree.getChildren().entrySet()) {
-            if (child.getValue().isRootNode()) {
-                final QNameModule childModule = child.getKey().getLastComponent().getModule();
-                subtrees.computeIfAbsent(childModule, k -> new HashSet<>()).add(child.getValue());
+        for (final SchemaTree child : tree.getChildren()) {
+            if (child.isRootNode()) {
+                final QNameModule childModule = child.getQname().getModule();
+                subtrees.computeIfAbsent(childModule, k -> new HashSet<>()).add(child);
             }
-            splitTree(child.getValue());
+            splitTree(child);
         }
     }
 

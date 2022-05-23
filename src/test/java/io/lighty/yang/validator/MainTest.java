@@ -74,7 +74,7 @@ public class MainTest implements Cleanable {
         contextFactory =
                 new YangContextFactory(ImmutableList.of(outPath), ImmutableList.of(), Collections.emptySet(), false);
         effectiveModelContext = contextFactory.createContext(true);
-        for (File xmlFile : xmlFiles) {
+        for (final File xmlFile : xmlFiles) {
             try (InputStream input = new FileInputStream(xmlFile)) {
                 final NormalizedNodeResult result = new NormalizedNodeResult();
                 final NormalizedNodeStreamWriter streamWriter = ImmutableNormalizedNodeStreamWriter.from(result);

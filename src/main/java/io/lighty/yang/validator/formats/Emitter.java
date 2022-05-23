@@ -10,7 +10,7 @@ package io.lighty.yang.validator.formats;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.List;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 
 public interface Emitter {
@@ -23,8 +23,8 @@ public interface Emitter {
      * @param testFilesSchemaSources yang modules that are tested
      * @param schemaTree             Tree representation of schema nodes
      */
-    void init(Configuration config, SchemaContext context, List<RevisionSourceIdentifier> testFilesSchemaSources,
-              SchemaTree schemaTree);
+    void init(Configuration config, EffectiveModelContext context,
+            List<RevisionSourceIdentifier> testFilesSchemaSources, SchemaTree schemaTree);
 
     /**
      * Create logic and emit output.

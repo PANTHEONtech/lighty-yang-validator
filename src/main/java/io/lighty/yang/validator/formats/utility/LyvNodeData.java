@@ -14,21 +14,24 @@ import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ContainerLike;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
 
 public class LyvNodeData {
 
     private final boolean isKey;
-    private final SchemaContext context;
+    private final EffectiveModelContext context;
     private final SchemaNode node;
+    private final Absolute absolutePath;
 
-    public LyvNodeData(@NonNull final SchemaContext context, @NonNull final SchemaNode node,
-            @Nullable final List<QName> keys) {
+    public LyvNodeData(@NonNull final EffectiveModelContext context, @NonNull final SchemaNode node,
+            @Nullable final List<QName> keys, final Absolute absolutePath) {
         this.context = context;
+        this.absolutePath = absolutePath;
         this.node = node;
         if (keys == null || keys.isEmpty()) {
             this.isKey = false;
@@ -37,12 +40,16 @@ public class LyvNodeData {
         }
     }
 
-    public SchemaContext getContext() {
+    public EffectiveModelContext getContext() {
         return this.context;
     }
 
     public SchemaNode getNode() {
         return this.node;
+    }
+
+    public Absolute getAbsolutePath() {
+        return absolutePath;
     }
 
     public boolean isNodeMandatory() {

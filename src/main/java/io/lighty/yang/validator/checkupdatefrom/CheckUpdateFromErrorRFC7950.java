@@ -42,7 +42,7 @@ final class CheckUpdateFromErrorRFC7950 extends CheckUpdateFromErrorRFC6020 {
                         + "provided there is at least one \"base\" statement left.");
     }
 
-    private CheckUpdateFromErrorRFC7950(String name, String description) {
+    private CheckUpdateFromErrorRFC7950(final String name, final String description) {
         super(name, description);
     }
 }

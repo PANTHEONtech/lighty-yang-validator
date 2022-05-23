@@ -9,11 +9,11 @@ package io.lighty.yang.validator.formats.yang.printer;
 
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
-import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.opendaylight.yangtools.yang.common.Decimal64;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.QNameModule;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
@@ -61,8 +61,8 @@ class TypePrinter {
             final StringTypeDefinition stringType = (StringTypeDefinition) type;
             printStringType(rootName, stringType);
         } else if (type instanceof RangeRestrictedTypeDefinition) {
-            final RangeRestrictedTypeDefinition<?,?> rangeRestrictedTypeDefinition
-                    = ((RangeRestrictedTypeDefinition<?,?>) type);
+            final RangeRestrictedTypeDefinition<?, ?> rangeRestrictedTypeDefinition
+                    = ((RangeRestrictedTypeDefinition<?, ?>) type);
             printRangeRestictedType(rootName, rangeRestrictedTypeDefinition);
         } else {
             printer.printSimple("type", rootName);
@@ -101,7 +101,7 @@ class TypePrinter {
     private void printDecimalType(final String rootName, final DecimalTypeDefinition decimalTypeDefinition) {
         printer.openStatement(Statement.TYPE, rootName);
         printer.printSimple("fraction-digits", Integer.toString(decimalTypeDefinition.getFractionDigits()));
-        final Optional<RangeConstraint<BigDecimal>> rangeConstraint = decimalTypeDefinition.getRangeConstraint();
+        final Optional<RangeConstraint<Decimal64>> rangeConstraint = decimalTypeDefinition.getRangeConstraint();
         if (rangeConstraint.isPresent()) {
             printer.printSimple("range", "\"" + rangeToString(rangeConstraint.get().getAllowedRanges()) + "\"");
         }
