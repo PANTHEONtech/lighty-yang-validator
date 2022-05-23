@@ -74,7 +74,7 @@ public class IntegrationTest implements Cleanable {
         final String expected = "module ietf-netconf-config@2013-10-21 depends on following modules: "
                 + "ietf-inet-types ietf-netconf-acm ietf-yang-types ietf-netconf-common@2013-10-21 "
                 + "ietf-netconf-tls@2013-10-21 ietf-x509-cert-to-name \n";
-        ItUtils.compareDependFormatOutput(expected, lyvOutput);
+        ItUtils.compareDependFormatOutput(lyvOutput, expected);
     }
 
     @Test
