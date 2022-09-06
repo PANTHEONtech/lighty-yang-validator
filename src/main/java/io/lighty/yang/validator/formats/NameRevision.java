@@ -13,7 +13,7 @@ import io.lighty.yang.validator.exceptions.NotFoundException;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.Module;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ public class NameRevision extends FormatPlugin {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
-        for (final RevisionSourceIdentifier source : this.sources) {
+        for (final SourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
                     .orElseThrow(() -> new NotFoundException("Module", source.getName()));
             final Optional<Revision> revision = module.getRevision();

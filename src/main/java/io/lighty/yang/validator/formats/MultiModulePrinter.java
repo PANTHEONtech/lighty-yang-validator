@@ -27,13 +27,14 @@ import java.util.Set;
 import java.util.TreeSet;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.QNameModule;
+import org.opendaylight.yangtools.yang.common.UnresolvedQName.Unqualified;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.type.UnionTypeDefinition;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +77,8 @@ public class MultiModulePrinter extends FormatPlugin {
                     .orElseThrow(() -> new NotFoundException("Revision of module", module.getName()));
             final String suffix = module.getRevision().isPresent() ? withRev + ".yang" : ".yang";
             final String name = module.getName() + suffix;
-            if (!this.sources.contains(RevisionSourceIdentifier.create(module.getName(), module.getRevision()))
+            if (!this.sources.contains(
+                    new SourceIdentifier(Unqualified.of(module.getName()), module.getRevision().get()))
                     && !this.sources.isEmpty()) {
                 continue;
             }

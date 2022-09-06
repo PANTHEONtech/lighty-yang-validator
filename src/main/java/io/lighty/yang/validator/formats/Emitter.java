@@ -11,7 +11,7 @@ import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.List;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 
 public interface Emitter {
 
@@ -24,7 +24,7 @@ public interface Emitter {
      * @param schemaTree             Tree representation of schema nodes
      */
     void init(Configuration config, EffectiveModelContext context,
-            List<RevisionSourceIdentifier> testFilesSchemaSources, SchemaTree schemaTree);
+            List<SourceIdentifier> testFilesSchemaSources, SchemaTree schemaTree);
 
     /**
      * Create logic and emit output.

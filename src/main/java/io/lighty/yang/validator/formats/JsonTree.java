@@ -44,7 +44,7 @@ import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.opendaylight.yangtools.yang.model.util.SchemaInferenceStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,7 +87,7 @@ public class JsonTree extends FormatPlugin {
     private static final String COLON = ":";
 
     @Override
-    void init(final EffectiveModelContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
+    void init(final EffectiveModelContext context, final List<SourceIdentifier> testFilesSchemaSources,
             final SchemaTree schemaTree, final Configuration config) {
         super.init(context, testFilesSchemaSources, schemaTree, config);
     }
@@ -96,7 +96,7 @@ public class JsonTree extends FormatPlugin {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
-        for (final RevisionSourceIdentifier source : this.sources) {
+        for (final SourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.getName()));
             final JSONObject moduleMetadata = resolveModuleMetadata(module);

@@ -38,7 +38,7 @@ import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.opendaylight.yangtools.yang.model.util.SchemaInferenceStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +57,7 @@ public class JsTree extends FormatPlugin {
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
         this.namespacePrefix = new HashMap<>();
-        for (final RevisionSourceIdentifier source : this.sources) {
+        for (final SourceIdentifier source : this.sources) {
             final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
                     .orElseThrow(() -> new NotFoundException("Module", source.getName()));
             final SingletonListInitializer singletonListInitializer = new SingletonListInitializer(1);
