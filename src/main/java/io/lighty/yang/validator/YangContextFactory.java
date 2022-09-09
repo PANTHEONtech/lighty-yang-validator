@@ -84,13 +84,13 @@ final class YangContextFactory {
         final List<String> names = new ArrayList<>();
         for (final File file : testFiles) {
             final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forPath(file.toPath());
-            names.add(yangTextSchemaSource.getIdentifier().getName());
+            names.add(yangTextSchemaSource.getIdentifier().name().getLocalName());
             parser.addSource(yangTextSchemaSource);
         }
         for (final File file : libFiles) {
             if (useAllFiles) {
                 final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forPath(file.toPath());
-                final String name = yangTextSchemaSource.getIdentifier().getName();
+                final String name = yangTextSchemaSource.getIdentifier().name().getLocalName();
 
                 if (!names.contains(name)) {
                     parser.addSource(yangTextSchemaSource);

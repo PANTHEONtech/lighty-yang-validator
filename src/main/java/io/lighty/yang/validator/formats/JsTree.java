@@ -58,8 +58,8 @@ public class JsTree extends FormatPlugin {
     public void emitFormat() {
         this.namespacePrefix = new HashMap<>();
         for (final SourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
+            final Module module = this.schemaContext.findModule(source.name().getLocalName(), source.revision())
+                    .orElseThrow(() -> new NotFoundException("Module", source.name().getLocalName()));
             final SingletonListInitializer singletonListInitializer = new SingletonListInitializer(1);
 
             // Nodes

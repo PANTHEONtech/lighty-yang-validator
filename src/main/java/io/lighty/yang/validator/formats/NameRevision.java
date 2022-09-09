@@ -30,8 +30,8 @@ public class NameRevision extends FormatPlugin {
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
         for (final SourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
+            final Module module = this.schemaContext.findModule(source.name().getLocalName(), source.revision())
+                    .orElseThrow(() -> new NotFoundException("Module", source.name().getLocalName()));
             final Optional<Revision> revision = module.getRevision();
             String moduleName = module.getName();
             if (revision.isPresent()) {

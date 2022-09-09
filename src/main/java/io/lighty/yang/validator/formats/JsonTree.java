@@ -97,8 +97,8 @@ public class JsonTree extends FormatPlugin {
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
         for (final SourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.getName()));
+            final Module module = this.schemaContext.findModule(source.name().getLocalName(), source.revision())
+                    .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.name().getLocalName()));
             final JSONObject moduleMetadata = resolveModuleMetadata(module);
             final JSONObject jsonTree = new JSONObject();
             final SchemaInferenceStack schemaInferenceStack = SchemaInferenceStack.of(this.schemaContext);

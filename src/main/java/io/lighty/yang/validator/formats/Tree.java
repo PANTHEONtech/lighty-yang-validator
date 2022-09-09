@@ -84,8 +84,8 @@ public class Tree extends FormatPlugin {
             printHelp();
         }
         for (final SourceIdentifier source : this.sources) {
-            usedModule = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
+            usedModule = this.schemaContext.findModule(source.name().getLocalName(), source.revision())
+                    .orElseThrow(() -> new NotFoundException("Module", source.name().getLocalName()));
             final String firstLine = MODULE + usedModule.getName();
             LOG.info("{}", firstLine.substring(0, min(firstLine.length(), lineLength)));
 
