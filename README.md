@@ -20,7 +20,7 @@ The distribution will be stored in the **"target"** directory, as a file called 
 1. Unzip the distribution:
 
 ```
-unzip lighty-yang-validator-16.2.0-SNAPSHOT-bin.zip
+unzip lighty-yang-validator-16.2.0-bin.zip
 ```
 
 2. Enter the directory, to which the distribution was extracted to.
