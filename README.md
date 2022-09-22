@@ -1,4 +1,4 @@
-# :cloud_with_lightning: lighty YANG Validator 16.2.0
+# :cloud_with_lightning: lighty YANG Validator 16.3.0-SNAPSHOT
 
 This tool validates YANG modules using the YANG-Tools parser. If there are any problems parsing the module, it will show the stacktrace with the problem, linking to the corresponding module.
 
@@ -13,7 +13,7 @@ Go to the root directory `/lighty-yang-validator/` and use the command:
 mvn clean install
 ```
 
-The distribution will be stored in the **"target"** directory, as a file called *lighty-yang-validator-16.2.0-SNAPSHOT-bin.zip*
+The distribution will be stored in the **"target"** directory, as a file called *lighty-yang-validator-16.3.0-SNAPSHOT-SNAPSHOT-bin.zip*
 
 ## Run from Distribution
 
