@@ -15,17 +15,17 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 
 public abstract class FormatPlugin {
 
     EffectiveModelContext schemaContext;
-    List<RevisionSourceIdentifier> sources;
+    List<SourceIdentifier> sources;
     SchemaTree schemaTree;
     Path output;
     Configuration configuration;
 
-    void init(final EffectiveModelContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
+    void init(final EffectiveModelContext context, final List<SourceIdentifier> testFilesSchemaSources,
             final SchemaTree tree, final Configuration config) {
         this.schemaContext = context;
         this.sources = testFilesSchemaSources;

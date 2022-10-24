@@ -91,7 +91,7 @@ public class ModulePrinter {
                 .orElseThrow(() -> new NotFoundException("Module ", moduleName.toString()));
         moduleToPrefix = module.getImports().stream()
                 .collect(Collectors.toMap(i -> schemaContext
-                                .findModules(i.getModuleName()).iterator().next().getQNameModule(),
+                                .findModules(i.getModuleName().getLocalName()).iterator().next().getQNameModule(),
                         ModuleImport::getPrefix));
         typePrinter = new SmartTypePrintingStrategy(module, moduleToPrefix);
     }
@@ -439,8 +439,8 @@ public class ModulePrinter {
 
     private void printImports() {
         for (final ModuleImport anImport : module.getImports()) {
-            if (this.usedImports.contains(anImport.getModuleName())) {
-                printer.openStatement(Statement.IMPORT, anImport.getModuleName());
+            if (this.usedImports.contains(anImport.getModuleName().getLocalName())) {
+                printer.openStatement(Statement.IMPORT, anImport.getModuleName().getLocalName());
                 printer.printSimple("prefix", anImport.getPrefix());
                 printer.closeStatement();
                 printer.printEmptyLine();

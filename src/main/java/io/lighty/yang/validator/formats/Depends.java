@@ -21,7 +21,7 @@ import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.ModuleLike;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,9 +46,9 @@ public class Depends extends FormatPlugin {
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
         final DependConfiguration dependConfiguration = this.configuration.getDependConfiguration();
-        for (final RevisionSourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
+        for (final SourceIdentifier source : this.sources) {
+            final Module module = this.schemaContext.findModule(source.name().getLocalName(), source.revision())
+                    .orElseThrow(() -> new NotFoundException("Module", source.name().getLocalName()));
             final StringBuilder dependantsBuilder = new StringBuilder(MODULE);
             dependantsBuilder.append(module.getName())
                     .append(AT);
@@ -80,7 +80,7 @@ public class Depends extends FormatPlugin {
 
     private void resolveImports(final ModuleLike module, final DependConfiguration dependConfiguration) {
         for (final ModuleImport moduleImport : module.getImports()) {
-            final String moduleName = moduleImport.getModuleName();
+            final String moduleName = moduleImport.getModuleName().getLocalName();
             if (dependConfiguration.getExcludedModuleNames().contains(moduleName)) {
                 continue;
             }
