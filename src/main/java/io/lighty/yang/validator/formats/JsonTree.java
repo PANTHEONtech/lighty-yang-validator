@@ -101,7 +101,7 @@ public class JsonTree extends FormatPlugin {
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.getName()));
             final JSONObject moduleMetadata = resolveModuleMetadata(module);
             final JSONObject jsonTree = new JSONObject();
-            final SchemaInferenceStack schemaInferenceStack = SchemaInferenceStack.of(this.schemaContext);
+            final SchemaInferenceStack schemaInferenceStack = SchemaInferenceStack.of(schemaContext);
             appendChildNodesToJsonTree(module, jsonTree, schemaInferenceStack);
             appendNotificationsToJsonTree(module, jsonTree, schemaInferenceStack);
             appendRpcsToJsonTree(module, jsonTree, schemaInferenceStack);
@@ -204,7 +204,7 @@ public class JsonTree extends FormatPlugin {
         }
     }
 
-    private void putNotificationDataToJsonNotification(final NotificationDefinition notification,
+    private static void putNotificationDataToJsonNotification(final NotificationDefinition notification,
             final JSONObject jsonNotification, final SchemaInferenceStack schemaInferenceStack) {
         jsonNotification.put(NAME, notification.getQName().getLocalName());
         jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
@@ -251,7 +251,8 @@ public class JsonTree extends FormatPlugin {
         return true;
     }
 
-    private boolean shouldSkipThisIteration(final Collection<? extends ActionDefinition> actions, final QName path) {
+    private static boolean shouldSkipThisIteration(final Collection<? extends ActionDefinition> actions,
+            final QName path) {
         for (final ActionDefinition action : actions) {
             if (action.getQName().getLocalName().equals(path.getLocalName())) {
                 return true;
@@ -339,7 +340,7 @@ public class JsonTree extends FormatPlugin {
         return jsonLeafType;
     }
 
-    private String resolveNodeClass(final DataSchemaNode node) {
+    private static String resolveNodeClass(final DataSchemaNode node) {
         if (node instanceof ListSchemaNode) {
             return "list";
         } else if (node instanceof ContainerLike) {
@@ -362,7 +363,7 @@ public class JsonTree extends FormatPlugin {
         }
     }
 
-    private JSONObject resolveModuleMetadata(final Module module) {
+    private static JSONObject resolveModuleMetadata(final Module module) {
         final JSONObject jsonModuleMetadata = new JSONObject();
         jsonModuleMetadata.put(NAME, module.getName());
         jsonModuleMetadata.put(REVISION, module.getRevision().orElse(Revision.of(EARLIEST_REVISION)).toString());

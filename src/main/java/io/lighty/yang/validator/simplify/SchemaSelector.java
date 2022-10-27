@@ -41,7 +41,7 @@ public class SchemaSelector {
     @SuppressWarnings("UnstableApiUsage")
     public SchemaSelector(final EffectiveModelContext effectiveModelContext) {
         this.effectiveModelContext = effectiveModelContext;
-        this.codecs = XmlCodecFactory.create(effectiveModelContext);
+        codecs = XmlCodecFactory.create(effectiveModelContext);
         tree = new SchemaTree(SchemaTree.ROOT, null,
                 false, false, null);
     }
@@ -59,11 +59,9 @@ public class SchemaSelector {
         final XMLStreamReader reader = FACTORY.createXMLStreamReader(input);
         final NormalizedNodeResult result = new NormalizedNodeResult();
         final NormalizedNodeStreamWriter streamWriter = ImmutableNormalizedNodeStreamWriter.from(result);
-        final TrackingXmlParserStream xmlParser =
-                new TrackingXmlParserStream(streamWriter, codecs, effectiveModelContext, true, st);
-        xmlParser.parse(reader);
-        xmlParser.flush();
-        xmlParser.close();
+        try (var xmlParser = new TrackingXmlParserStream(streamWriter, codecs, effectiveModelContext, true, st)) {
+            xmlParser.parse(reader);
+        }
     }
 
     public void noXml() {

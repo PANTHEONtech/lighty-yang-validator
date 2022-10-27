@@ -21,14 +21,16 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.AbstractCollection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
+import org.opendaylight.yangtools.yang.data.api.schema.ContainerNode;
 import org.opendaylight.yangtools.yang.data.api.schema.DataContainerChild;
+import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
 import org.opendaylight.yangtools.yang.data.api.schema.stream.NormalizedNodeStreamWriter;
 import org.opendaylight.yangtools.yang.data.codec.xml.XmlParserStream;
 import org.opendaylight.yangtools.yang.data.impl.schema.ImmutableNormalizedNodeStreamWriter;
@@ -78,14 +80,14 @@ public class MainTest implements Cleanable {
             try (InputStream input = new FileInputStream(xmlFile)) {
                 final NormalizedNodeResult result = new NormalizedNodeResult();
                 final NormalizedNodeStreamWriter streamWriter = ImmutableNormalizedNodeStreamWriter.from(result);
-                final XmlParserStream xmlParser = XmlParserStream.create(streamWriter, effectiveModelContext);
-                reader = FACTORY.createXMLStreamReader(input);
-                xmlParser.parse(reader);
-                xmlParser.flush();
-                xmlParser.close();
+                try (var xmlParser = XmlParserStream.create(streamWriter, effectiveModelContext)) {
+                    reader = FACTORY.createXMLStreamReader(input);
+                    xmlParser.parse(reader);
+                }
                 Assert.assertTrue(result.isFinished());
-                final AbstractCollection<DataContainerChild> value =
-                        (AbstractCollection<DataContainerChild>) result.getResult().body();
+                final NormalizedNode node = result.getResult();
+                Assert.assertTrue(node instanceof ContainerNode);
+                final Collection<DataContainerChild> value = ((ContainerNode) node).body();
                 Assert.assertEquals(value.size(), 1);
             }
         }
@@ -102,5 +104,4 @@ public class MainTest implements Cleanable {
 
         return schemaSelector.getSchemaTree();
     }
-
 }

@@ -32,21 +32,22 @@ public class ConsoleLine extends Line {
         this.isConnected = isConnected;
     }
 
+    @Override
     protected void resolveFlag(SchemaNode node, final Absolute absolutePath, EffectiveModelContext context) {
         if (node instanceof CaseSchemaNode) {
-            this.flag = "";
+            flag = "";
         } else if (node instanceof NotificationDefinition) {
-            this.flag = "-n";
+            flag = "-n";
         } else if (context.findNotification(absolutePath.firstNodeIdentifier()).isPresent()) {
-            this.flag = RO;
-        } else if (this.inputOutput == RpcInputOutput.INPUT) {
-            this.flag = "-w";
-        } else if (this.inputOutput == RpcInputOutput.OUTPUT) {
-            this.flag = RO;
+            flag = RO;
+        } else if (inputOutput == RpcInputOutput.INPUT) {
+            flag = "-w";
+        } else if (inputOutput == RpcInputOutput.OUTPUT) {
+            flag = RO;
         } else if (node instanceof DataSchemaNode) {
             resolveFlagForDataSchemaNode((DataSchemaNode) node, RW, RO);
         } else {
-            this.flag = "-x";
+            flag = "-x";
         }
     }
 
@@ -82,7 +83,7 @@ public class ConsoleLine extends Line {
         return builder.toString();
     }
 
-    private StringBuilder getBuilderWithRestOfTheFeature(final Iterator<IfFeatureStatement> ifFeaturesIterator) {
+    private static StringBuilder getBuilderWithRestOfTheFeature(final Iterator<IfFeatureStatement> ifFeaturesIterator) {
         final StringBuilder builder = new StringBuilder();
         builder.append(" {");
         while (ifFeaturesIterator.hasNext()) {
