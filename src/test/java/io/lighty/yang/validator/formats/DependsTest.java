@@ -11,13 +11,13 @@ import static io.lighty.yang.validator.Main.runLYV;
 
 import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.FormatTest;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -27,69 +27,69 @@ public class DependsTest extends FormatTest {
     public void setFormat() {
         final List<FormatPlugin> formats = new ArrayList<>();
         formats.add(new Depends());
-        this.formatter = new Format(formats);
-        this.builder.setFormat("depend");
-        this.builder.setDependConfiguration(false, false, false,
+        formatter = new Format(formats);
+        builder.setFormat("depend");
+        builder.setDependConfiguration(false, false, false,
                 new HashSet<>());
     }
 
     @Test
     public void onlySubmodulesTest() throws Exception {
         setFormat();
-        this.builder.setDependConfiguration(false, false, true,
+        builder.setDependConfiguration(false, false, true,
                 new HashSet<>());
-        final String module = Paths.get(this.yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runDependendsTest("ietf-ipv6-router-advertisements_submodule-dependencies");
     }
 
     @Test
     public void onlyImportsTest() throws Exception {
         setFormat();
-        this.builder.setDependConfiguration(false, true, false,
+        builder.setDependConfiguration(false, true, false,
                 new HashSet<>());
-        final String module = Paths.get(this.yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runDependendsTest("ietf-ipv6-router-advertisements_import-dependencies");
     }
 
     @Test
     public void dependsTestNotRecursive() throws Exception {
         setFormat();
-        this.builder.setDependConfiguration(true, false, false,
+        builder.setDependConfiguration(true, false, false,
                 new HashSet<>());
-        final String module = Paths.get(this.yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runDependendsTest("ietf-ipv6-router-advertisements_non-recursive-dependencies");
     }
 
     @Test
     public void dependsTestNotRecursiveSubmodulesOnly() throws Exception {
         setFormat();
-        this.builder.setDependConfiguration(true, false, true,
+        builder.setDependConfiguration(true, false, true,
                 new HashSet<>());
-        final String module = Paths.get(this.yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runDependendsTest("ietf-ipv6-router-advertisements_non-recursive-only-submodules-dependencies");
     }
 
     @Test
     public void dependsTestNotRecursiveModulesOnly() throws Exception {
         setFormat();
-        this.builder.setDependConfiguration(true, true, false,
+        builder.setDependConfiguration(true, true, false,
                 new HashSet<>());
-        final String module = Paths.get(this.yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runDependendsTest("ietf-ipv6-router-advertisements_non-recursive-only-imports-dependencies");
     }
 
     @Test
     public void dependsTestExcludeModule() throws Exception {
         setFormat();
-        this.builder.setDependConfiguration(false, false, false,
+        builder.setDependConfiguration(false, false, false,
                 new HashSet<>(Collections.singleton("ietf-ipv6-router-advertisements")));
-        final String module = Paths.get(this.yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runDependendsTest("ietf-ipv6-router-advertisements_exclude-module-dependencies");
     }
 
@@ -119,10 +119,9 @@ public class DependsTest extends FormatTest {
     }
 
     private void runDependendsTest(final String comapreWithFileName) throws Exception {
-        final Path outLog = Paths.get(this.outPath).resolve("out.log");
-        final String fileCreated = FileUtils.readFileToString(outLog.toFile(), "utf-8");
-        final String compareWith = FileUtils.readFileToString(outLog.getParent()
-                .resolve("compare").resolve(comapreWithFileName).toFile(), "utf-8");
+        final Path outLog = Paths.get(outPath).resolve("out.log");
+        final String fileCreated = Files.readString(outLog);
+        final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
         Assert.assertEquals(fileCreated.replaceAll("\\s+", ""), compareWith.replaceAll("\\s+", ""));
     }
 
