@@ -78,7 +78,7 @@ public class HtmlLine extends Line {
                 }
             } else {
                 return SchemaHtmlEnum.getSchemaHtmlEnumByName(
-                        ((EffectiveStatement) node).getDeclared().statementDefinition().getStatementName()
+                        ((EffectiveStatement<?, ?>) node).getDeclared().statementDefinition().getStatementName()
                                 .getLocalName());
             }
         } else {
@@ -172,17 +172,17 @@ public class HtmlLine extends Line {
         if (node instanceof CaseSchemaNode || node instanceof RpcDefinition || node instanceof NotificationDefinition
                 || node instanceof ActionDefinition) {
             // do not emit the "config/no config" for rpc/action/notification/case SchemaNode
-            this.flag = "";
+            flag = "";
         } else if (context.findNotification(absolutePath.firstNodeIdentifier()).isPresent()) {
-            this.flag = NO_CONFIG;
-        } else if (this.inputOutput == RpcInputOutput.INPUT) {
-            this.flag = CONFIG;
-        } else if (this.inputOutput == RpcInputOutput.OUTPUT) {
-            this.flag = NO_CONFIG;
+            flag = NO_CONFIG;
+        } else if (inputOutput == RpcInputOutput.INPUT) {
+            flag = CONFIG;
+        } else if (inputOutput == RpcInputOutput.OUTPUT) {
+            flag = NO_CONFIG;
         } else if (node instanceof DataSchemaNode) {
             resolveFlagForDataSchemaNode((DataSchemaNode) node, CONFIG, NO_CONFIG);
         } else {
-            this.flag = CONFIG;
+            flag = CONFIG;
         }
     }
 }
