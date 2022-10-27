@@ -17,7 +17,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
@@ -134,8 +133,8 @@ public final class ItUtils {
 
     public static void verifyTwoUnsortedArrays(final List<String> splitOut, final List<String> splitExp) {
         verifyLengthOfElements(splitOut, splitExp);
-        Collections.sort(splitExp);
-        Collections.sort(splitOut);
+        splitExp.sort(null);
+        splitOut.sort(null);
         assertEquals(splitOut, splitExp);
     }
 
