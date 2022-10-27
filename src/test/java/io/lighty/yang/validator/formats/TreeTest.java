@@ -11,12 +11,12 @@ import static io.lighty.yang.validator.Main.runLYV;
 
 import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.FormatTest;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -26,52 +26,52 @@ public class TreeTest extends FormatTest {
     public void setFormat() {
         final List<FormatPlugin> formats = new ArrayList<>();
         formats.add(new Tree());
-        this.formatter = new Format(formats);
-        this.builder.setFormat("tree");
-        this.builder.setTreeConfiguration(0, 0, false, false, false);
+        formatter = new Format(formats);
+        builder.setFormat("tree");
+        builder.setTreeConfiguration(0, 0, false, false, false);
     }
 
     @Test
     public void treePrefixMainModuleTest() throws Exception {
         setFormat();
-        this.builder.setTreeConfiguration(0, 0, false, false, true);
-        final String module = Paths.get(this.yangPath).resolve("ietf-ip@2018-02-22.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        builder.setTreeConfiguration(0, 0, false, false, true);
+        final String module = Paths.get(yangPath).resolve("ietf-ip@2018-02-22.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runTreeTest("ip-prefix-main-module.tree");
     }
 
     @Test
     public void treePrefixModuleTest() throws Exception {
         setFormat();
-        this.builder.setTreeConfiguration(0, 0, false, true, false);
-        final String module = Paths.get(this.yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        builder.setTreeConfiguration(0, 0, false, true, false);
+        final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runTreeTest("interfaces-prefix-module.tree");
     }
 
     @Test
     public void treeLineLengthTest() throws Exception {
         setFormat();
-        this.builder.setTreeConfiguration(0, 20, false, false, false);
-        final String module = Paths.get(this.yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        builder.setTreeConfiguration(0, 20, false, false, false);
+        final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runTreeTest("interfaces-line-length.tree");
     }
 
     @Test
     public void treeHelpTest() throws Exception {
         setFormat();
-        this.builder.setTreeConfiguration(0, 0, true, false, false);
-        runLYV(Collections.emptyList(), this.builder.build(), this.formatter);
+        builder.setTreeConfiguration(0, 0, true, false, false);
+        runLYV(Collections.emptyList(), builder.build(), formatter);
         runTreeTest("tree-help");
     }
 
     @Test
     public void treeDepthTest() throws Exception {
         setFormat();
-        this.builder.setTreeConfiguration(3, 0, false, false, false);
-        final String module = Paths.get(this.yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        builder.setTreeConfiguration(3, 0, false, false, false);
+        final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runTreeTest("interfaces-limited-depth.tree");
     }
 
@@ -101,10 +101,9 @@ public class TreeTest extends FormatTest {
     }
 
     private void runTreeTest(final String comapreWithFileName) throws Exception {
-        final Path outLog = Paths.get(this.outPath).resolve("out.log");
-        final String fileCreated = FileUtils.readFileToString(outLog.toFile(), "utf-8");
-        final String compareWith = FileUtils.readFileToString(outLog.getParent().resolve("compare")
-                .resolve(comapreWithFileName).toFile(), "utf-8");
+        final Path outLog = Paths.get(outPath).resolve("out.log");
+        final String fileCreated = Files.readString(outLog);
+        final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
         Assert.assertEquals(fileCreated, compareWith);
     }
 
