@@ -331,7 +331,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
             final SchemaTree parentTree = schemaTree;
             final int countOfSchemaISLevels = childDataSchemaNodes.size();
             schemaTree = getSchemaTreeWithAddedChildren(schemaTree, childDataSchemaNodes, schemaIS);
-            read(in, ((CompositeNodeDataWithSchema) parent).addChild(childDataSchemaNodes, ChildReusePolicy.NOOP),
+            read(in, ((CompositeNodeDataWithSchema<?>) parent).addChild(childDataSchemaNodes, ChildReusePolicy.NOOP),
                     rootElement, schemaTree, schemaIS);
             schemaTree = parentTree;
             for (int i = 0; i < countOfSchemaISLevels; i++) {
@@ -340,7 +340,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         }
     }
 
-    private String getXmlElementNamespace(final XMLStreamReader in, final Set<Entry<String, String>> namesakes,
+    private static String getXmlElementNamespace(final XMLStreamReader in, final Set<Entry<String, String>> namesakes,
             final String xmlElementName) {
         final String xmlElementNamespace = in.getNamespaceURI();
         if (!namesakes.add(new SimpleImmutableEntry<>(xmlElementNamespace, xmlElementName))) {
@@ -352,7 +352,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         return xmlElementNamespace;
     }
 
-    private SchemaTree getSchemaTreeWithAddedChildren(SchemaTree schemaTree,
+    private static SchemaTree getSchemaTreeWithAddedChildren(SchemaTree schemaTree,
             final Deque<DataSchemaNode> childDataSchemaNodes, final SchemaInferenceStack schemaIS) {
         for (final DataSchemaNode less : childDataSchemaNodes) {
             /*
