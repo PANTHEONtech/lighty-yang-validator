@@ -18,12 +18,12 @@ import io.lighty.yang.validator.formats.MultiModulePrinter;
 import io.lighty.yang.validator.formats.Tree;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -42,52 +42,52 @@ public class TreeSimplifiedTest implements Cleanable {
 
     @BeforeClass
     public void init() {
-        this.outPath = TreeSimplifiedTest.class.getResource("/out").getFile();
-        this.yangPath = TreeSimplifiedTest.class.getResource("/yang").getFile();
+        outPath = TreeSimplifiedTest.class.getResource("/out").getFile();
+        yangPath = TreeSimplifiedTest.class.getResource("/yang").getFile();
     }
 
     @BeforeMethod
     public void setUpOutput() throws Exception {
-        this.constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
-        this.constructor.setAccessible(true);
-        this.method = Main.class.getDeclaredMethod("setMainLoggerOutput", Configuration.class);
-        final Main mainClass = this.constructor.newInstance();
-        this.method.setAccessible(true);
-        this.builder = new ConfigurationBuilder()
+        constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
+        constructor.setAccessible(true);
+        method = Main.class.getDeclaredMethod("setMainLoggerOutput", Configuration.class);
+        final Main mainClass = constructor.newInstance();
+        method.setAccessible(true);
+        builder = new ConfigurationBuilder()
                 .setRecursive(false)
-                .setOutput(this.outPath)
-                .setPath(Collections.singletonList(this.yangPath));
-        this.method.invoke(mainClass, this.builder.build());
+                .setOutput(outPath)
+                .setPath(Collections.singletonList(yangPath));
+        method.invoke(mainClass, builder.build());
     }
 
     @AfterMethod
     public void removeOuptut() throws Exception {
         tearDown();
-        this.method.setAccessible(false);
-        this.constructor.setAccessible(false);
+        method.setAccessible(false);
+        constructor.setAccessible(false);
     }
 
     @Test
     public void runTreeSimplifiedTest() throws Exception {
         prepare("tree", new Tree());
-        final String module = Paths.get(this.yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
-        final Path outLog = Paths.get(this.outPath).resolve("out.log");
-        final String fileCreated = FileUtils.readFileToString(outLog.toFile(), "utf-8");
-        final String compareWith = FileUtils.readFileToString(outLog.getParent().resolve("compare")
-                .resolve("interfacesSimplified.tree").toFile(), "utf-8");
+        final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
+        final Path outLog = Paths.get(outPath).resolve("out.log");
+        final String fileCreated = Files.readString(outLog);
+        final String compareWith = Files.readString(
+            outLog.resolveSibling("compare").resolve("interfacesSimplified.tree"));
         Assert.assertEquals(fileCreated, compareWith);
     }
 
     @Test
     public void runYangSimplifiedTest() throws Exception {
         prepare("yang", new MultiModulePrinter());
-        final String module = Paths.get(this.yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
-        final Path outLog = Paths.get(this.outPath).resolve("ietf-interfaces@2018-02-20.yang");
-        final String fileCreated = FileUtils.readFileToString(outLog.toFile(), "utf-8");
-        final String compareWith = FileUtils.readFileToString(outLog.getParent().resolve("compare")
-                .resolve("interfaces-simplified.yang").toFile(), "utf-8");
+        final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
+        final Path outLog = Paths.get(outPath).resolve("ietf-interfaces@2018-02-20.yang");
+        final String fileCreated = Files.readString(outLog);
+        final String compareWith = Files.readString(
+            outLog.resolveSibling("compare").resolve("interfaces-simplified.yang"));
         Assert.assertEquals(fileCreated, compareWith);
     }
 
@@ -96,8 +96,8 @@ public class TreeSimplifiedTest implements Cleanable {
         formats.add(plugin);
         final String xmlPath = TreeSimplifiedTest.class.getResource("/xml").getFile();
 
-        this.formatter = new Format(formats);
-        this.builder.setFormat(format)
+        formatter = new Format(formats);
+        builder.setFormat(format)
                 .setSimplify(xmlPath)
                 .setTreeConfiguration(0, 0, false, false, false)
                 .build();
