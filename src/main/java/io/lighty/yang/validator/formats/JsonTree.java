@@ -11,6 +11,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.exceptions.NotFoundException;
+import io.lighty.yang.validator.formats.utility.LyvStack;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +19,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import org.eclipse.jdt.annotation.Nullable;
 import org.json.JSONObject;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
@@ -45,7 +47,6 @@ import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
 import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
-import org.opendaylight.yangtools.yang.model.util.SchemaInferenceStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,18 +97,23 @@ public class JsonTree extends FormatPlugin {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
+        final LyvStack stack = new LyvStack();
+
         for (final SourceIdentifier source : sources) {
             final Module module = schemaContext.findModule(source.name().getLocalName(), source.revision())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.name().getLocalName()));
             final JSONObject moduleMetadata = resolveModuleMetadata(module);
             final JSONObject jsonTree = new JSONObject();
-            final SchemaInferenceStack schemaInferenceStack = SchemaInferenceStack.of(schemaContext);
-            appendChildNodesToJsonTree(module, jsonTree, schemaInferenceStack);
-            appendNotificationsToJsonTree(module, jsonTree, schemaInferenceStack);
-            appendRpcsToJsonTree(module, jsonTree, schemaInferenceStack);
+
+            appendChildNodesToJsonTree(module, jsonTree, stack);
+            stack.clear();
+            appendNotificationsToJsonTree(module, jsonTree, stack);
+            stack.clear();
+            appendRpcsToJsonTree(module, jsonTree, stack);
+            stack.clear();
 
             for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
-                schemaInferenceStack.enterSchemaTree(augmentation.getTargetPath());
+                stack.enter(augmentation.getTargetPath());
                 final JSONObject augmentationJson = new JSONObject();
                 final boolean isConfig = isAugmentConfig(augmentation);
                 augmentationJson.put(CONFIG, isConfig);
@@ -120,18 +126,16 @@ public class JsonTree extends FormatPlugin {
                 augmentationJson.put(NAME, path);
                 for (final DataSchemaNode child : augmentation.getChildNodes()) {
                     if (isConfig) {
-                        augmentationJson.append(CHILDREN, resolveChildMetadata(child, Optional.empty(),
-                                schemaInferenceStack));
+                        augmentationJson.append(CHILDREN, resolveChildMetadata(child, stack));
                     } else {
-                        augmentationJson.append(CHILDREN, resolveChildMetadata(child, Optional.of(false),
-                                schemaInferenceStack));
+                        augmentationJson.append(CHILDREN, resolveChildMetadata(child, stack, Boolean.FALSE));
                     }
                 }
 
-                appendActionsToAugmentationJson(augmentation, augmentationJson, schemaInferenceStack);
-                appendNotificationsToAugmentationJson(module, augmentationJson, schemaInferenceStack);
+                appendActionsToAugmentationJson(augmentation, augmentationJson, stack);
+                appendNotificationsToAugmentationJson(module, augmentationJson, stack);
                 jsonTree.append(AUGMENTS, augmentationJson);
-                schemaInferenceStack.clear();
+                stack.clear();
             }
             jsonTree.put(MODULE, moduleMetadata);
             final String jsonTreeText = jsonTree.toString(4);
@@ -140,88 +144,82 @@ public class JsonTree extends FormatPlugin {
     }
 
     private void appendNotificationsToAugmentationJson(final Module module, final JSONObject augmentationJson,
-            final SchemaInferenceStack schemaInferenceStack) {
+            final LyvStack stack) {
         for (final NotificationDefinition notification : module.getNotifications()) {
             final JSONObject jsonNotification = new JSONObject();
             for (final DataSchemaNode node : notification.getChildNodes()) {
-                jsonNotification.append(CHILDREN, resolveChildMetadata(node, Optional.of(false), schemaInferenceStack));
+                jsonNotification.append(CHILDREN, resolveChildMetadata(node, stack, Boolean.FALSE));
             }
-            putNotificationDataToJsonNotification(notification, jsonNotification, schemaInferenceStack);
+            putNotificationDataToJsonNotification(notification, jsonNotification, stack);
             augmentationJson.append(NOTIFICATIONS, jsonNotification);
         }
     }
 
     private void appendActionsToAugmentationJson(final AugmentationSchemaNode augmentation,
-            final JSONObject augmentationJson,
-            final SchemaInferenceStack schemaInferenceStack) {
+            final JSONObject augmentationJson, final LyvStack stack) {
         for (final ActionDefinition child : augmentation.getActions()) {
-            schemaInferenceStack.enterSchemaTree(child.getQName());
+            stack.enter(child);
             final JSONObject jsonModuleChildAction = new JSONObject();
             jsonModuleChildAction.put(NAME, child.getQName().getLocalName());
             jsonModuleChildAction.put(DESCRIPTION, child.getDescription().orElse(EMPTY));
             jsonModuleChildAction.put(STATUS, child.getStatus().name());
             jsonModuleChildAction.put(TYPE_INFO, new JSONObject());
             jsonModuleChildAction.put(CLASS, ACTION);
-            jsonModuleChildAction.put(PATH, resolvePath(schemaInferenceStack.toSchemaNodeIdentifier()));
-            jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getInput(), Optional.empty(),
-                    schemaInferenceStack));
-            jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getOutput(), Optional.of(false),
-                    schemaInferenceStack));
+            jsonModuleChildAction.put(PATH, resolvePath(stack));
+            jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getInput(), stack));
+            jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getOutput(), stack, Boolean.FALSE));
             augmentationJson.append(CHILDREN, jsonModuleChildAction);
-            schemaInferenceStack.exit();
+            stack.exit();
         }
     }
 
-    private void appendRpcsToJsonTree(final Module module, final JSONObject jsonTree,
-            final SchemaInferenceStack schemaInferenceStack) {
+    private void appendRpcsToJsonTree(final Module module, final JSONObject jsonTree, final LyvStack stack) {
         for (final RpcDefinition rpc : module.getRpcs()) {
-            schemaInferenceStack.enterSchemaTree(rpc.getQName());
+            stack.enter(rpc);
             final JSONObject jsonRpc = new JSONObject();
             jsonRpc.put(NAME, rpc.getQName().getLocalName());
             jsonRpc.put(DESCRIPTION, rpc.getDescription().orElse(EMPTY));
             jsonRpc.put(STATUS, rpc.getStatus().name());
             jsonRpc.put(TYPE_INFO, new JSONObject());
             jsonRpc.put(CLASS, RPC);
-            jsonRpc.put(PATH, resolvePath(schemaInferenceStack.toSchemaNodeIdentifier()));
-            jsonRpc.append(CHILDREN, resolveChildMetadata(rpc.getInput(), Optional.empty(), schemaInferenceStack));
-            jsonRpc.append(CHILDREN, resolveChildMetadata(rpc.getOutput(), Optional.of(false), schemaInferenceStack));
+            jsonRpc.put(PATH, resolvePath(stack));
+            jsonRpc.append(CHILDREN, resolveChildMetadata(rpc.getInput(), stack));
+            jsonRpc.append(CHILDREN, resolveChildMetadata(rpc.getOutput(), stack, Boolean.FALSE));
             jsonTree.append(RPCS, jsonRpc);
-            schemaInferenceStack.exit();
+            stack.exit();
         }
     }
 
-    private void appendNotificationsToJsonTree(final Module module, final JSONObject jsonTree,
-            final SchemaInferenceStack schemaInferenceStack) {
+    private void appendNotificationsToJsonTree(final Module module, final JSONObject jsonTree, final LyvStack stack) {
         for (final NotificationDefinition notification : module.getNotifications()) {
-            schemaInferenceStack.enterSchemaTree(notification.getQName());
+            stack.enter(notification);
             final JSONObject jsonNotification = new JSONObject();
             for (final DataSchemaNode node : notification.getChildNodes()) {
-                jsonNotification.append(CHILDREN, resolveChildMetadata(node, Optional.of(false), schemaInferenceStack));
+                jsonNotification.append(CHILDREN, resolveChildMetadata(node, stack, Boolean.FALSE));
             }
-            putNotificationDataToJsonNotification(notification, jsonNotification, schemaInferenceStack);
+            putNotificationDataToJsonNotification(notification, jsonNotification, stack);
             jsonTree.append(NOTIFICATIONS, jsonNotification);
-            schemaInferenceStack.exit();
+            stack.exit();
         }
     }
 
     private static void putNotificationDataToJsonNotification(final NotificationDefinition notification,
-            final JSONObject jsonNotification, final SchemaInferenceStack schemaInferenceStack) {
+            final JSONObject jsonNotification, final LyvStack stack) {
         jsonNotification.put(NAME, notification.getQName().getLocalName());
         jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
         jsonNotification.put(STATUS, notification.getStatus().name());
         jsonNotification.put(TYPE_INFO, new JSONObject());
         jsonNotification.put(CLASS, NOTIFICATION);
-        jsonNotification.put(PATH, schemaInferenceStack.toSchemaNodeIdentifier());
+        jsonNotification.put(PATH, stack.toSchemaNodeIdentifier());
     }
 
-    private void appendChildNodesToJsonTree(final Module module, final JSONObject jsonTree,
-            final SchemaInferenceStack schemaInferenceStack) {
+    private void appendChildNodesToJsonTree(final Module module, final JSONObject jsonTree, final LyvStack stack) {
         for (final DataSchemaNode node : module.getChildNodes()) {
-            jsonTree.append(CHILDREN, resolveChildMetadata(node, Optional.empty(), schemaInferenceStack));
+            jsonTree.append(CHILDREN, resolveChildMetadata(node, stack));
         }
     }
 
-    private Boolean isAugmentConfig(final AugmentationSchemaNode augmentation) {
+    private boolean isAugmentConfig(final AugmentationSchemaNode augmentation) {
         final List<QName> qNames = new ArrayList<>();
         Collection<? extends ActionDefinition> actions = new HashSet<>();
         boolean isAction = false;
@@ -234,15 +232,20 @@ public class JsonTree extends FormatPlugin {
                 continue;
             }
 
+            // FIXME: This is inefficient: we end up re-looking up each previous QName, i.e. this has O(N!) complexity.
+            //        We should use DataNodeContainer.findDataTreeChild(path) and iteratively move parent, i.e. we do
+            //        not need qNames at all!
             qNames.add(path);
-            final Optional<DataSchemaNode> dataTreeChild = schemaContext.findDataTreeChild(qNames);
-            if (dataTreeChild.isPresent()) {
-                final Optional<Boolean> isConfig = dataTreeChild.get().effectiveConfig();
-                if (isConfig.isPresent() && !isConfig.get()) {
+            final Optional<DataSchemaNode> optDataTreeChild = schemaContext.findDataTreeChild(qNames);
+
+            if (optDataTreeChild.isPresent()) {
+                final DataSchemaNode dataTreeChild = optDataTreeChild.orElseThrow();
+                final Optional<Boolean> isConfig = dataTreeChild.effectiveConfig();
+                if (isConfig.isPresent() && !isConfig.orElseThrow()) {
                     return false;
                 }
-                if (dataTreeChild.get() instanceof ActionNodeContainer) {
-                    actions = ((ActionNodeContainer) dataTreeChild.get()).getActions();
+                if (dataTreeChild instanceof ActionNodeContainer) {
+                    actions = ((ActionNodeContainer) dataTreeChild).getActions();
                 }
             } else {
                 qNames.remove(path);
@@ -271,48 +274,51 @@ public class JsonTree extends FormatPlugin {
         return Optional.empty();
     }
 
-    private JSONObject resolveChildMetadata(final DataSchemaNode node, final Optional<Boolean> isConfig,
-            final SchemaInferenceStack schemaInferenceStack) {
+    private JSONObject resolveChildMetadata(final DataSchemaNode node, final LyvStack stack) {
+        return resolveChildMetadata(node, stack, null);
+    }
+
+    private JSONObject resolveChildMetadata(final DataSchemaNode node, final LyvStack stack,
+            final @Nullable Boolean isConfig) {
+        final Boolean config = isConfig != null ? isConfig : node.isConfiguration();
         final JSONObject jsonModuleChild = new JSONObject();
         jsonModuleChild.put(NAME, node.getQName().getLocalName());
-        jsonModuleChild.put(CONFIG, isConfig.orElse(node.isConfiguration()));
+        jsonModuleChild.put(CONFIG, config);
         jsonModuleChild.put(DESCRIPTION, node.getDescription().orElse(EMPTY));
         jsonModuleChild.put(STATUS, node.getStatus().name());
         jsonModuleChild.put(TYPE_INFO, new JSONObject());
         jsonModuleChild.put(CLASS, resolveNodeClass(node));
-        schemaInferenceStack.enterSchemaTree(node.getQName());
-        jsonModuleChild.put(PATH, resolvePath(schemaInferenceStack.toSchemaNodeIdentifier()));
+        stack.enter(node);
+        jsonModuleChild.put(PATH, resolvePath(stack));
         if (node instanceof ActionNodeContainer) {
             for (final ActionDefinition child : ((ActionNodeContainer) node).getActions()) {
-                schemaInferenceStack.enterSchemaTree(child.getQName());
+                stack.enter(child);
                 final JSONObject jsonModuleChildAction = new JSONObject();
                 jsonModuleChildAction.put(NAME, child.getQName().getLocalName());
                 jsonModuleChildAction.put(DESCRIPTION, child.getDescription().orElse(EMPTY));
                 jsonModuleChildAction.put(STATUS, child.getStatus().name());
                 jsonModuleChildAction.put(TYPE_INFO, new JSONObject());
-                jsonModuleChildAction.put(PATH, resolvePath(schemaInferenceStack.toSchemaNodeIdentifier()));
+                jsonModuleChildAction.put(PATH, resolvePath(stack));
                 jsonModuleChildAction.put(CLASS, ACTION);
-                jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getInput(), isConfig,
-                        schemaInferenceStack));
-                jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getOutput(), Optional.of(false),
-                        schemaInferenceStack));
+                jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getInput(), stack, isConfig));
+                jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getOutput(), stack, Boolean.FALSE));
                 jsonModuleChild.append(CHILDREN, jsonModuleChildAction);
-                schemaInferenceStack.exit();
+                stack.exit();
             }
         }
         if (node instanceof DataNodeContainer) {
             for (final DataSchemaNode child : ((DataNodeContainer) node).getChildNodes()) {
-                jsonModuleChild.append(CHILDREN, resolveChildMetadata(child, isConfig, schemaInferenceStack));
+                jsonModuleChild.append(CHILDREN, resolveChildMetadata(child, stack, isConfig));
             }
         } else if (node instanceof ChoiceSchemaNode) {
             for (final CaseSchemaNode caseNode : ((ChoiceSchemaNode) node).getCases()) {
-                jsonModuleChild.append(CHILDREN, resolveChildMetadata(caseNode, isConfig, schemaInferenceStack));
+                jsonModuleChild.append(CHILDREN, resolveChildMetadata(caseNode, stack, isConfig));
             }
         } else if (node instanceof TypedDataSchemaNode) {
             jsonModuleChild.put(TYPE_INFO, resolveType(((TypedDataSchemaNode) node).getType()));
             jsonModuleChild.put(CHILDREN, Collections.emptyList());
         }
-        schemaInferenceStack.exit();
+        stack.exit();
         return jsonModuleChild;
     }
 
@@ -374,14 +380,16 @@ public class JsonTree extends FormatPlugin {
         return jsonModuleMetadata;
     }
 
-    private String resolvePath(final SchemaNodeIdentifier schemaNodeIdentifier) {
-        final Iterable<QName> pathFromRoot = schemaNodeIdentifier.getNodeIdentifiers();
+    private String resolvePath(final LyvStack stack) {
+        return resolvePath(stack.toSchemaNodeIdentifier());
+    }
+
+    private String resolvePath(final SchemaNodeIdentifier pathFromRoot) {
         final StringBuilder path = new StringBuilder(SLASH);
-        for (final QName pathQname : pathFromRoot) {
+        for (final QName pathQname : pathFromRoot.getNodeIdentifiers()) {
             schemaContext.findModule(pathQname.getModule()).ifPresent(module1 -> path.append(module1.getPrefix()));
-            path.append(COLON)
-                    .append(pathQname.getLocalName())
-                    .append(SLASH);
+            // FIXME: this produces trailing slashes
+            path.append(COLON).append(pathQname.getLocalName()).append(SLASH);
         }
         return path.toString();
     }
