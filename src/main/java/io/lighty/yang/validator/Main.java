@@ -237,8 +237,7 @@ public final class Main {
             String propertiesPath = classPath.substring(0, classPath.lastIndexOf("!") + 1)
                     + "/META-INF/maven/org.opendaylight.yangtools/yang-model-api/pom.properties";
             Properties properties = new Properties();
-            try {
-                InputStream is = new URL(propertiesPath).openStream();
+            try (InputStream is = new URL(propertiesPath).openStream()) {
                 if (is != null) {
                     properties.load(is);
                     version = properties.getProperty("version", "");
