@@ -632,12 +632,14 @@ public class CheckUpdateFrom {
             final PatternConstraint pattern = patterns.get(i);
             stringBuilder.append("{regex=")
                     .append(pattern.getJavaPatternString());
-            if (pattern.getErrorMessage().isPresent()) {
+            final Optional<String> errorMessage = pattern.getErrorMessage();
+            if (errorMessage.isPresent()) {
                 stringBuilder.append(",")
                         .append("errorMessage=")
                         .append(pattern.getErrorMessage().get());
             }
-            if (pattern.getErrorAppTag().isPresent()) {
+            final Optional<String> errorAppTag = pattern.getErrorAppTag();
+            if (errorAppTag.isPresent()) {
                 stringBuilder.append(",")
                         .append("errorAppTag=")
                         .append(pattern.getErrorAppTag().get());
