@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.QNameModule;
+import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.common.UnresolvedQName.Unqualified;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
@@ -73,12 +74,12 @@ public class MultiModulePrinter extends FormatPlugin {
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.schemaContext.findModule(entry.getKey())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, entry.getKey().toString()));
-            final String withRev = "@" + module.getRevision()
+            final Revision withRev = module.getRevision()
                     .orElseThrow(() -> new NotFoundException("Revision of module", module.getName()));
-            final String suffix = module.getRevision().isPresent() ? withRev + ".yang" : ".yang";
+            final String suffix = module.getRevision().isPresent() ? "@" + withRev + ".yang" : ".yang";
             final String name = module.getName() + suffix;
             if (!this.sources.contains(
-                    new SourceIdentifier(Unqualified.of(module.getName()), module.getRevision().get()))
+                    new SourceIdentifier(Unqualified.of(module.getName()), withRev))
                     && !this.sources.isEmpty()) {
                 continue;
             }

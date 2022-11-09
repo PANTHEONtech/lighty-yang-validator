@@ -269,11 +269,13 @@ public class ModulePrinter {
     private static boolean isSubstatementNotFound(final Collection<? extends EffectiveStatement<?, ?>> collection,
             final EffectiveStatement<?, ?> compare) {
         for (final EffectiveStatement<?, ?> substatement : collection) {
-            if (compare.getDeclared() == null) {
+            final DeclaredStatement<?> compareDeclared = compare.getDeclared();
+            final DeclaredStatement<?> substatementDeclared = substatement.getDeclared();
+            if (compareDeclared == null) {
                 if (compare.equals(substatement)) {
                     return false;
                 }
-            } else if (compare.getDeclared().equals(substatement.getDeclared())) {
+            } else if (compareDeclared.equals(substatementDeclared)) {
                 return false;
             }
         }
