@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -709,9 +710,9 @@ public class CheckUpdateFrom {
             }
 
             final Collection<? extends RevisionStatement> revisionsNew =
-                    ((ModuleEffectiveStatement) newModule).getDeclared().getRevisions();
+                    Objects.requireNonNull(((ModuleEffectiveStatement) newModule).getDeclared()).getRevisions();
             final Collection<? extends RevisionStatement> revisionsOld =
-                    ((ModuleEffectiveStatement) oldModule).getDeclared().getRevisions();
+                    Objects.requireNonNull(((ModuleEffectiveStatement) oldModule).getDeclared()).getRevisions();
 
             final List<Revision> newDates = revisionsNew
                     .stream()
