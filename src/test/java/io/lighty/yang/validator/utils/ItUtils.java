@@ -19,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.io.IOUtils;
 
 public final class ItUtils {
 
@@ -74,7 +73,7 @@ public final class ItUtils {
     public static String loadLyvOutput(final String path) throws IOException {
         final InputStream out = ItUtils.class.getResourceAsStream(path);
         assertNotNull(out);
-        return IOUtils.toString(out, StandardCharsets.UTF_8);
+        return new String(out.readAllBytes(), StandardCharsets.UTF_8);
     }
 
     public static String startLyvParseAllWithFileOutput(final String modelFolder, final String format)
@@ -90,7 +89,7 @@ public final class ItUtils {
         final InputStream inputStream = ItUtils.class.getClassLoader()
                 .getResourceAsStream(String.format("integration/compare/%s", fileName));
         assertNotNull(inputStream);
-        return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+        return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
     }
 
     public static String removeHtmlGeneratedInfo(final String text) {
@@ -122,11 +121,11 @@ public final class ItUtils {
     public static void compareMixedOutput(final String output, final String expected, final String splitFormat) {
         final List<String> splitExp = Arrays.stream(expected.split(splitFormat))
                 .map(String::trim)
-                .filter(t -> !(t.isBlank() || t.isEmpty()))
+                .filter(t -> (!t.isBlank() && !t.isEmpty()))
                 .collect(Collectors.toList());
         final List<String> splitOut = Arrays.stream(output.split(splitFormat))
                 .map(String::trim)
-                .filter(t -> !(t.isBlank() || t.isEmpty()))
+                .filter(t -> (!t.isBlank() && !t.isEmpty()))
                 .collect(Collectors.toList());
         verifyTwoUnsortedArrays(splitOut, splitExp);
     }

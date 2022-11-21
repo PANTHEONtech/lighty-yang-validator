@@ -17,11 +17,11 @@ import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.config.ConfigurationBuilder;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -42,48 +42,47 @@ public class AnalyzerTest implements Cleanable {
         outPath = TreeTest.class.getResource("/out").getFile();
         yangPath = MainTest.class.getResource("/yang").getFile();
 
-        this.builder = new ConfigurationBuilder()
+        builder = new ConfigurationBuilder()
                 .setRecursive(false)
-                .setOutput(this.outPath);
+                .setOutput(outPath);
     }
 
     @BeforeMethod
     public void setUpOutput() throws Exception {
-        this.constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
-        this.constructor.setAccessible(true);
-        final Main mainClass = this.constructor.newInstance();
+        constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
+        constructor.setAccessible(true);
+        final Main mainClass = constructor.newInstance();
 
-        this.method = Main.class.getDeclaredMethod("setMainLoggerOutput", Configuration.class);
-        this.method.setAccessible(true);
-        this.method.invoke(mainClass, this.builder.build());
+        method = Main.class.getDeclaredMethod("setMainLoggerOutput", Configuration.class);
+        method.setAccessible(true);
+        method.invoke(mainClass, builder.build());
         final List<FormatPlugin> formats = new ArrayList<>();
         formats.add(new Analyzer());
-        this.formatter = new Format(formats);
-        this.builder.setFormat("analyze");
-        this.builder.setTreeConfiguration(0, 0, false, false, false);
+        formatter = new Format(formats);
+        builder.setFormat("analyze");
+        builder.setTreeConfiguration(0, 0, false, false, false);
     }
 
     @AfterMethod
     public void removeOuptut() throws Exception {
         tearDown();
-        this.method.setAccessible(false);
-        this.constructor.setAccessible(false);
+        method.setAccessible(false);
+        constructor.setAccessible(false);
     }
 
 
     @Test
     public void analyzeTest() throws Exception {
-        final String module = Paths.get(this.yangPath).resolve("ietf-netconf-common@2013-10-21.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final String module = Paths.get(yangPath).resolve("ietf-netconf-common@2013-10-21.yang").toString();
+        runLYV(ImmutableList.of(module), builder.build(), formatter);
         runAnalyzeTest("ietf-netconf-common-analyzed");
     }
 
 
     private void runAnalyzeTest(final String comapreWithFileName) throws Exception {
-        final Path outLog = Paths.get(this.outPath).resolve("out.log");
-        final String fileCreated = FileUtils.readFileToString(outLog.toFile(), "utf-8");
-        final String compareWith = FileUtils.readFileToString(outLog.getParent().resolve("compare")
-                .resolve(comapreWithFileName).toFile(), "utf-8");
+        final Path outLog = Paths.get(outPath).resolve("out.log");
+        final String fileCreated = Files.readString(outLog);
+        final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
         Assert.assertEquals(fileCreated, compareWith);
     }
 
