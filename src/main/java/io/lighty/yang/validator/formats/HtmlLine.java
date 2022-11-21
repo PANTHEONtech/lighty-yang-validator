@@ -12,6 +12,7 @@ import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.formats.utility.SchemaHtmlEnum;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
@@ -78,8 +79,8 @@ public class HtmlLine extends Line {
                 }
             } else {
                 return SchemaHtmlEnum.getSchemaHtmlEnumByName(
-                        ((EffectiveStatement) node).getDeclared().statementDefinition().getStatementName()
-                                .getLocalName());
+                        Objects.requireNonNull(((EffectiveStatement<?, ?>) node).getDeclared())
+                                .statementDefinition().getStatementName().getLocalName());
             }
         } else {
             return SchemaHtmlEnum.EMPTY;
