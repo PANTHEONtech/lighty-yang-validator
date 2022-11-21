@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -39,6 +40,7 @@ import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.DescriptionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
@@ -268,15 +270,15 @@ public class ModulePrinter {
 
     private boolean isSubstatementNotFound(final Collection<? extends EffectiveStatement<?, ?>> collection,
             final EffectiveStatement<?, ?> compare) {
+        final DeclaredStatement<?> compareDeclared = compare.getDeclared();
         for (final EffectiveStatement<?, ?> substatement : collection) {
-            if (compare.getDeclared() == null) {
+            final DeclaredStatement<?> substatementDeclared = substatement.getDeclared();
+            if (compareDeclared == null) {
                 if (compare.equals(substatement)) {
                     return false;
                 }
-            } else {
-                if (compare.getDeclared().equals(substatement.getDeclared())) {
-                    return false;
-                }
+            } else if (compareDeclared.equals(substatementDeclared)) {
+                return false;
             }
         }
         return true;
@@ -401,8 +403,8 @@ public class ModulePrinter {
         }
 
         if (module instanceof ModuleEffectiveStatement) {
-            final Collection<? extends RevisionStatement> revisions
-                    = ((ModuleEffectiveStatement) module).getDeclared().getRevisions();
+            final Collection<? extends RevisionStatement> revisions = Objects
+                    .requireNonNull(((ModuleEffectiveStatement) module).getDeclared()).getRevisions();
             printEachRevision(revisions);
         } else {
             doPrintSimpleRevision(revision.get());
