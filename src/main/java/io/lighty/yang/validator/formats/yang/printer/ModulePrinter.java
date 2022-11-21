@@ -208,7 +208,7 @@ public class ModulePrinter {
         return false;
     }
 
-    private Optional<GroupingDefinition> findMatchInGroupingDefinitions(
+    private static Optional<GroupingDefinition> findMatchInGroupingDefinitions(
             final List<GroupingDefinition> groupingDefinitions, final DataSchemaNode schemaNode) {
         Optional<GroupingDefinition> match;
         for (final GroupingDefinition grouping : groupingDefinitions) {
@@ -218,7 +218,7 @@ public class ModulePrinter {
             }
             final DataSchemaNode dataSchemaNode = dataChildByName.get();
 
-            if (!(dataSchemaNode instanceof EffectiveStatement || schemaNode instanceof EffectiveStatement)) {
+            if (!(dataSchemaNode instanceof EffectiveStatement) && !(schemaNode instanceof EffectiveStatement)) {
                 continue;
             }
             final Collection<? extends EffectiveStatement<?, ?>> effectiveStatements
@@ -236,7 +236,7 @@ public class ModulePrinter {
         return Optional.empty();
     }
 
-    private void resolveChoiceSchemaNode(final Set<SchemaTree> schemaTrees, final SchemaTree tree) {
+    private static void resolveChoiceSchemaNode(final Set<SchemaTree> schemaTrees, final SchemaTree tree) {
         boolean extendedTree = false;
         for (final SchemaTree st : schemaTrees) {
             if (st.getSchemaNode() instanceof ChoiceSchemaNode && st.getQname().equals(tree.getQname())) {
@@ -253,7 +253,7 @@ public class ModulePrinter {
         }
     }
 
-    private Optional<GroupingDefinition> getGroupingDefinitionMatch(final EffectiveStatement<?, ?> schemaNode,
+    private static Optional<GroupingDefinition> getGroupingDefinitionMatch(final EffectiveStatement<?, ?> schemaNode,
             final Collection<? extends EffectiveStatement<?, ?>> collection, final GroupingDefinition grouping) {
         boolean allSubstatementFound = true;
         for (final EffectiveStatement<?, ?> compare : schemaNode.effectiveSubstatements()) {
@@ -268,7 +268,7 @@ public class ModulePrinter {
         return Optional.empty();
     }
 
-    private boolean isSubstatementNotFound(final Collection<? extends EffectiveStatement<?, ?>> collection,
+    private static boolean isSubstatementNotFound(final Collection<? extends EffectiveStatement<?, ?>> collection,
             final EffectiveStatement<?, ?> compare) {
         final DeclaredStatement<?> compareDeclared = compare.getDeclared();
         for (final EffectiveStatement<?, ?> substatement : collection) {
@@ -299,16 +299,14 @@ public class ModulePrinter {
             if (schemaNode instanceof ContainerLike) {
                 printer.openStatement(Statement.CONTAINER, schemaNode.getQName().getLocalName());
                 printer.printConfig(schemaNode.isConfiguration());
-            } else if (schemaNode instanceof ListSchemaNode) {
-                final ListSchemaNode listSchemaNode = (ListSchemaNode) schemaNode;
+            } else if (schemaNode instanceof ListSchemaNode listSchemaNode) {
                 printer.openStatement(Statement.LIST, schemaNode.getQName().getLocalName());
                 final StringJoiner keyJoiner = new StringJoiner(" ", "key \"", "\"");
                 listSchemaNode.getKeyDefinition().stream()
                         .map(QName::getLocalName)
                         .forEach(keyJoiner::add);
                 printer.printSimple("", keyJoiner.toString());
-            } else if (schemaNode instanceof LeafSchemaNode) {
-                final LeafSchemaNode leafSchemaNode = (LeafSchemaNode) schemaNode;
+            } else if (schemaNode instanceof LeafSchemaNode leafSchemaNode) {
                 printer.openStatement(Statement.LEAF, schemaNode.getQName().getLocalName());
                 typePrinter.printType(printer, leafSchemaNode);
             } else if (schemaNode instanceof ChoiceSchemaNode) {
@@ -441,7 +439,7 @@ public class ModulePrinter {
 
     private void printImports() {
         for (final ModuleImport anImport : module.getImports()) {
-            if (this.usedImports.contains(anImport.getModuleName().getLocalName())) {
+            if (usedImports.contains(anImport.getModuleName().getLocalName())) {
                 printer.openStatement(Statement.IMPORT, anImport.getModuleName().getLocalName());
                 printer.printSimple("prefix", anImport.getPrefix());
                 printer.closeStatement();
@@ -450,7 +448,8 @@ public class ModulePrinter {
         }
     }
 
-    private boolean isStAugmentOrStParentEqualsToAugmPath(final SchemaTree st, final AugmentationSchemaNode augmSN) {
+    private static boolean isStAugmentOrStParentEqualsToAugmPath(final SchemaTree st,
+            final AugmentationSchemaNode augmSN) {
         if (st.isAugmenting()) {
             final List<QName> qnamePath = st.getAbsolutePath().getNodeIdentifiers();
             if (qnamePath.size() > 1) {

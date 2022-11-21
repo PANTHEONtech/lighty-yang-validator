@@ -9,7 +9,6 @@ package io.lighty.yang.validator.formats;
 
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.opendaylight.yangtools.yang.common.QName;
@@ -59,12 +58,12 @@ abstract class Line {
     Line(final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
             final Map<XMLNamespace, String> namespacePrefix) {
         final SchemaNode node = lyvNodeData.getNode();
-        this.status = node.getStatus();
-        this.isMandatory = lyvNodeData.isNodeMandatory();
-        this.isListOrLeafList = node instanceof LeafListSchemaNode || node instanceof ListSchemaNode;
-        this.isChoice = node instanceof ChoiceSchemaNode;
-        this.isCase = node instanceof CaseSchemaNode;
-        this.nodeName = node.getQName().getLocalName();
+        status = node.getStatus();
+        isMandatory = lyvNodeData.isNodeMandatory();
+        isListOrLeafList = node instanceof LeafListSchemaNode || node instanceof ListSchemaNode;
+        isChoice = node instanceof ChoiceSchemaNode;
+        isCase = node instanceof CaseSchemaNode;
+        nodeName = node.getQName().getLocalName();
         this.inputOutput = inputOutput;
         this.namespacePrefix = namespacePrefix;
         resolveFlag(node, lyvNodeData.getAbsolutePath(), lyvNodeData.getContext());
@@ -78,24 +77,23 @@ abstract class Line {
     protected void resolveFlagForDataSchemaNode(final DataSchemaNode dataSchemaNode, final String config,
             final String noConfig) {
         if (dataSchemaNode.isConfiguration()) {
-            this.flag = config;
+            flag = config;
         } else {
-            this.flag = noConfig;
+            flag = noConfig;
         }
     }
 
     private void resolveIfFeatures(final SchemaNode node) {
         final DeclaredStatement<?> declared = getDeclared(node);
         if (declared instanceof IfFeatureAwareDeclaredStatement) {
-            final Collection<IfFeatureStatement> ifFeature
-                    = ((IfFeatureAwareDeclaredStatement) declared).getIfFeatures();
-            this.ifFeatures.addAll(ifFeature);
+            final var ifFeature = ((IfFeatureAwareDeclaredStatement<?>) declared).getIfFeatures();
+            ifFeatures.addAll(ifFeature);
         }
     }
 
-    private DeclaredStatement<?> getDeclared(final SchemaNode node) {
+    private static DeclaredStatement<?> getDeclared(final SchemaNode node) {
         if (node instanceof AbstractDeclaredEffectiveStatement) {
-            return ((AbstractDeclaredEffectiveStatement) node).getDeclared();
+            return ((AbstractDeclaredEffectiveStatement<?, ?>) node).getDeclared();
         }
         return null;
     }
@@ -149,7 +147,7 @@ abstract class Line {
         }
     }
 
-    private boolean isBaseType(final TypeDefinition<? extends TypeDefinition<?>> type) {
+    private static boolean isBaseType(final TypeDefinition<? extends TypeDefinition<?>> type) {
         TypeDefinition<?> baseType = type.getBaseType();
         if (baseType == null) {
             return true;
