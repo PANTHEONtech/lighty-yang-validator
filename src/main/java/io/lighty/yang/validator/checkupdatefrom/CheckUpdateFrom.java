@@ -631,17 +631,13 @@ public class CheckUpdateFrom {
             stringBuilder.append("{regex=")
                     .append(pattern.getJavaPatternString());
             final Optional<String> errorMessage = pattern.getErrorMessage();
-            if (errorMessage.isPresent()) {
-                stringBuilder.append(",")
-                        .append("errorMessage=")
-                        .append(pattern.getErrorMessage().get());
-            }
+            errorMessage.ifPresent(s -> stringBuilder.append(",")
+                    .append("errorMessage=")
+                    .append(s));
             final Optional<String> errorAppTag = pattern.getErrorAppTag();
-            if (errorAppTag.isPresent()) {
-                stringBuilder.append(",")
-                        .append("errorAppTag=")
-                        .append(pattern.getErrorAppTag().get());
-            }
+            errorAppTag.ifPresent(s -> stringBuilder.append(",")
+                    .append("errorAppTag=")
+                    .append(s));
             stringBuilder.append("}");
 
             if (i != patterns.size() - 1) {
