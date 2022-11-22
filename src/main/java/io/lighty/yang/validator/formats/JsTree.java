@@ -226,7 +226,7 @@ public class JsTree extends FormatPlugin {
             final Optional<DataSchemaNode> dataTreeChild = schemaContext.findDataTreeChild(qnamesCopy);
             if (dataTreeChild.isPresent() && dataTreeChild.get() instanceof ActionNodeContainer) {
                 final ActionNodeContainer actionSchemaNode =
-                        (ActionNodeContainer) this.schemaContext.findDataTreeChild(qnamesCopy).get();
+                        (ActionNodeContainer) dataTreeChild.get();
                 actions = actionSchemaNode.getActions();
             }
         }
