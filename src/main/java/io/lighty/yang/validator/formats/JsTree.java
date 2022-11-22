@@ -214,9 +214,8 @@ public class JsTree extends FormatPlugin {
             final List<QName> qnamesCopy = qnames.subList(0, i);
             inputOutputOther = getRpcInputOutput(qnames, actions, inputOutputOther, i, qnamesCopy);
             final Optional<DataSchemaNode> dataTreeChild = schemaContext.findDataTreeChild(qnamesCopy);
-            if (dataTreeChild.isPresent() && dataTreeChild.get() instanceof ActionNodeContainer) {
-                final ActionNodeContainer actionSchemaNode =
-                        (ActionNodeContainer) schemaContext.findDataTreeChild(qnamesCopy).get();
+            if (dataTreeChild.isPresent()
+                    && dataTreeChild.get() instanceof final ActionNodeContainer actionSchemaNode) {
                 actions = actionSchemaNode.getActions();
             }
         }
