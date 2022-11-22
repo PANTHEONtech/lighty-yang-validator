@@ -212,11 +212,12 @@ public class JsTree extends FormatPlugin {
             final ListIterator<Integer> integerListIterator =
                     removeChoiceQnames.listIterator(removeChoiceQnames.size());
             removeQnameCopyByIntegerListValues(qnamesCopy, integerListIterator);
-            if (!this.schemaContext.findDataTreeChild(qnamesCopy).isPresent()) {
+             final Optional<DataSchemaNode> dataTreeChild = this.schemaContext.findDataTreeChild(qnamesCopy);
+            if (!dataTreeChild.isPresent()) {
                 removeChoiceQnames.add(i - 1);
-            } else if (this.schemaContext.findDataTreeChild(qnamesCopy).get() instanceof ActionNodeContainer) {
+            } else if (dataTreeChild.get() instanceof ActionNodeContainer) {
                 final ActionNodeContainer actionSchemaNode =
-                        (ActionNodeContainer) this.schemaContext.findDataTreeChild(qnamesCopy).get();
+                        (ActionNodeContainer) dataTreeChild.get();
                 actions = actionSchemaNode.getActions();
             }
         }

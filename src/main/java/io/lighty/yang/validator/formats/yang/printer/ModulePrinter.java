@@ -38,9 +38,11 @@ import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
+import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaPath;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.DescriptionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
@@ -273,15 +275,15 @@ public class ModulePrinter {
 
     private boolean isSubstatementNotFound(final Collection<? extends EffectiveStatement<?, ?>> collection,
             final EffectiveStatement<?, ?> compare) {
-        for (EffectiveStatement<?, ?> substatement : collection) {
-            if (compare.getDeclared() == null) {
+        final DeclaredStatement<?> compareDeclared = compare.getDeclared();
+        for (final EffectiveStatement<?, ?> substatement : collection) {
+            final DeclaredStatement<?> substatementDeclared = substatement.getDeclared();
+            if (compareDeclared == null) {
                 if (compare.equals(substatement)) {
                     return false;
                 }
-            } else {
-                if (compare.getDeclared().equals(substatement.getDeclared())) {
-                    return false;
-                }
+            } else if (compareDeclared.equals(substatementDeclared)) {
+                return false;
             }
         }
         return true;
@@ -456,8 +458,8 @@ public class ModulePrinter {
 
     private static boolean isSchemaNodePathEqualsToDataSchemaNodePath(final DataSchemaNode schemaNode,
             final DataSchemaNode dataSchemaNode) {
-        return ((DerivableSchemaNode) schemaNode).getOriginal().isPresent()
-                && (!((DerivableSchemaNode) schemaNode).getOriginal().get().getPath().equals(dataSchemaNode.getPath()));
+        final Optional<? extends SchemaNode> optionalSchemaNode = ((DerivableSchemaNode) schemaNode).getOriginal();
+        return optionalSchemaNode.isPresent() && (!optionalSchemaNode.get().getPath().equals(dataSchemaNode.getPath()));
     }
 
     private static boolean isEqualsSchemaTreeLastComponents(final SchemaTree st, final SchemaTree tree) {
