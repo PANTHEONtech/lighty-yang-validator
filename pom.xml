@@ -28,6 +28,19 @@
         <application.attach.zip>true</application.attach.zip>
     </properties>
 
+    <!-- FIXME: Remove this when bumping to more recent Lighty.core -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.opendaylight.yangtools</groupId>
+                <artifactId>yangtools-artifacts</artifactId>
+                <version>9.0.3</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>net.sourceforge.argparse4j</groupId>
