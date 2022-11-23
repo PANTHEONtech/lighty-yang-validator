@@ -13,14 +13,14 @@ Go to the root directory `/lighty-yang-validator/` and use the command:
 mvn clean install
 ```
 
-The distribution will be stored in the **"target"** directory, as a file called *lighty-yang-validator-17.0.1-SNAPSHOT-bin.zip*
+The distribution will be stored in the **"target"** directory, as a file called *lighty-yang-validator-17.0.1-bin.zip*
 
 ## Run from Distribution
 
 1. Unzip the distribution:
 
 ```
-unzip lighty-yang-validator-17.0.1-SNAPSHOT-bin.zip
+unzip lighty-yang-validator-17.0.1-bin.zip
 ```
 
 2. Enter the directory, to which the distribution was extracted to.
