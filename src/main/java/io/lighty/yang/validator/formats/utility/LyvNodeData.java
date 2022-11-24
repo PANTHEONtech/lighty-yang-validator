@@ -28,24 +28,35 @@ public class LyvNodeData {
     private final SchemaNode node;
     private final Absolute absolutePath;
 
-    public LyvNodeData(@NonNull final EffectiveModelContext context, @NonNull final SchemaNode node,
-            @Nullable final List<QName> keys, final Absolute absolutePath) {
+    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull SchemaNode node,
+            final @NonNull LyvStack stack) {
+        this(context, node, stack.toSchemaNodeIdentifier());
+    }
+
+    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull SchemaNode node,
+            final @NonNull LyvStack stack, final @Nullable List<QName> keys) {
+        this(context, node, stack.toSchemaNodeIdentifier(), keys);
+    }
+
+    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull SchemaNode node,
+            final @NonNull Absolute absolutePath) {
+        this(context, node, absolutePath, null);
+    }
+
+    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull SchemaNode node,
+            final @NonNull Absolute absolutePath, final @Nullable List<QName> keys) {
         this.context = context;
         this.absolutePath = absolutePath;
         this.node = node;
-        if (keys == null || keys.isEmpty()) {
-            this.isKey = false;
-        } else {
-            this.isKey = keys.contains(node.getQName());
-        }
+        isKey = keys != null && keys.contains(node.getQName());
     }
 
     public EffectiveModelContext getContext() {
-        return this.context;
+        return context;
     }
 
     public SchemaNode getNode() {
-        return this.node;
+        return node;
     }
 
     public Absolute getAbsolutePath() {
@@ -53,9 +64,9 @@ public class LyvNodeData {
     }
 
     public boolean isNodeMandatory() {
-        return (this.node instanceof MandatoryAware && ((MandatoryAware) this.node).isMandatory())
-                || this.node instanceof ContainerLike || this.node instanceof CaseSchemaNode
-                || this.node instanceof NotificationDefinition || this.node instanceof ActionDefinition
-                || this.node instanceof RpcDefinition || this.isKey;
+        return node instanceof MandatoryAware && ((MandatoryAware) node).isMandatory()
+                || node instanceof ContainerLike || node instanceof CaseSchemaNode
+                || node instanceof NotificationDefinition || node instanceof ActionDefinition
+                || node instanceof RpcDefinition || isKey;
     }
 }
