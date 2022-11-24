@@ -23,6 +23,8 @@ import org.testng.annotations.Test;
 
 public class TreeTest extends FormatTest {
 
+    private static final String MODULE_DEVIATION_EXPECT = "module: deviation\n";
+
     @Override
     public void setFormat() {
         final List<FormatPlugin> formats = new ArrayList<>();
@@ -56,6 +58,29 @@ public class TreeTest extends FormatTest {
         assertEquals(modules.size(), 1);
         runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runTreeTest("interfaces-prefix-module.tree");
+    }
+
+    @Test
+    public void treeDeviationTest() throws Exception {
+        setFormat();
+        builder.setTreeConfiguration(0, 0, false, true, false);
+        final var deviation = Paths.get(yangPath + "/deviation/deviation.yang").toString();
+        final var model = Paths.get(yangPath + "/deviation/model.yang").toString();
+        final var configuration = builder.build();
+        final var context = Main.getLyvContext(ImmutableList.of(deviation, model), configuration);
+        final var modules = context.testedModules();
+        assertEquals(modules.size(), 2);
+        for (final var module : modules) {
+            if ("deviation".equals(module.getName())) {
+                runLYV(module, configuration, formatter, context.context());
+                final var outLog = Paths.get(outPath).resolve("out.log");
+                final var fileCreated = Files.readString(outLog);
+                assertEquals(fileCreated, MODULE_DEVIATION_EXPECT);
+            } else {
+                runLYV(module, configuration, formatter, context.context());
+                runTreeTest("module-deviation.tree");
+            }
+        }
     }
 
     @Test
