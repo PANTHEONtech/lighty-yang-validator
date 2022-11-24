@@ -7,6 +7,7 @@
  */
 package io.lighty.yang.validator.simplify;
 
+import io.lighty.yang.validator.formats.utility.LyvStack;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -45,11 +46,11 @@ public class SchemaTree implements Comparable<SchemaTree> {
     }
 
     public boolean isRootNode() {
-        return this.isRootNode;
+        return isRootNode;
     }
 
     public boolean isAugmenting() {
-        return this.isAugmenting;
+        return isAugmenting;
     }
 
     public DataSchemaNode getSchemaNode() {
@@ -74,15 +75,21 @@ public class SchemaTree implements Comparable<SchemaTree> {
 
     public SchemaTree addChild(final DataSchemaNode schemaNodeInput, final boolean isRootNodeInput,
             final boolean isAugmentingInput, final Absolute absolute) {
-        final SchemaTree tree = new SchemaTree(absolute, schemaNodeInput,
-                isRootNodeInput, isAugmentingInput, null);
+        final SchemaTree tree = new SchemaTree(absolute, schemaNodeInput, isRootNodeInput, isAugmentingInput, null);
+        return addChild(tree);
+    }
+
+    public SchemaTree addChild(final DataSchemaNode schemaNodeInput, final boolean isRootNodeInput,
+            final boolean isAugmentingInput, final LyvStack stack) {
+        final SchemaTree tree = new SchemaTree(stack.toSchemaNodeIdentifier(), schemaNodeInput, isRootNodeInput,
+            isAugmentingInput, null);
         return addChild(tree);
     }
 
     SchemaTree addChild(final ActionDefinition schemaNodeInput, final boolean isRootNodeInput,
-            final boolean augmentation, final Absolute absolute) {
-        final SchemaTree tree = new SchemaTree(absolute, null,
-                isRootNodeInput, augmentation, schemaNodeInput);
+            final boolean augmentation, final LyvStack stack) {
+        final SchemaTree tree = new SchemaTree(stack.toSchemaNodeIdentifier(), null, isRootNodeInput, augmentation,
+            schemaNodeInput);
         return addChild(tree);
     }
 
@@ -129,7 +136,7 @@ public class SchemaTree implements Comparable<SchemaTree> {
 
     @Override
     public int compareTo(final SchemaTree originalTree) {
-        return this.getQname().compareTo(originalTree.getQname());
+        return getQname().compareTo(originalTree.getQname());
     }
 }
 
