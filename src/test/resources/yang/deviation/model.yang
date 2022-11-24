@@ -1,0 +1,23 @@
+module model {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:mode";
+  prefix mo;
+
+  container data-container {
+      list list-data {
+        key name;
+        leaf name {
+          type string;
+        }
+        leaf year {
+          type int64;
+        }
+      }
+  }
+
+  augment /mo:data-container/mo:list-data {
+    leaf month {
+      type string;
+    }
+  }
+}
