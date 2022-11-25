@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
+import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.opendaylight.yangtools.yang.parser.api.YangParserException;
 import org.opendaylight.yangtools.yang.parser.spi.source.SourceException;
 import org.slf4j.Logger;
@@ -286,6 +287,29 @@ public final class Main {
         }
     }
 
+    public static LyvEffectiveModelContext getLyvContext(final List<String> yangFiles, final Configuration config)
+            throws LyvApplicationException {
+        final var yangLibDirs = initYangDirsPath(config.getPath());
+        LOG.debug("Yang models dirs: {} ", yangLibDirs);
+        if (yangFiles.isEmpty() && config.getTreeConfiguration().isHelp()) {
+            return new LyvEffectiveModelContext(null);
+        }
+        final YangContextFactory contextFactory;
+        try {
+            contextFactory = new YangContextFactory(yangLibDirs, yangFiles, config.getSupportedFeatures(),
+                    config.isRecursive());
+        } catch (final IOException e) {
+            throw new LyvApplicationException("Failed to create YangContextFactory", e);
+        }
+        EffectiveModelContext context;
+        try {
+            context = contextFactory.createContext(config.getSimplify() != null);
+        } catch (final IOException | YangParserException e) {
+            throw new LyvApplicationException("Failed to create SchemaContext", e);
+        }
+        return new LyvEffectiveModelContext(context, contextFactory.getTestFilesSourceIdentifiers());
+    }
+
     @SuppressWarnings("checkstyle:illegalCatch")
     public static void runLYV(final List<String> yangFiles, final Configuration config,
             final Emitter format) throws LyvApplicationException {
@@ -294,33 +318,15 @@ public final class Main {
         LOG.debug("Yang models files: {} ", yangFiles);
         LOG.debug("Supported features: {} ", config.getSupportedFeatures());
 
-        final boolean yangFileIsNotEmptyAndHelpIsNotSet
-                = !(yangFiles.isEmpty() && config.getTreeConfiguration().isHelp());
         final Stopwatch stopWatch = Stopwatch.createStarted();
-        final YangContextFactory contextFactory;
-        try {
-            contextFactory =
-                    new YangContextFactory(yangLibDirs, yangFiles, config.getSupportedFeatures(), config.isRecursive());
-        } catch (final IOException e) {
-            throw new LyvApplicationException("Failed to create YangContextFactory", e);
-        }
-
-        EffectiveModelContext effectiveModelContext = null;
-        if (yangFileIsNotEmptyAndHelpIsNotSet) {
-            try {
-                effectiveModelContext = contextFactory.createContext(config.getSimplify() != null);
-            } catch (final IOException | YangParserException e) {
-                throw new LyvApplicationException("Failed to create SchemaContext", e);
-            }
-        }
+        final LyvEffectiveModelContext lyvContext = getLyvContext(yangFiles, config);
         SchemaTree schemaTree = null;
         if (config.getCheckUpdateFrom() == null) {
-            if (yangFileIsNotEmptyAndHelpIsNotSet) {
-                schemaTree = resolveSchemaTree(config.getSimplify(), effectiveModelContext);
+            if (lyvContext.isNotEmpty()) {
+                schemaTree = resolveSchemaTree(config.getSimplify(), lyvContext.context());
             }
             if (config.getFormat() != null) {
-                format.init(config, effectiveModelContext, contextFactory.getTestFilesSourceIdentifiers(),
-                        schemaTree);
+                format.init(config, lyvContext.context(), lyvContext.sourceIdentifiers(), schemaTree);
                 format.emit();
             }
         } else {
@@ -338,7 +344,7 @@ public final class Main {
             } catch (final IOException | YangParserException e) {
                 throw new LyvApplicationException("Failed to create SchemaContext", e);
             }
-            final CheckUpdateFrom checkUpdateFrom = new CheckUpdateFrom(effectiveModelContext,
+            final CheckUpdateFrom checkUpdateFrom = new CheckUpdateFrom(lyvContext.context(),
                     yangFiles.iterator().next(), contextFrom, config.getCheckUpdateFrom(),
                     config.getCheckUpdateFromConfiguration().getRfcVersion());
             checkUpdateFrom.validate();
@@ -416,5 +422,14 @@ public final class Main {
             this.yangName = name;
         }
 
+    }
+
+    public record LyvEffectiveModelContext(EffectiveModelContext context, List<SourceIdentifier> sourceIdentifiers) {
+        public LyvEffectiveModelContext(final EffectiveModelContext context) {
+            this(context, List.of());
+        }
+        public boolean isNotEmpty() {
+            return context != null;
+        }
     }
 }
