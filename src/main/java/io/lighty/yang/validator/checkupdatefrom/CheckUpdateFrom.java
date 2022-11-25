@@ -111,13 +111,12 @@ public class CheckUpdateFrom {
 
     private final Set<CheckUpdateFromErrorRFC6020> errors = new LinkedHashSet<>();
 
-    public CheckUpdateFrom(final EffectiveModelContext newContext, final String newModule,
+    public CheckUpdateFrom(final EffectiveModelContext newContext, final Module newModule,
             final EffectiveModelContext oldContext, final String oldModule, final int rfcVersion) {
-        final String newModuleName = extractModuleName(newModule);
         final String oldModuleName = extractModuleName(oldModule);
         oldSchemaIS = SchemaInferenceStack.of(oldContext);
         newSchemaIS = SchemaInferenceStack.of(newContext);
-        this.newModule = newContext.findModules(newModuleName).iterator().next();
+        this.newModule = newModule;
         this.oldModule = oldContext.findModules(oldModuleName).iterator().next();
         is7950 = rfcVersion == 7950;
     }
