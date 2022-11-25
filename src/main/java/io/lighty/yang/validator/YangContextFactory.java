@@ -76,15 +76,13 @@ final class YangContextFactory {
             parser.addSource(yangTextSchemaSource);
         }
         for (final File file : libFiles) {
-            if (useAllFiles) {
-                final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forPath(file.toPath());
-                final String name = yangTextSchemaSource.getIdentifier().name().getLocalName();
-
-                if (!names.contains(name)) {
+            final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forPath(file.toPath());
+            if (!names.contains(yangTextSchemaSource.getIdentifier().name().getLocalName())) {
+                if (useAllFiles) {
                     parser.addSource(yangTextSchemaSource);
+                } else {
+                    parser.addLibSource(YangTextSchemaSource.forPath(file.toPath()));
                 }
-            } else {
-                parser.addLibSource(YangTextSchemaSource.forPath(file.toPath()));
             }
         }
 
