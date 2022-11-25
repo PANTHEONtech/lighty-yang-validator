@@ -36,6 +36,7 @@ import org.opendaylight.yangtools.yang.data.codec.xml.XmlParserStream;
 import org.opendaylight.yangtools.yang.data.impl.schema.ImmutableNormalizedNodeStreamWriter;
 import org.opendaylight.yangtools.yang.data.impl.schema.NormalizedNodeResult;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
+import org.opendaylight.yangtools.yang.model.api.Module;
 import org.testng.Assert;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.Test;
@@ -71,8 +72,10 @@ public class MainTest implements Cleanable {
                 .setFormat("yang")
                 .setOutput(outPath)
                 .build();
-        format.init(config, effectiveModelContext, contextFactory.getTestFilesSourceIdentifiers(), schemaTree);
-        format.emit();
+        for (final Module module : effectiveModelContext.getModules()) {
+            format.init(config, effectiveModelContext, module, schemaTree);
+            format.emit();
+        }
         contextFactory =
                 new YangContextFactory(ImmutableList.of(outPath), ImmutableList.of(), Collections.emptySet(), false);
         effectiveModelContext = contextFactory.createContext(true);

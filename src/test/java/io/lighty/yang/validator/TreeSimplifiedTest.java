@@ -8,6 +8,7 @@
 package io.lighty.yang.validator;
 
 import static io.lighty.yang.validator.Main.runLYV;
+import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.config.Configuration;
@@ -24,7 +25,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -71,24 +71,32 @@ public class TreeSimplifiedTest implements Cleanable {
     public void runTreeSimplifiedTest() throws Exception {
         prepare("tree", new Tree());
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), builder.build(), formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(
             outLog.resolveSibling("compare").resolve("interfacesSimplified.tree"));
-        Assert.assertEquals(fileCreated, compareWith);
+        assertEquals(fileCreated, compareWith);
     }
 
     @Test
     public void runYangSimplifiedTest() throws Exception {
         prepare("yang", new MultiModulePrinter());
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), builder.build(), formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         final Path outLog = Paths.get(outPath).resolve("ietf-interfaces@2018-02-20.yang");
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(
             outLog.resolveSibling("compare").resolve("interfaces-simplified.yang"));
-        Assert.assertEquals(fileCreated, compareWith);
+        assertEquals(fileCreated, compareWith);
     }
 
     private void prepare(final String format, final FormatPlugin plugin) {

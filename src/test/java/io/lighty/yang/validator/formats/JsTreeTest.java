@@ -7,7 +7,9 @@
  */
 package io.lighty.yang.validator.formats;
 
+import static io.lighty.yang.validator.Main.getLyvContext;
 import static io.lighty.yang.validator.Main.runLYV;
+import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.FormatTest;
@@ -16,7 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class JsTreeTest extends FormatTest {
@@ -34,7 +35,11 @@ public class JsTreeTest extends FormatTest {
         //testing for undeclared choice-case statement (no case inside of choice)
         setFormat();
         final String module = Paths.get(yangPath).resolve("undeclared.yang").toString();
-        runLYV(ImmutableList.of(module), builder.build(), formatter);
+        final var configuration = builder.build();
+        final var lyvContext = getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runJsTreeTest("undeclared.html");
     }
 
@@ -67,7 +72,7 @@ public class JsTreeTest extends FormatTest {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
-        Assert.assertEquals(fileCreated.replaceAll("\\s+", ""), compareWith.replaceAll("\\s+", ""));
+        assertEquals(fileCreated.replaceAll("\\s+", ""), compareWith.replaceAll("\\s+", ""));
     }
 
 }

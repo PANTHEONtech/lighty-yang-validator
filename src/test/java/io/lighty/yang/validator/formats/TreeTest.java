@@ -8,14 +8,15 @@
 package io.lighty.yang.validator.formats;
 
 import static io.lighty.yang.validator.Main.runLYV;
+import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.FormatTest;
+import io.lighty.yang.validator.Main;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -36,7 +37,11 @@ public class TreeTest extends FormatTest {
         setFormat();
         builder.setTreeConfiguration(0, 0, false, false, true);
         final String module = Paths.get(yangPath).resolve("ietf-ip@2018-02-22.yang").toString();
-        runLYV(ImmutableList.of(module), builder.build(), formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runTreeTest("ip-prefix-main-module.tree");
     }
 
@@ -45,7 +50,11 @@ public class TreeTest extends FormatTest {
         setFormat();
         builder.setTreeConfiguration(0, 0, false, true, false);
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), builder.build(), formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runTreeTest("interfaces-prefix-module.tree");
     }
 
@@ -54,7 +63,11 @@ public class TreeTest extends FormatTest {
         setFormat();
         builder.setTreeConfiguration(0, 20, false, false, false);
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), builder.build(), formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runTreeTest("interfaces-line-length.tree");
     }
 
@@ -62,7 +75,7 @@ public class TreeTest extends FormatTest {
     public void treeHelpTest() throws Exception {
         setFormat();
         builder.setTreeConfiguration(0, 0, true, false, false);
-        runLYV(Collections.emptyList(), builder.build(), formatter);
+        runLYV(null, builder.build(), formatter, null);
         runTreeTest("tree-help");
     }
 
@@ -71,7 +84,11 @@ public class TreeTest extends FormatTest {
         setFormat();
         builder.setTreeConfiguration(3, 0, false, false, false);
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), builder.build(), formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runTreeTest("interfaces-limited-depth.tree");
     }
 
