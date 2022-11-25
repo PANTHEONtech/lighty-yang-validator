@@ -97,53 +97,53 @@ public final class Main {
             return;
         }
         setMainLoggerOutput(configuration);
-        final List<String> yangFiles = new ArrayList<>();
-        final List<String> moduleNameValues = configuration.getModuleNames();
-
-        final List<String> parseAllDir = configuration.getParseAll();
-        if (parseAllDir.isEmpty()) {
-            if (moduleNameValues != null) {
-                yangFiles.addAll(moduleNameValues);
+        try {
+            if (configuration.getParseAll().isEmpty()) {
+                runLyvForProvidedFiles(configuration, format);
+            } else {
+                runLyvForProvidedFolder(configuration, format);
             }
-            yangFiles.addAll(configuration.getYang());
-            try {
-                runLYV(yangFiles, configuration, format);
-            } catch (final LyvApplicationException e) {
-                LOG.error("Exception in LYV application: {}", formatLyvExceptionMessage(e));
-                return;
-            }
-        } else {
-            for (final String dir : parseAllDir) {
-                try (Stream<Path> path = Files.list(Paths.get(dir))) {
-                    final List<String> collect = path
-                            .map(Path::toString)
-                            .collect(Collectors.toList());
-                    yangFiles.addAll(collect);
-                } catch (final IOException e) {
-                    LOG.error("Could not Collect files from provided ({}) directory",
-                            String.join(",", parseAllDir), e);
-                    return;
-                }
-            }
-
-            final String yangtoolsVersion;
-            try {
-                yangtoolsVersion = getYangtoolsVersion(EffectiveModelContext.class);
-            } catch (final LyvApplicationException e) {
-                LOG.error("Exception in LYV application", e);
-                return;
-            }
-            final CompilationTable table =
-                    new CompilationTable(configuration.getOutput(), parseAllDir, yangtoolsVersion);
-            final CompilationTableAppender newAppender = new CompilationTableAppender();
-            newAppender.setContext(MAIN_LOGGER.getLoggerContext());
-            newAppender.start();
-            newAppender.setCompilationTable(table);
-
-            MAIN_LOGGER.addAppender(newAppender);
-            runLywForeachYangFile(yangFiles, configuration, newAppender, table, format);
+        } catch (final LyvApplicationException e) {
+            LOG.error("Exception in LYV application: {}", formatLyvExceptionMessage(e));
         }
         MAIN_LOGGER.getLoggerContext().reset();
+    }
+
+    private static void runLyvForProvidedFiles(final Configuration config,  final Format format)
+            throws LyvApplicationException {
+        final var moduleNameValues = config.getModuleNames();
+        final var yangFiles = new ArrayList<String>();
+        if (moduleNameValues != null) {
+            yangFiles.addAll(moduleNameValues);
+        }
+        yangFiles.addAll(config.getYang());
+        runLYV(yangFiles, config, format);
+    }
+
+    private static void runLyvForProvidedFolder(final Configuration config, final Format format)
+            throws LyvApplicationException {
+        final var parseAllDir = config.getParseAll();
+        final var yangFiles = new ArrayList<String>();
+        for (final var dir : parseAllDir) {
+            try (var path = Files.list(Paths.get(dir))) {
+                final var collect = path
+                        .map(Path::toString)
+                        .toList();
+                yangFiles.addAll(collect);
+            } catch (final IOException e) {
+                throw new LyvApplicationException(String.format("Could not Collect files from provided (%s) directory",
+                        String.join(",", parseAllDir)), e);
+            }
+        }
+        final var yangtoolsVersion = getYangtoolsVersion(EffectiveModelContext.class);
+        final var table = new CompilationTable(config.getOutput(), parseAllDir, yangtoolsVersion);
+        final var newAppender = new CompilationTableAppender();
+        newAppender.setContext(MAIN_LOGGER.getLoggerContext());
+        newAppender.start();
+        newAppender.setCompilationTable(table);
+
+        MAIN_LOGGER.addAppender(newAppender);
+        runLywForeachYangFile(yangFiles, config, newAppender, table, format);
     }
 
     private static Configuration getConfiguration(final Format format, final String[] args) {
