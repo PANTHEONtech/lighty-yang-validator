@@ -12,7 +12,6 @@ import static java.lang.Math.min;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.Configuration;
-import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.formats.utility.LyvStack;
 import io.lighty.yang.validator.simplify.SchemaTree;
@@ -43,7 +42,6 @@ import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
-import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,16 +58,14 @@ public class Tree extends FormatPlugin {
     private static final String NOTIFICATION = "notifications:";
 
     private Map<XMLNamespace, String> namespacePrefix = new HashMap<>();
-    private Module usedModule = null;
     private int treeDepth;
     private int lineLength;
 
     @Override
-    void init(final EffectiveModelContext context, final List<SourceIdentifier> testFilesSchemaSources,
-            final SchemaTree schemaTree, final Configuration config) {
-        super.init(context, testFilesSchemaSources, schemaTree, config);
+    void init(final EffectiveModelContext context, final Module module, final SchemaTree schemaTree,
+            final Configuration config) {
+        super.init(context, module, schemaTree, config);
         namespacePrefix = new HashMap<>();
-        usedModule = null;
         treeDepth = configuration.getTreeConfiguration().getTreeDepth();
         final int len = configuration.getTreeConfiguration().getLineLength();
         lineLength = len == 0 ? 10000 : len;
@@ -81,18 +77,15 @@ public class Tree extends FormatPlugin {
     public void emitFormat() {
         if (configuration.getTreeConfiguration().isHelp()) {
             printHelp();
-        }
-        for (final SourceIdentifier source : sources) {
-            usedModule = schemaContext.findModule(source.name().getLocalName(), source.revision())
-                    .orElseThrow(() -> new NotFoundException("Module", source.name().getLocalName()));
-            final String firstLine = MODULE + usedModule.getName();
+        } else if (testedModule != null) {
+            final String firstLine = MODULE + testedModule.getName();
             LOG.info("{}", firstLine.substring(0, min(firstLine.length(), lineLength)));
 
             putSchemaContextModuleMatchedWithUsedModuleToNamespacePrefix();
 
             final AtomicInteger rootNodes = new AtomicInteger(0);
             for (final SchemaTree st : schemaTree.getChildren()) {
-                if (st.getQname().getModule().equals(usedModule.getQNameModule()) && !st.isAugmenting()) {
+                if (st.getQname().getModule().equals(testedModule.getQNameModule()) && !st.isAugmenting()) {
                     rootNodes.incrementAndGet();
                 }
             }
@@ -107,18 +100,20 @@ public class Tree extends FormatPlugin {
             }
 
             // Rpcs
-            final Iterator<? extends RpcDefinition> rpcs = usedModule.getRpcs().iterator();
+            final Iterator<? extends RpcDefinition> rpcs = testedModule.getRpcs().iterator();
             if (rpcs.hasNext()) {
                 LOG.info("{}", RPCS.substring(0, min(RPCS.length(), lineLength)));
             }
             printLines(getRpcsLines(rpcs));
 
             // Notifications
-            final Iterator<? extends NotificationDefinition> notifications = usedModule.getNotifications().iterator();
+            final Iterator<? extends NotificationDefinition> notifications = testedModule.getNotifications().iterator();
             if (notifications.hasNext()) {
                 LOG.info("{}", NOTIFICATION.substring(0, min(NOTIFICATION.length(), lineLength)));
             }
             printLines(getNotificationLines(notifications));
+        } else {
+            LOG.error("{}", EMPTY_MODULE_EXCEPTION);
         }
     }
 
@@ -155,7 +150,7 @@ public class Tree extends FormatPlugin {
     private List<Line> getSchemaNodeLines(final AtomicInteger rootNodes) {
         final List<Line> lines = new ArrayList<>();
         for (final SchemaTree st : schemaTree.getChildren()) {
-            if (st.getQname().getModule().equals(usedModule.getQNameModule()) && !st.isAugmenting()) {
+            if (st.getQname().getModule().equals(testedModule.getQNameModule()) && !st.isAugmenting()) {
                 final DataSchemaNode node = st.getSchemaNode();
                 final LyvNodeData lyvNodeData = new LyvNodeData(schemaContext, node, st.getAbsolutePath());
                 final ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData,
@@ -175,7 +170,7 @@ public class Tree extends FormatPlugin {
 
     private void putSchemaContextModuleMatchedWithUsedModuleToNamespacePrefix() {
         for (final Module m : schemaContext.getModules()) {
-            if (!m.getPrefix().equals(usedModule.getPrefix())
+            if (!m.getPrefix().equals(testedModule.getPrefix())
                     || configuration.getTreeConfiguration().isPrefixMainModule()) {
                 if (configuration.getTreeConfiguration().isModulePrefix()) {
                     namespacePrefix.put(m.getNamespace(), m.getName());
@@ -248,7 +243,7 @@ public class Tree extends FormatPlugin {
     private Map<List<QName>, Set<SchemaTree>> getAugmentationMap() {
         final Map<List<QName>, Set<SchemaTree>> augments = new LinkedHashMap<>();
         for (final SchemaTree st : schemaTree.getChildren()) {
-            if (st.getQname().getModule().equals(usedModule.getQNameModule()) && st.isAugmenting()) {
+            if (st.getQname().getModule().equals(testedModule.getQNameModule()) && st.isAugmenting()) {
                 final Iterator<QName> iterator = st.getAbsolutePath().getNodeIdentifiers().iterator();
                 final List<QName> qnames = new ArrayList<>();
                 while (iterator.hasNext()) {
@@ -363,7 +358,7 @@ public class Tree extends FormatPlugin {
     private void resolveActions(final List<Line> lines, final List<Boolean> isConnected, final boolean hasNext,
             final Iterator<SchemaTree> actions) {
         final SchemaTree nextST = actions.next();
-        if (nextST.getQname().getModule().equals(usedModule.getQNameModule())) {
+        if (nextST.getQname().getModule().equals(testedModule.getQNameModule())) {
             resolveActions(lines, isConnected, hasNext, actions, nextST);
         }
     }
@@ -417,7 +412,7 @@ public class Tree extends FormatPlugin {
         final Iterator<SchemaTree> caseNodes = st.getDataSchemaNodeChildren().iterator();
         while (caseNodes.hasNext()) {
             final SchemaTree nextST = caseNodes.next();
-            if (nextST.getQname().getModule().equals(usedModule.getQNameModule())) {
+            if (nextST.getQname().getModule().equals(testedModule.getQNameModule())) {
                 final DataSchemaNode child = nextST.getSchemaNode();
                 final LyvNodeData lyvNodeData = new LyvNodeData(schemaContext, child, nextST.getAbsolutePath());
                 final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
@@ -454,7 +449,7 @@ public class Tree extends FormatPlugin {
         final Iterator<SchemaTree> childNodes = st.getDataSchemaNodeChildren().iterator();
         while (childNodes.hasNext()) {
             final SchemaTree nextST = childNodes.next();
-            if (nextST.getQname().getModule().equals(usedModule.getQNameModule())) {
+            if (nextST.getQname().getModule().equals(testedModule.getQNameModule())) {
                 final DataSchemaNode child = nextST.getSchemaNode();
                 final LyvNodeData lyvNodeData = new LyvNodeData(schemaContext, child, nextST.getAbsolutePath(), keys);
                 final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
