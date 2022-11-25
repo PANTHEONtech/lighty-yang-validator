@@ -109,6 +109,73 @@ public final class Main {
         MAIN_LOGGER.getLoggerContext().reset();
     }
 
+    public static LyvEffectiveModelContext getLyvContext(final List<String> yangFiles, final Configuration config)
+            throws LyvApplicationException {
+        final var yangLibDirs = initYangDirsPath(config.getPath());
+        LOG.debug("Yang models dirs: {} ", yangLibDirs);
+        if (yangFiles.isEmpty() && config.getTreeConfiguration().isHelp()) {
+            return new LyvEffectiveModelContext(null);
+        }
+        final YangContextFactory contextFactory;
+        try {
+            contextFactory = new YangContextFactory(yangLibDirs, yangFiles, config.getSupportedFeatures(),
+                    config.isRecursive());
+        } catch (final IOException e) {
+            throw new LyvApplicationException("Failed to create YangContextFactory", e);
+        }
+        EffectiveModelContext context;
+        try {
+            context = contextFactory.createContext(config.getSimplify() != null);
+        } catch (final IOException | YangParserException e) {
+            throw new LyvApplicationException("Failed to create SchemaContext", e);
+        }
+        return new LyvEffectiveModelContext(context, contextFactory.getTestFilesSourceIdentifiers());
+    }
+
+    public static void runLYV(final List<String> yangFiles, final Configuration config,
+            final Emitter format) throws LyvApplicationException {
+        final List<String> yangLibDirs = initYangDirsPath(config.getPath());
+        LOG.debug("Yang models dirs: {} ", yangLibDirs);
+        LOG.debug("Yang models files: {} ", yangFiles);
+        LOG.debug("Supported features: {} ", config.getSupportedFeatures());
+
+        final Stopwatch stopWatch = Stopwatch.createStarted();
+        final LyvEffectiveModelContext lyvContext = getLyvContext(yangFiles, config);
+        SchemaTree schemaTree = null;
+        if (config.getCheckUpdateFrom() == null) {
+            if (lyvContext.isNotEmpty()) {
+                schemaTree = resolveSchemaTree(config.getSimplify(), lyvContext.context());
+            }
+            if (config.getFormat() != null) {
+                format.init(config, lyvContext.context(), lyvContext.sourceIdentifiers(), schemaTree);
+                format.emit();
+            }
+        } else {
+            if (yangFiles.size() != 1) {
+                throw new LyvApplicationException("Check-update-from option may be used with single module only");
+            }
+            final EffectiveModelContext contextFrom;
+            try {
+                final YangContextFactory contextFactoryFrom =
+                        new YangContextFactory(initYangDirsPath(
+                                config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath()),
+                                Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
+                                config.isRecursive());
+                contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
+            } catch (final IOException | YangParserException e) {
+                throw new LyvApplicationException("Failed to create SchemaContext", e);
+            }
+            final CheckUpdateFrom checkUpdateFrom = new CheckUpdateFrom(lyvContext.context(),
+                    yangFiles.iterator().next(), contextFrom, config.getCheckUpdateFrom(),
+                    config.getCheckUpdateFromConfiguration().getRfcVersion());
+            checkUpdateFrom.validate();
+            checkUpdateFrom.printErrors();
+        }
+
+        stopWatch.stop();
+        LOG.debug("Elapsed time: {}", stopWatch);
+    }
+
     private static void runLyvForProvidedFiles(final Configuration config,  final Format format)
             throws LyvApplicationException {
         final var moduleNameValues = config.getModuleNames();
@@ -285,74 +352,6 @@ public final class Main {
         } else {
             MAIN_LOGGER.setLevel(Level.INFO);
         }
-    }
-
-    public static LyvEffectiveModelContext getLyvContext(final List<String> yangFiles, final Configuration config)
-            throws LyvApplicationException {
-        final var yangLibDirs = initYangDirsPath(config.getPath());
-        LOG.debug("Yang models dirs: {} ", yangLibDirs);
-        if (yangFiles.isEmpty() && config.getTreeConfiguration().isHelp()) {
-            return new LyvEffectiveModelContext(null);
-        }
-        final YangContextFactory contextFactory;
-        try {
-            contextFactory = new YangContextFactory(yangLibDirs, yangFiles, config.getSupportedFeatures(),
-                    config.isRecursive());
-        } catch (final IOException e) {
-            throw new LyvApplicationException("Failed to create YangContextFactory", e);
-        }
-        EffectiveModelContext context;
-        try {
-            context = contextFactory.createContext(config.getSimplify() != null);
-        } catch (final IOException | YangParserException e) {
-            throw new LyvApplicationException("Failed to create SchemaContext", e);
-        }
-        return new LyvEffectiveModelContext(context, contextFactory.getTestFilesSourceIdentifiers());
-    }
-
-    @SuppressWarnings("checkstyle:illegalCatch")
-    public static void runLYV(final List<String> yangFiles, final Configuration config,
-            final Emitter format) throws LyvApplicationException {
-        final List<String> yangLibDirs = initYangDirsPath(config.getPath());
-        LOG.debug("Yang models dirs: {} ", yangLibDirs);
-        LOG.debug("Yang models files: {} ", yangFiles);
-        LOG.debug("Supported features: {} ", config.getSupportedFeatures());
-
-        final Stopwatch stopWatch = Stopwatch.createStarted();
-        final LyvEffectiveModelContext lyvContext = getLyvContext(yangFiles, config);
-        SchemaTree schemaTree = null;
-        if (config.getCheckUpdateFrom() == null) {
-            if (lyvContext.isNotEmpty()) {
-                schemaTree = resolveSchemaTree(config.getSimplify(), lyvContext.context());
-            }
-            if (config.getFormat() != null) {
-                format.init(config, lyvContext.context(), lyvContext.sourceIdentifiers(), schemaTree);
-                format.emit();
-            }
-        } else {
-            if (yangFiles.size() != 1) {
-                throw new LyvApplicationException("Check-update-from option may be used with single module only");
-            }
-            final EffectiveModelContext contextFrom;
-            try {
-                final YangContextFactory contextFactoryFrom =
-                        new YangContextFactory(initYangDirsPath(
-                                config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath()),
-                                Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
-                                config.isRecursive());
-                contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
-            } catch (final IOException | YangParserException e) {
-                throw new LyvApplicationException("Failed to create SchemaContext", e);
-            }
-            final CheckUpdateFrom checkUpdateFrom = new CheckUpdateFrom(lyvContext.context(),
-                    yangFiles.iterator().next(), contextFrom, config.getCheckUpdateFrom(),
-                    config.getCheckUpdateFromConfiguration().getRfcVersion());
-            checkUpdateFrom.validate();
-            checkUpdateFrom.printErrors();
-        }
-
-        stopWatch.stop();
-        LOG.debug("Elapsed time: {}", stopWatch);
     }
 
     private static SchemaTree resolveSchemaTree(final String simplifyDir,
