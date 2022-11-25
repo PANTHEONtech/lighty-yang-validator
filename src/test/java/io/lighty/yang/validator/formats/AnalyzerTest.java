@@ -8,6 +8,7 @@
 package io.lighty.yang.validator.formats;
 
 import static io.lighty.yang.validator.Main.runLYV;
+import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.Cleanable;
@@ -74,7 +75,11 @@ public class AnalyzerTest implements Cleanable {
     @Test
     public void analyzeTest() throws Exception {
         final String module = Paths.get(yangPath).resolve("ietf-netconf-common@2013-10-21.yang").toString();
-        runLYV(ImmutableList.of(module), builder.build(), formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertTrue(modules.isEmpty());
+        runLYV(null, configuration, formatter, lyvContext.context());
         runAnalyzeTest("ietf-netconf-common-analyzed");
     }
 
