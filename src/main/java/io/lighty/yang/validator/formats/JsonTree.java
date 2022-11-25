@@ -46,8 +46,6 @@ import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
-import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,31 +87,28 @@ public class JsonTree extends FormatPlugin {
     private static final String COLON = ":";
 
     @Override
-    void init(final EffectiveModelContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
-            final SchemaTree schemaTree, final Configuration config) {
-        super.init(context, testFilesSchemaSources, schemaTree, config);
+    void init(final EffectiveModelContext context, final Module module, final SchemaTree schemaTree,
+            final Configuration config) {
+        super.init(context, module, schemaTree, config);
     }
 
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
-        final LyvStack stack = new LyvStack();
-
-        for (final SourceIdentifier source : sources) {
-            final Module module = schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.getName()));
-            final JSONObject moduleMetadata = resolveModuleMetadata(module);
+        if (testedModule != null) {
+            final LyvStack stack = new LyvStack();
+            final JSONObject moduleMetadata = resolveModuleMetadata(testedModule);
             final JSONObject jsonTree = new JSONObject();
 
-            appendChildNodesToJsonTree(module, jsonTree, stack);
+            appendChildNodesToJsonTree(testedModule, jsonTree, stack);
             stack.clear();
-            appendNotificationsToJsonTree(module, jsonTree, stack);
+            appendNotificationsToJsonTree(testedModule, jsonTree, stack);
             stack.clear();
-            appendRpcsToJsonTree(module, jsonTree, stack);
+            appendRpcsToJsonTree(testedModule, jsonTree, stack);
             stack.clear();
 
-            for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
+            for (final AugmentationSchemaNode augmentation : testedModule.getAugmentations()) {
                 stack.enter(augmentation.getTargetPath());
                 final JSONObject augmentationJson = new JSONObject();
                 final boolean isConfig = isAugmentConfig(augmentation);
@@ -134,13 +129,15 @@ public class JsonTree extends FormatPlugin {
                 }
 
                 appendActionsToAugmentationJson(augmentation, augmentationJson, stack);
-                appendNotificationsToAugmentationJson(module, augmentationJson, stack);
+                appendNotificationsToAugmentationJson(testedModule, augmentationJson, stack);
                 jsonTree.append(AUGMENTS, augmentationJson);
                 stack.clear();
             }
             jsonTree.put(MODULE, moduleMetadata);
             final String jsonTreeText = jsonTree.toString(4);
             LOG.info("{}", jsonTreeText);
+        } else {
+            LOG.error("{}", EMPTY_MODULE_EXCEPTION);
         }
     }
 

@@ -12,23 +12,25 @@ import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.api.Module;
 
 public abstract class FormatPlugin {
 
+    static final String EMPTY_MODULE_EXCEPTION = "Provided yang module is empty. Ensure that provided path contains"
+            + " file/files with .yang extension";
+
     EffectiveModelContext schemaContext;
-    List<RevisionSourceIdentifier> sources;
+    Module testedModule;
     SchemaTree schemaTree;
     Path output;
     Configuration configuration;
 
-    void init(final EffectiveModelContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
+    void init(final EffectiveModelContext context, final Module module,
             final SchemaTree tree, final Configuration config) {
         this.schemaContext = context;
-        this.sources = testFilesSchemaSources;
+        this.testedModule = module;
         this.schemaTree = tree;
         this.configuration = config;
         final String out = config.getOutput();

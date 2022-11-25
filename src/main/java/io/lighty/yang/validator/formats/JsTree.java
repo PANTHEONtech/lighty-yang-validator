@@ -10,7 +10,6 @@ package io.lighty.yang.validator.formats;
 import com.google.common.io.Resources;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
-import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.formats.utility.LyvStack;
 import java.io.IOException;
@@ -39,7 +38,6 @@ import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
-import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,33 +54,33 @@ public class JsTree extends FormatPlugin {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
-        namespacePrefix = new HashMap<>();
-        for (final SourceIdentifier source : sources) {
-            final Module module = schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
+        if (testedModule != null) {
+            namespacePrefix = new HashMap<>();
             final SingletonListInitializer singletonListInitializer = new SingletonListInitializer(1);
 
             // Nodes
-            printLines(getChildNodesLines(singletonListInitializer, module));
+            printLines(getChildNodesLines(singletonListInitializer, testedModule));
 
             // Augmentations
-            for (final AugmentationSchemaNode augNode : module.getAugmentations()) {
+            for (final AugmentationSchemaNode augNode : testedModule.getAugmentations()) {
                 printLines(getAugmentationNodesLines(singletonListInitializer.getSingletonListWithIncreasedValue(),
                         augNode));
             }
 
             // Rpcs
-            printLines(getRpcsLines(singletonListInitializer, module));
+            printLines(getRpcsLines(singletonListInitializer, testedModule));
 
             // Notifications
-            printLines(getNotificationsLines(singletonListInitializer, module));
-        }
+            printLines(getNotificationsLines(singletonListInitializer, testedModule));
 
-        LOG.info("</table>");
-        LOG.info("</div>");
-        LOG.info("{}", loadJS());
-        LOG.info("</body>");
-        LOG.info("</html>");
+            LOG.info("</table>");
+            LOG.info("</div>");
+            LOG.info("{}", loadJS());
+            LOG.info("</body>");
+            LOG.info("</html>");
+        } else {
+            LOG.error(EMPTY_MODULE_EXCEPTION);
+        }
     }
 
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
