@@ -19,11 +19,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.common.UnresolvedQName.Unqualified;
 import org.opendaylight.yangtools.yang.common.YangConstants;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
-import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 import org.opendaylight.yangtools.yang.parser.api.YangParser;
 import org.opendaylight.yangtools.yang.parser.api.YangParserException;
@@ -37,7 +35,7 @@ final class YangContextFactory {
     private final List<File> testFiles = new ArrayList<>();
     private final List<File> libFiles = new ArrayList<>();
     private final Set<QName> supportedFeatures;
-    private final List<SourceIdentifier> sourceIdentifiers = new ArrayList<>();
+    private final List<Module> testedModules = new ArrayList<>();
 
     YangContextFactory(final List<String> yangLibDirs, final List<String> yangTestFiles,
             final Set<QName> supportedFeatures, final boolean recursiveSearch) throws IOException {
@@ -90,15 +88,15 @@ final class YangContextFactory {
         for (final Module next : effectiveModelContext.getModules()) {
             for (final String name : names) {
                 if (next.getName().equals(name)) {
-                    sourceIdentifiers.add(new SourceIdentifier(Unqualified.of(name), next.getRevision().orElse(null)));
+                    testedModules.add(next);
                 }
             }
         }
         return effectiveModelContext;
     }
 
-    List<SourceIdentifier> getTestFilesSourceIdentifiers() {
-        return sourceIdentifiers;
+    List<Module> getModulesForTesting() {
+        return testedModules;
     }
 
     private static Collection<File> getYangFiles(final String yangSourcesDirectoryPath, final boolean recursiveSearch) {
