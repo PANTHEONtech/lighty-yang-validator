@@ -9,11 +9,7 @@ package io.lighty.yang.validator;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -22,14 +18,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.common.UnresolvedQName.Unqualified;
 import org.opendaylight.yangtools.yang.common.YangConstants;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
-import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 import org.opendaylight.yangtools.yang.parser.api.YangParser;
 import org.opendaylight.yangtools.yang.parser.api.YangParserException;
@@ -38,14 +30,12 @@ import org.opendaylight.yangtools.yang.parser.impl.DefaultYangParserFactory;
 
 final class YangContextFactory {
 
-    private static final Pattern MODULE_PATTERN = Pattern.compile("module(.*?)\\{");
-    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
     private static final YangParserFactory PARSER_FACTORY = new DefaultYangParserFactory();
 
     private final List<File> testFiles = new ArrayList<>();
     private final List<File> libFiles = new ArrayList<>();
     private final Set<QName> supportedFeatures;
-    private final List<SourceIdentifier> sourceIdentifiers = new ArrayList<>();
+    private final List<Module> testedModules = new ArrayList<>();
 
     YangContextFactory(final List<String> yangLibDirs, final List<String> yangTestFiles,
             final Set<QName> supportedFeatures, final boolean recursiveSearch) throws IOException {
@@ -53,15 +43,11 @@ final class YangContextFactory {
 
         final Set<String> yangLibDirsSet = new HashSet<>();
         for (final String yangTestFile : yangTestFiles) {
-            final File file;
-            if (!yangTestFile.endsWith(YangConstants.RFC6020_YANG_FILE_EXTENSION)) {
-                file = findInFiles(libFiles, yangTestFile);
-                testFiles.add(file);
-            } else {
-                file = new File(yangTestFile);
+            if (yangTestFile.endsWith(YangConstants.RFC6020_YANG_FILE_EXTENSION)) {
+                final var file = new File(yangTestFile);
+                yangLibDirsSet.add(file.getParent());
                 testFiles.add(file);
             }
-            yangLibDirsSet.add(file.getParent());
         }
         yangLibDirsSet.addAll(yangLibDirs);
         for (final String yangLibDir : yangLibDirsSet) {
@@ -88,15 +74,13 @@ final class YangContextFactory {
             parser.addSource(yangTextSchemaSource);
         }
         for (final File file : libFiles) {
-            if (useAllFiles) {
-                final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forPath(file.toPath());
-                final String name = yangTextSchemaSource.getIdentifier().name().getLocalName();
-
-                if (!names.contains(name)) {
+            final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forPath(file.toPath());
+            if (!names.contains(yangTextSchemaSource.getIdentifier().name().getLocalName())) {
+                if (useAllFiles) {
                     parser.addSource(yangTextSchemaSource);
+                } else {
+                    parser.addLibSource(YangTextSchemaSource.forPath(file.toPath()));
                 }
-            } else {
-                parser.addLibSource(YangTextSchemaSource.forPath(file.toPath()));
             }
         }
 
@@ -104,34 +88,15 @@ final class YangContextFactory {
         for (final Module next : effectiveModelContext.getModules()) {
             for (final String name : names) {
                 if (next.getName().equals(name)) {
-                    sourceIdentifiers.add(new SourceIdentifier(Unqualified.of(name), next.getRevision().orElse(null)));
+                    testedModules.add(next);
                 }
             }
         }
         return effectiveModelContext;
     }
 
-    List<SourceIdentifier> getTestFilesSourceIdentifiers() {
-        return sourceIdentifiers;
-    }
-
-    private static File findInFiles(final List<File> libFiles, final String yangTestFile) throws IOException {
-        for (final File file : libFiles) {
-            if (WHITESPACES.matcher(getModelNameFromFile(file)).replaceAll("").equals(yangTestFile)) {
-                return file;
-            }
-        }
-        throw new FileNotFoundException("Model with specific module-name does not exist : " + yangTestFile);
-    }
-
-    private static String getModelNameFromFile(final File file) throws IOException {
-        final String fileAsString = readFile(file.getAbsolutePath());
-        final Matcher matcher = MODULE_PATTERN.matcher(fileAsString);
-        return matcher.find() ? matcher.group(1) : "";
-    }
-
-    private static String readFile(final String path) throws IOException {
-        return new String(Files.readAllBytes(Paths.get(path)), StandardCharsets.UTF_8);
+    List<Module> getModulesForTesting() {
+        return testedModules;
     }
 
     private static Collection<File> getYangFiles(final String yangSourcesDirectoryPath, final boolean recursiveSearch) {

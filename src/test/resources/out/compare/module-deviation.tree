@@ -1,0 +1,7 @@
+module: deviation
+module: model
+  +--rw data-container
+     +--rw list-data* [name]
+        +--rw name       string
+augment /data-container/list-data:
+  +--rw month?       string

@@ -8,6 +8,7 @@
 package io.lighty.yang.validator;
 
 import static io.lighty.yang.validator.Main.runLYV;
+import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.config.Configuration;
@@ -65,7 +66,11 @@ public abstract class FormatTest implements Cleanable {
         //only root tree
         setFormat();
         final String module = Paths.get(this.yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runInterfacesTest();
     }
 
@@ -74,7 +79,11 @@ public abstract class FormatTest implements Cleanable {
         //contains augmentations
         setFormat();
         final String module = Paths.get(this.yangPath).resolve("ietf-ip@2018-02-22.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runIpTest();
     }
 
@@ -84,7 +93,11 @@ public abstract class FormatTest implements Cleanable {
         setFormat();
         final String module =
                 Paths.get(this.yangPath).resolve("ietf-connection-oriented-oam@2019-04-16.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runConnectionOrentedOamTest();
     }
 
@@ -93,7 +106,11 @@ public abstract class FormatTest implements Cleanable {
         //contains actions
         setFormat();
         final String module = Paths.get(this.yangPath).resolve("ietf-routing@2018-03-13.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runRoutingTest();
     }
 
@@ -104,7 +121,11 @@ public abstract class FormatTest implements Cleanable {
          */
         setFormat();
         final String module = Paths.get(this.yangPath).resolve("test_model@2020-12-03.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final var configuration = builder.build();
+        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var modules = lyvContext.testedModules();
+        assertEquals(modules.size(), 1);
+        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
         runCustomModuleTest();
     }
 
