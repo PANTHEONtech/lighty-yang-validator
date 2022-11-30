@@ -65,6 +65,11 @@ public class JsTreeTest extends FormatTest {
         runJsTreeTest("testModel.html");
     }
 
+    @Override
+    public void runDeviationTest() throws Exception {
+        runJsTreeTest("moduleDeviation.html");
+    }
+
     private void runJsTreeTest(final String comapreWithFileName) throws Exception {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);

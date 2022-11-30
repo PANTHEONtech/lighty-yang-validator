@@ -2,6 +2,24 @@ module: deviation
 module: model
   +--rw data-container
      +--rw list-data* [name]
-        +--rw name       string
+     |  +--rw name       string
+     |  +--rw year?       int8
+     |  +--rw sub-device* [type]
+     |     +--rw type       string
+     |     +--rw state?       string
+     +--rw country?       string
+     +--rw device
+        +--rw enumType?       enumeration
+        +--rw model?       uint8
 augment /data-container/list-data:
   +--rw month?       string
+  +--rw sub-device* [type]
+     +--rw type?       string
+     +--rw year?       uint8
+     +--rw state?       string
+augment /data-container:
+  +--rw device
+     +--rw enumType?       enumeration
+augment /data-container/device:
+  +--rw model?       string
+  +--rw manufacturer?       string

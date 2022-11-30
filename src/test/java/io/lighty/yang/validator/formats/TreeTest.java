@@ -21,8 +21,6 @@ import org.testng.annotations.Test;
 
 public class TreeTest extends FormatTest {
 
-    private static final String MODULE_DEVIATION_EXPECT = "module: deviation\n";
-
     @Override
     public void setFormat() {
         final List<FormatPlugin> formats = new ArrayList<>();
@@ -52,18 +50,6 @@ public class TreeTest extends FormatTest {
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runTreeTest("interfaces-prefix-module.tree");
-    }
-
-    @Test
-    public void treeDeviationTest() throws Exception {
-        setFormat();
-        builder.setTreeConfiguration(0, 0, false, true, false);
-        final var deviation = Paths.get(yangPath + "/deviation/deviation.yang").toString();
-        final var module = Paths.get(yangPath + "/deviation/model.yang").toString();
-        builder.setYangModules(ImmutableList.of(module, deviation));
-        final var configuration = builder.build();
-        startLyv(configuration, formatter);
-        runTreeTest("module-deviation.tree");
     }
 
     @Test
@@ -120,6 +106,11 @@ public class TreeTest extends FormatTest {
     @Override
     public void runCustomModuleTest() throws Exception {
         runTreeTest("testModel.tree");
+    }
+
+    @Override
+    public void runDeviationTest() throws Exception {
+        runTreeTest("module-deviation.tree");
     }
 
     private void runTreeTest(final String comapreWithFileName) throws Exception {
