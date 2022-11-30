@@ -7,12 +7,12 @@
  */
 package io.lighty.yang.validator.formats;
 
-import static io.lighty.yang.validator.Main.getLyvContext;
 import static io.lighty.yang.validator.Main.runLYV;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.FormatTest;
+import io.lighty.yang.validator.LyvEffectiveModelContextFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,7 +41,7 @@ public class DependsTest extends FormatTest {
                 new HashSet<>());
         final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
         final var configuration = builder.build();
-        final var lyvContext = getLyvContext(ImmutableList.of(module), configuration);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
         final var modules = lyvContext.testedModules();
         assertEquals(modules.size(), 1);
         runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
@@ -55,7 +55,7 @@ public class DependsTest extends FormatTest {
                 new HashSet<>());
         final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
         final var configuration = builder.build();
-        final var lyvContext = getLyvContext(ImmutableList.of(module), configuration);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
         final var modules = lyvContext.testedModules();
         assertEquals(modules.size(), 1);
         runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
@@ -69,7 +69,7 @@ public class DependsTest extends FormatTest {
                 new HashSet<>());
         final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
         final var configuration = builder.build();
-        final var lyvContext = getLyvContext(ImmutableList.of(module), configuration);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
         final var modules = lyvContext.testedModules();
         assertEquals(modules.size(), 1);
         runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
@@ -83,7 +83,7 @@ public class DependsTest extends FormatTest {
                 new HashSet<>());
         final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
         final var configuration = builder.build();
-        final var lyvContext = getLyvContext(ImmutableList.of(module), configuration);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
         final var modules = lyvContext.testedModules();
         assertEquals(modules.size(), 1);
         runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
@@ -97,7 +97,7 @@ public class DependsTest extends FormatTest {
                 new HashSet<>());
         final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
         final var configuration = builder.build();
-        final var lyvContext = getLyvContext(ImmutableList.of(module), configuration);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
         final var modules = lyvContext.testedModules();
         assertEquals(modules.size(), 1);
         runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
@@ -111,7 +111,7 @@ public class DependsTest extends FormatTest {
                 new HashSet<>(Collections.singleton("ietf-ipv6-router-advertisements")));
         final String module = Paths.get(yangPath).resolve("ietf-ipv6-unicast-routing@2018-03-13.yang").toString();
         final var configuration = builder.build();
-        final var lyvContext = getLyvContext(ImmutableList.of(module), configuration);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
         final var modules = lyvContext.testedModules();
         assertEquals(modules.size(), 1);
         runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());

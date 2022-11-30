@@ -72,7 +72,7 @@ public class TreeSimplifiedTest implements Cleanable {
         prepare("tree", new Tree());
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
         final var configuration = builder.build();
-        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
         final var modules = lyvContext.testedModules();
         assertEquals(modules.size(), 1);
         runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
@@ -88,7 +88,7 @@ public class TreeSimplifiedTest implements Cleanable {
         prepare("yang", new MultiModulePrinter());
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
         final var configuration = builder.build();
-        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
         final var modules = lyvContext.testedModules();
         assertEquals(modules.size(), 1);
         runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
