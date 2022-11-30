@@ -109,29 +109,6 @@ public final class Main {
         MAIN_LOGGER.getLoggerContext().reset();
     }
 
-    public static LyvEffectiveModelContext getLyvContext(final List<String> yangFiles, final Configuration config)
-            throws LyvApplicationException {
-        final var yangLibDirs = initYangDirsPath(config.getPath());
-        LOG.debug("Yang models dirs: {} ", yangLibDirs);
-        if (yangFiles.isEmpty() && config.getTreeConfiguration().isHelp()) {
-            return new LyvEffectiveModelContext(null);
-        }
-        final YangContextFactory contextFactory;
-        try {
-            contextFactory = new YangContextFactory(yangLibDirs, yangFiles, config.getSupportedFeatures(),
-                    config.isRecursive());
-        } catch (final IOException e) {
-            throw new LyvApplicationException("Failed to create YangContextFactory", e);
-        }
-        EffectiveModelContext context;
-        try {
-            context = contextFactory.createContext(config.getSimplify() != null);
-        } catch (final IOException | YangParserException e) {
-            throw new LyvApplicationException("Failed to assemble Effective Model Context", e);
-        }
-        return new LyvEffectiveModelContext(context, contextFactory.getModulesForTesting());
-    }
-
     public static void runLYV(final Module module, final Configuration config,
             final Emitter format, final EffectiveModelContext context) throws LyvApplicationException {
         LOG.debug("Supported features: {} ", config.getSupportedFeatures());
@@ -150,6 +127,7 @@ public final class Main {
             }
             final EffectiveModelContext contextFrom;
             try {
+                // FIXME suspicious call
                 final YangContextFactory contextFactoryFrom =
                         new YangContextFactory(initYangDirsPath(
                                 config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath()),
@@ -178,7 +156,7 @@ public final class Main {
             yangFiles.addAll(moduleNameValues);
         }
         yangFiles.addAll(config.getYang());
-        final var lyvContext = getLyvContext(yangFiles, config);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(yangFiles, config);
         if (lyvContext.testedModules().isEmpty()) {
             // Analyse format require only EffectiveModelContext
             runLYV(null, config, format, lyvContext.context());
@@ -242,7 +220,7 @@ public final class Main {
     private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration configuration,
             final CompilationTableAppender newAppender, final CompilationTable table,
             final Format formatter) throws LyvApplicationException {
-        final var lyvContext = getLyvContext(yangFiles, configuration);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(yangFiles, configuration);
         if (lyvContext.testedModules().isEmpty()) {
             // Analyse format require only EffectiveModelContext
             runLYV(null, configuration, formatter, lyvContext.context());
@@ -426,11 +404,5 @@ public final class Main {
             this.yangName = name;
         }
 
-    }
-
-    public record LyvEffectiveModelContext(EffectiveModelContext context, List<Module> testedModules) {
-        public LyvEffectiveModelContext(final EffectiveModelContext context) {
-            this(context, List.of());
-        }
     }
 }
