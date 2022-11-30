@@ -234,7 +234,7 @@ public class JsonTree extends FormatPlugin {
             //        We should use DataNodeContainer.findDataTreeChild(path) and iteratively move parent, i.e. we do
             //        not need qNames at all!
             qNames.add(path);
-            final Optional<DataSchemaNode> optDataTreeChild = schemaContext.findDataTreeChild(qNames);
+            final Optional<DataSchemaNode> optDataTreeChild = modelContext.findDataTreeChild(qNames);
 
             if (optDataTreeChild.isPresent()) {
                 final DataSchemaNode dataTreeChild = optDataTreeChild.orElseThrow();
@@ -333,7 +333,7 @@ public class JsonTree extends FormatPlugin {
                 jsonLeafType.append(BASE, base.getQName().getLocalName());
             }
         } else {
-            final String prefix = schemaContext.findModule(typeqName.getNamespace(), typeqName.getRevision())
+            final String prefix = modelContext.findModule(typeqName.getNamespace(), typeqName.getRevision())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, typeqName.getNamespace().toString()))
                     .getPrefix();
             type = prefix + COLON + typeqName.getLocalName();
@@ -385,7 +385,7 @@ public class JsonTree extends FormatPlugin {
     private String resolvePath(final SchemaNodeIdentifier pathFromRoot) {
         final StringBuilder path = new StringBuilder(SLASH);
         for (final QName pathQname : pathFromRoot.getNodeIdentifiers()) {
-            schemaContext.findModule(pathQname.getModule()).ifPresent(module1 -> path.append(module1.getPrefix()));
+            modelContext.findModule(pathQname.getModule()).ifPresent(module1 -> path.append(module1.getPrefix()));
             // FIXME: this produces trailing slashes
             path.append(COLON).append(pathQname.getLocalName()).append(SLASH);
         }
