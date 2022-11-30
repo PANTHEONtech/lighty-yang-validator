@@ -118,6 +118,17 @@ public abstract class FormatTest implements Cleanable {
         runCustomModuleTest();
     }
 
+    @Test
+    public void testDeviations() throws Exception {
+        setFormat();
+        final var deviation = Paths.get(yangPath + "/deviation/deviation@2022-11-30.yang").toString();
+        final var module = Paths.get(yangPath + "/deviation/model@2022-11-30.yang").toString();
+        builder.setYangModules(ImmutableList.of(module, deviation));
+        final var configuration = builder.build();
+        startLyv(configuration, formatter);
+        runDeviationTest();
+    }
+
     public abstract void setFormat();
 
     public abstract void runInterfacesTest() throws Exception;
@@ -129,5 +140,7 @@ public abstract class FormatTest implements Cleanable {
     public abstract void runRoutingTest() throws Exception;
 
     public abstract void runCustomModuleTest() throws Exception;
+
+    public  abstract void runDeviationTest() throws Exception;
 
 }
