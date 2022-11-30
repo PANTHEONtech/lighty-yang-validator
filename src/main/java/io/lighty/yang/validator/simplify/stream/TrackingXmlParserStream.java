@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Cisco Systems, Inc. and others.  All rights reserved.
- * Copyright (c) 2019 Pantheon Technologies s.r.o. All Rights Reserved.
+ * Copyright (c) 2019 PANTHEON.tech s.r.o. All Rights Reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v1.0 which accompanies this distribution,
