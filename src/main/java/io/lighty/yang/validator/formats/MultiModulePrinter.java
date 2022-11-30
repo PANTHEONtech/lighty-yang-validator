@@ -74,7 +74,7 @@ public class MultiModulePrinter extends FormatPlugin {
 
     private void printEachYangModule() {
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
-            final Module module = this.schemaContext.findModule(entry.getKey())
+            final Module module = this.modelContext.findModule(entry.getKey())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, entry.getKey().toString()));
             final Revision revision = module.getRevision()
                     .orElseThrow(() -> new NotFoundException("Revision of module", module.getName()));
@@ -86,13 +86,13 @@ public class MultiModulePrinter extends FormatPlugin {
             final ModulePrinter modulePrinter;
             if (this.output == null) {
                 LOG.info("\n\nprinting yang module {}\n", name);
-                modulePrinter = new ModulePrinter(entry.getValue(), this.schemaContext, entry.getKey(), LOG,
+                modulePrinter = new ModulePrinter(entry.getValue(), this.modelContext, entry.getKey(), LOG,
                         this.usedImportedTypeDefs.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()),
                         this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()));
                 modulePrinter.printYang();
             } else {
                 try (OutputStream os = new FileOutputStream(this.output.resolve(name).toFile())) {
-                    modulePrinter = new ModulePrinter(entry.getValue(), this.schemaContext, entry.getKey(), os,
+                    modulePrinter = new ModulePrinter(entry.getValue(), this.modelContext, entry.getKey(), os,
                             this.usedImportedTypeDefs.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()),
                             this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>()));
                     modulePrinter.printYang();
@@ -105,7 +105,7 @@ public class MultiModulePrinter extends FormatPlugin {
 
     private void resolveAugmentationsImports() {
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
-            final Module module = this.schemaContext.findModule(entry.getKey())
+            final Module module = this.modelContext.findModule(entry.getKey())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, entry.getKey().toString()));
             for (final SchemaTree singleEntry : entry.getValue()) {
                 gatherUsedTypeDefs(singleEntry, module);
@@ -113,7 +113,7 @@ public class MultiModulePrinter extends FormatPlugin {
             for (final AugmentationSchemaNode aug : module.getAugmentations()) {
                 for (final QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
-                            .add(this.schemaContext.findModule(pathQname.getModule())
+                            .add(this.modelContext.findModule(pathQname.getModule())
                                     .orElseThrow(
                                             () -> new NotFoundException(MODULE_STRING,
                                                     pathQname.getModule().toString()))
@@ -151,7 +151,7 @@ public class MultiModulePrinter extends FormatPlugin {
             usedImportedTypeDefs.computeIfAbsent(mod, k -> new TreeSet<>(Comparator.comparing(SchemaNode::getQName)))
                     .add(type);
             usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
-                    .add(this.schemaContext.findModule(mod)
+                    .add(this.modelContext.findModule(mod)
                             .orElseThrow(() -> new NotFoundException(MODULE_STRING, mod.toString()))
                             .getName());
 

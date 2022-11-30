@@ -31,7 +31,7 @@ public class Analyzer extends FormatPlugin {
 
     @Override
     void emitFormat() {
-        final Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(schemaContext.getModules());
+        final Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(modelContext.getModules());
         for (final DeclaredStatement<?> declaredStatement : statements) {
             analyzeSubstatement(declaredStatement);
         }
