@@ -23,7 +23,7 @@ public abstract class FormatPlugin {
     public static final String EMPTY_MODULE_EXCEPTION = "Provided yang module is empty. Ensure that provided path"
             + " contains file/files with .yang extension";
 
-    EffectiveModelContext schemaContext;
+    EffectiveModelContext modelContext;
     Module testedModule;
     SchemaTree schemaTree;
     Path output;
@@ -31,7 +31,7 @@ public abstract class FormatPlugin {
 
     void init(final EffectiveModelContext context, final Module module,
             final SchemaTree tree, final Configuration config) {
-        this.schemaContext = context;
+        this.modelContext = context;
         this.testedModule = module;
         this.schemaTree = tree;
         this.configuration = config;

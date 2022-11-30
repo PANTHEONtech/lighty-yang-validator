@@ -87,7 +87,7 @@ public class Depends extends FormatPlugin {
 
     private void resolveImportsInSchemaContextModules(final DependConfiguration dependConfiguration,
             final ModuleImport moduleImport, final String moduleName) {
-        for (final Module contextModule : schemaContext.getModules()) {
+        for (final Module contextModule : modelContext.getModules()) {
             if (moduleName.equals(contextModule.getName()) && isRevisionsEqualsOrNull(moduleImport, contextModule)) {
                 addContextModuleToModulesAndResolveImports(dependConfiguration, contextModule);
                 break;
