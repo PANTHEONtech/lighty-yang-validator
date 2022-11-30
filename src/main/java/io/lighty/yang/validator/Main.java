@@ -127,7 +127,7 @@ public final class Main {
         try {
             context = contextFactory.createContext(config.getSimplify() != null);
         } catch (final IOException | YangParserException e) {
-            throw new LyvApplicationException("Failed to create SchemaContext", e);
+            throw new LyvApplicationException("Failed to assemble Effective Model Context", e);
         }
         return new LyvEffectiveModelContext(context, contextFactory.getModulesForTesting());
     }
@@ -157,7 +157,7 @@ public final class Main {
                                 config.isRecursive());
                 contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
             } catch (final IOException | YangParserException e) {
-                throw new LyvApplicationException("Failed to create SchemaContext", e);
+                throw new LyvApplicationException("Failed to assemble Effective Model Context", e);
             }
             final CheckUpdateFrom checkUpdateFrom = new CheckUpdateFrom(context,
                     module, contextFrom, config.getCheckUpdateFrom(),

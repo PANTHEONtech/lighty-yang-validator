@@ -81,7 +81,7 @@ public class Tree extends FormatPlugin {
             final String firstLine = MODULE + testedModule.getName();
             LOG.info("{}", firstLine.substring(0, min(firstLine.length(), lineLength)));
 
-            putSchemaContextModuleMatchedWithUsedModuleToNamespacePrefix();
+            putContextModuleMatchedWithUsedModuleToNamespacePrefix();
 
             final AtomicInteger rootNodes = new AtomicInteger(0);
             for (final SchemaTree st : schemaTree.getChildren()) {
@@ -168,7 +168,7 @@ public class Tree extends FormatPlugin {
         return lines;
     }
 
-    private void putSchemaContextModuleMatchedWithUsedModuleToNamespacePrefix() {
+    private void putContextModuleMatchedWithUsedModuleToNamespacePrefix() {
         for (final Module m : modelContext.getModules()) {
             if (!m.getPrefix().equals(testedModule.getPrefix())
                     || configuration.getTreeConfiguration().isPrefixMainModule()) {
