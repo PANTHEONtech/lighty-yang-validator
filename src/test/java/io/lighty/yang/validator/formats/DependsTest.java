@@ -130,6 +130,11 @@ public class DependsTest extends FormatTest {
         runDependendsTest("testModel-dependencies");
     }
 
+    @Override
+    public void runDeviationTest() throws Exception {
+        runDependendsTest("moduleDeviation-dependencies");
+    }
+
     private void runDependendsTest(final String comapreWithFileName) throws Exception {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);

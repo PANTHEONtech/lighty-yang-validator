@@ -1,0 +1,45 @@
+module deviation {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:deviation";
+  prefix dev;
+
+  import model {prefix mo;}
+
+  revision 2022-11-30 {
+    description
+      "Initial revision.";
+  }
+
+  deviation "/mo:data-container/mo:list-data/mo:month" {
+    description "not-supported.";
+    deviate not-supported;
+  }
+  deviation "/mo:data-container/mo:list-data/mo:sub-device/mo:year" {
+    description "not-supported.";
+    deviate not-supported;
+  }
+  deviation "/mo:data-container/mo:device/mo:manufacturer" {
+    description "not-supported.";
+    deviate not-supported;
+  }
+  deviation "/mo:data-container/mo:device/mo:model" {
+    deviate replace {
+        type uint8;
+    }
+  }
+  deviation "/mo:data-container/mo:device/mo:model" {
+     deviate add {
+         default 15;
+     }
+   }
+  deviation "/mo:data-container/mo:device" {
+    deviate delete {
+        must "enumType != 'ethernet'";
+    }
+  }
+  deviation "/mo:data-container/mo:list-data/mo:sub-device" {
+    deviate delete {
+        unique "state";
+    }
+  }
+}
