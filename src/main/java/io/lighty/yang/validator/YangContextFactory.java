@@ -38,7 +38,7 @@ final class YangContextFactory {
     private final List<Module> testedModules = new ArrayList<>();
 
     YangContextFactory(final List<String> yangLibDirs, final List<String> yangTestFiles,
-            final Set<QName> supportedFeatures, final boolean recursiveSearch) throws IOException {
+            final Set<QName> supportedFeatures, final boolean recursiveSearch) {
         this.supportedFeatures = supportedFeatures;
 
         final Set<String> yangLibDirsSet = new HashSet<>();

@@ -12,6 +12,7 @@ import static org.testng.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.Cleanable;
+import io.lighty.yang.validator.LyvEffectiveModelContextFactory;
 import io.lighty.yang.validator.Main;
 import io.lighty.yang.validator.MainTest;
 import io.lighty.yang.validator.config.Configuration;
@@ -76,7 +77,7 @@ public class AnalyzerTest implements Cleanable {
     public void analyzeTest() throws Exception {
         final String module = Paths.get(yangPath).resolve("ietf-netconf-common@2013-10-21.yang").toString();
         final var configuration = builder.build();
-        final var lyvContext = Main.getLyvContext(ImmutableList.of(module), configuration);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
         final var modules = lyvContext.testedModules();
         assertTrue(modules.isEmpty());
         runLYV(null, configuration, formatter, lyvContext.context());
