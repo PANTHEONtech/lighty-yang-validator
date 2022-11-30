@@ -82,13 +82,13 @@ public class Depends extends FormatPlugin {
             if (dependConfiguration.getExcludedModuleNames().contains(moduleName)) {
                 continue;
             }
-            resolveImportsInSchemaContextModules(dependConfiguration, moduleImport, moduleName);
+            resolveImportsInContextModules(dependConfiguration, moduleImport, moduleName);
         }
     }
 
-    private void resolveImportsInSchemaContextModules(final DependConfiguration dependConfiguration,
+    private void resolveImportsInContextModules(final DependConfiguration dependConfiguration,
             final ModuleImport moduleImport, final String moduleName) {
-        for (final Module contextModule : schemaContext.getModules()) {
+        for (final Module contextModule : modelContext.getModules()) {
             if (moduleName.equals(contextModule.getName()) && isRevisionsEqualsOrNull(moduleImport, contextModule)) {
                 addContextModuleToModulesAndResolveImports(dependConfiguration, contextModule);
                 break;
