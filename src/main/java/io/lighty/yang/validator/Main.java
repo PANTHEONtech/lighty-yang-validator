@@ -151,10 +151,8 @@ public final class Main {
             }
             final EffectiveModelContext contextFrom;
             try {
-                // FIXME suspicious call
                 final YangContextFactory contextFactoryFrom =
-                        new YangContextFactory(initYangDirsPath(
-                                config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath()),
+                        new YangContextFactory(config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath(),
                                 Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
                                 config.isRecursive());
                 contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
@@ -176,9 +174,7 @@ public final class Main {
             throws LyvApplicationException {
         final var moduleNameValues = config.getModuleNames();
         final var yangFiles = new ArrayList<String>();
-        if (moduleNameValues != null) {
-            yangFiles.addAll(moduleNameValues);
-        }
+        yangFiles.addAll(moduleNameValues);
         yangFiles.addAll(config.getYang());
         final var lyvContext = LyvEffectiveModelContextFactory.create(yangFiles, config);
         if (lyvContext.testedModules().isEmpty()) {
@@ -390,16 +386,6 @@ public final class Main {
                         String.format("Failed to fill schema from %s", xmlFile), e);
             }
         }
-    }
-
-    private static List<String> initYangDirsPath(final List<String> paths) {
-        final List<String> yangDirs = new ArrayList<>();
-        if (paths != null) {
-            for (final String pathArg : paths) {
-                yangDirs.addAll(Arrays.asList(pathArg.split(":")));
-            }
-        }
-        return yangDirs;
     }
 
     private static class CompilationTableAppender extends AppenderBase<ILoggingEvent> {
