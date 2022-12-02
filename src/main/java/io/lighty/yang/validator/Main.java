@@ -153,7 +153,7 @@ public final class Main {
         checkUpdateFrom.printErrors();
     }
 
-    private static void runLyvForProvidedFiles(final Configuration config,  final Format format)
+    private static void runLyvForProvidedFiles(final Configuration config, final Format format)
             throws LyvApplicationException {
         final var moduleNameValues = config.getModuleNames();
         final var yangFiles = new ArrayList<String>();
@@ -187,31 +187,6 @@ public final class Main {
         //FIXME: This method should be called only for model validation not for all formats.
         generateHtmlAnalyzeOutput(yangFiles, config);
         runLywForeachYangFile(yangFiles, config, format);
-    }
-
-    private static Configuration getConfiguration(final Format format, final String[] args) {
-        final LyvParameters lyvParameters = new LyvParameters(format, args);
-        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder = configurationBuilder.from(lyvParameters);
-        Configuration configuration = configurationBuilder.build();
-
-        if (configuration.getTreeConfiguration().isHelp()) {
-            configurationBuilder.setFormat("tree");
-            configuration = configurationBuilder.build();
-        }
-        return configuration;
-    }
-
-    private static Format getFormat() {
-        final List<FormatPlugin> formats = new ArrayList<>();
-        formats.add(new Depends());
-        formats.add(new NameRevision());
-        formats.add(new JsonTree());
-        formats.add(new Tree());
-        formats.add(new MultiModulePrinter());
-        formats.add(new JsTree());
-        formats.add(new Analyzer());
-        return new Format(formats);
     }
 
     private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration configuration,
@@ -248,6 +223,31 @@ public final class Main {
             }
         }
         table.buildHtml();
+    }
+
+    private static Configuration getConfiguration(final Format format, final String[] args) {
+        final LyvParameters lyvParameters = new LyvParameters(format, args);
+        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
+        configurationBuilder = configurationBuilder.from(lyvParameters);
+        Configuration configuration = configurationBuilder.build();
+
+        if (configuration.getTreeConfiguration().isHelp()) {
+            configurationBuilder.setFormat("tree");
+            configuration = configurationBuilder.build();
+        }
+        return configuration;
+    }
+
+    private static Format getFormat() {
+        final List<FormatPlugin> formats = new ArrayList<>();
+        formats.add(new Depends());
+        formats.add(new NameRevision());
+        formats.add(new JsonTree());
+        formats.add(new Tree());
+        formats.add(new MultiModulePrinter());
+        formats.add(new JsTree());
+        formats.add(new Analyzer());
+        return new Format(formats);
     }
 
     private static Throwable getSourceException(final LyvApplicationException exception) {
