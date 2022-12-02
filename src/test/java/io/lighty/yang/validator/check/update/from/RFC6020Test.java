@@ -8,12 +8,9 @@
 package io.lighty.yang.validator.check.update.from;
 
 import static io.lighty.yang.validator.Main.checkUpdateForm;
-import static io.lighty.yang.validator.Main.runLYV;
 import static org.testng.Assert.assertEquals;
 
-import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.Cleanable;
-import io.lighty.yang.validator.LyvEffectiveModelContextFactory;
 import io.lighty.yang.validator.Main;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.config.ConfigurationBuilder;
