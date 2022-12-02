@@ -7,7 +7,7 @@
  */
 package io.lighty.yang.validator;
 
-import static io.lighty.yang.validator.Main.runLYV;
+import static io.lighty.yang.validator.Main.startLyv;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
@@ -71,11 +71,9 @@ public class TreeSimplifiedTest implements Cleanable {
     public void runTreeSimplifiedTest() throws Exception {
         prepare("tree", new Tree());
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
+        builder.setYangModules(ImmutableList.of(module));
         final var configuration = builder.build();
-        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
-        final var modules = lyvContext.testedModules();
-        assertEquals(modules.size(), 1);
-        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
+        startLyv(configuration, formatter);
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(
@@ -87,11 +85,9 @@ public class TreeSimplifiedTest implements Cleanable {
     public void runYangSimplifiedTest() throws Exception {
         prepare("yang", new MultiModulePrinter());
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
+        builder.setYangModules(ImmutableList.of(module));
         final var configuration = builder.build();
-        final var lyvContext = LyvEffectiveModelContextFactory.create(ImmutableList.of(module), configuration);
-        final var modules = lyvContext.testedModules();
-        assertEquals(modules.size(), 1);
-        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
+        startLyv(configuration, formatter);
         final Path outLog = Paths.get(outPath).resolve("ietf-interfaces@2018-02-20.yang");
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(
