@@ -7,12 +7,14 @@
  */
 package io.lighty.yang.validator;
 
+import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.List;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
 
-public record LyvEffectiveModelContext(EffectiveModelContext context, List<Module> testedModules) {
-    public LyvEffectiveModelContext(final EffectiveModelContext context) {
-        this(context, List.of());
+public record LyvEffectiveModelContext(EffectiveModelContext context, SchemaTree schemaTree,
+                                       List<Module> testedModules) {
+    public LyvEffectiveModelContext(final EffectiveModelContext context, final SchemaTree schemaTree) {
+        this(context, schemaTree, List.of());
     }
 }
