@@ -183,15 +183,9 @@ public final class Main {
                         String.join(",", parseAllDir)), e);
             }
         }
-        final var yangtoolsVersion = getYangtoolsVersion(EffectiveModelContext.class);
-        final var table = new CompilationTable(config.getOutput(), parseAllDir, yangtoolsVersion);
-        final var newAppender = new CompilationTableAppender();
-        newAppender.setContext(MAIN_LOGGER.getLoggerContext());
-        newAppender.start();
-        newAppender.setCompilationTable(table);
-
-        MAIN_LOGGER.addAppender(newAppender);
-        runLywForeachYangFile(yangFiles, config, newAppender, table, format);
+        //FIXME: This method should be called only for model validation not for all formats.
+        generateHtmlAnalyzeOutput(yangFiles, config);
+        runLywForeachYangFile(yangFiles, config, format);
     }
 
     private static Configuration getConfiguration(final Format format, final String[] args) {
@@ -220,7 +214,6 @@ public final class Main {
     }
 
     private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration configuration,
-            final CompilationTableAppender newAppender, final CompilationTable table,
             final Format formatter) throws LyvApplicationException {
         final var lyvContext = LyvEffectiveModelContextFactory.create(yangFiles, configuration);
         if (lyvContext.testedModules().isEmpty()) {
@@ -228,14 +221,29 @@ public final class Main {
             runLYV(null, configuration, formatter, lyvContext.context());
         }
         for (final Module module : lyvContext.testedModules()) {
+            runLYV(module, configuration, formatter, lyvContext.context());
+        }
+    }
+
+    private static void generateHtmlAnalyzeOutput(final List<String> yangFiles, final Configuration config)
+            throws LyvApplicationException {
+        final var yangtoolsVersion = getYangtoolsVersion(EffectiveModelContext.class);
+        final var table = new CompilationTable(config.getOutput(), config.getParseAll(), yangtoolsVersion);
+        final var newAppender = new CompilationTableAppender();
+        newAppender.setContext(MAIN_LOGGER.getLoggerContext());
+        newAppender.start();
+        newAppender.setCompilationTable(table);
+        MAIN_LOGGER.addAppender(newAppender);
+        for (final String yangFile : yangFiles) {
+            final String name = yangFile.split("/")[yangFile.split("/").length - 1];
             try {
-                newAppender.setYangName(module.getName());
-                runLYV(module, configuration, formatter, lyvContext.context());
-                table.addRow(module.getName(), null, CompilationStatus.PASSED);
+                newAppender.setYangName(name);
+                LyvEffectiveModelContextFactory.create(List.of(yangFile), config);
+                table.addRow(name, null, CompilationStatus.PASSED);
             } catch (final LyvApplicationException e) {
                 final String message = formatLyvExceptionMessage(e);
-                table.addRow(module.getName(), message, CompilationStatus.FAILED);
-                LOG.error("name : {}, message: {}", module.getName(), message);
+                table.addRow(name, message, CompilationStatus.FAILED);
+                LOG.error("name : {}, message: {}", name, message);
             }
         }
         table.buildHtml();
