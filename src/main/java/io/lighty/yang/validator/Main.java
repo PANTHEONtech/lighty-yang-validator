@@ -42,7 +42,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
@@ -98,10 +97,14 @@ public final class Main {
         }
         setMainLoggerOutput(configuration);
         try {
-            if (configuration.getParseAll().isEmpty()) {
-                runLyvForProvidedFiles(configuration, format);
+            if (configuration.getCheckUpdateFrom() != null && configuration.getFormat() == null) {
+                checkUpdateForm(configuration);
             } else {
-                runLyvForProvidedFolder(configuration, format);
+                if (configuration.getParseAll().isEmpty()) {
+                    runLyvForProvidedFiles(configuration, format);
+                } else {
+                    runLyvForProvidedFolder(configuration, format);
+                }
             }
         } catch (final LyvApplicationException e) {
             LOG.error("Exception in LYV application: {}", formatLyvExceptionMessage(e));
@@ -113,37 +116,40 @@ public final class Main {
             final Emitter format, final EffectiveModelContext context) throws LyvApplicationException {
         LOG.debug("Supported features: {} ", config.getSupportedFeatures());
         final Stopwatch stopWatch = Stopwatch.createStarted();
-        if (config.getCheckUpdateFrom() == null && config.getFormat() != null) {
-            SchemaTree schemaTree = null;
-            if (context != null) {
-                schemaTree = resolveSchemaTree(config.getSimplify(), context);
-            }
-            format.init(config, context, module, schemaTree);
-            format.emit();
-        } else {
-            if (module == null) {
-                throw new LyvApplicationException("Yang model for Check-update-from was not specified."
-                        + " Please provide updated yang model for compare");
-            }
-            final EffectiveModelContext contextFrom;
-            try {
-                final YangContextFactory contextFactoryFrom =
-                        new YangContextFactory(config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath(),
-                                Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
-                                config.isRecursive());
-                contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
-            } catch (final IOException | YangParserException e) {
-                throw new LyvApplicationException("Failed to assemble Effective Model Context", e);
-            }
-            final CheckUpdateFrom checkUpdateFrom = new CheckUpdateFrom(context,
-                    module, contextFrom, config.getCheckUpdateFrom(),
-                    config.getCheckUpdateFromConfiguration().getRfcVersion());
-            checkUpdateFrom.validate();
-            checkUpdateFrom.printErrors();
+        SchemaTree schemaTree = null;
+        if (context != null) {
+            schemaTree = resolveSchemaTree(config.getSimplify(), context);
         }
-
+        format.init(config, context, module, schemaTree);
+        format.emit();
         stopWatch.stop();
         LOG.debug("Elapsed time: {}", stopWatch);
+    }
+
+    public static void checkUpdateForm(final Configuration config) throws LyvApplicationException {
+        final var lyvContext = LyvEffectiveModelContextFactory.create(config.getYang(), config);
+        if (lyvContext.testedModules() == null) {
+            throw new LyvApplicationException("Yang model for Check-update-from was not specified."
+                    + " Please provide updated yang model for compare");
+        }
+        if (lyvContext.testedModules().size() != 1) {
+            throw new LyvApplicationException("Check-update-from option may be used with single module only");
+        }
+        final var module = lyvContext.testedModules().iterator().next();
+        final EffectiveModelContext contextFrom;
+        try {
+            final var contextFactoryFrom = new YangContextFactory(
+                    config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath(),
+                    Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
+                    config.isRecursive());
+            contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
+        } catch (final IOException | YangParserException e) {
+            throw new LyvApplicationException("Failed to assemble Effective Model Context", e);
+        }
+        final var checkUpdateFrom = new CheckUpdateFrom(lyvContext.context(), module, contextFrom,
+                config.getCheckUpdateFrom(), config.getCheckUpdateFromConfiguration().getRfcVersion());
+        checkUpdateFrom.validate();
+        checkUpdateFrom.printErrors();
     }
 
     private static void runLyvForProvidedFiles(final Configuration config,  final Format format)
