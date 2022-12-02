@@ -22,7 +22,6 @@ import io.lighty.yang.validator.config.ConfigurationBuilder;
 import io.lighty.yang.validator.exceptions.LyvApplicationException;
 import io.lighty.yang.validator.formats.Analyzer;
 import io.lighty.yang.validator.formats.Depends;
-import io.lighty.yang.validator.formats.Emitter;
 import io.lighty.yang.validator.formats.Format;
 import io.lighty.yang.validator.formats.FormatPlugin;
 import io.lighty.yang.validator.formats.JsTree;
@@ -30,13 +29,8 @@ import io.lighty.yang.validator.formats.JsonTree;
 import io.lighty.yang.validator.formats.MultiModulePrinter;
 import io.lighty.yang.validator.formats.NameRevision;
 import io.lighty.yang.validator.formats.Tree;
-import io.lighty.yang.validator.simplify.SchemaSelector;
-import io.lighty.yang.validator.simplify.SchemaTree;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,9 +41,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.parser.api.YangParserException;
@@ -96,10 +87,12 @@ public final class Main {
             return;
         }
         setMainLoggerOutput(configuration);
+        final Stopwatch stopWatch = Stopwatch.createStarted();
         try {
             if (configuration.getCheckUpdateFrom() != null && configuration.getFormat() == null) {
                 checkUpdateForm(configuration);
             } else {
+                LOG.debug("Supported features: {} ", configuration.getSupportedFeatures());
                 if (configuration.getParseAll().isEmpty()) {
                     runLyvForProvidedFiles(configuration, format);
                 } else {
@@ -109,22 +102,9 @@ public final class Main {
         } catch (final LyvApplicationException e) {
             LOG.error("Exception in LYV application: {}", formatLyvExceptionMessage(e));
         }
-        MAIN_LOGGER.getLoggerContext().reset();
-    }
-
-    public static void runLYV(final Module module, final Configuration config,
-            final Emitter format, final EffectiveModelContext context) throws LyvApplicationException {
-        LOG.debug("Supported features: {} ", config.getSupportedFeatures());
-        final Stopwatch stopWatch = Stopwatch.createStarted();
-
-        SchemaTree schemaTree = null;
-        if (context != null) {
-            schemaTree = resolveSchemaTree(config.getSimplify(), context);
-        }
-        format.init(config, context, module, schemaTree);
-        format.emit();
         stopWatch.stop();
         LOG.debug("Elapsed time: {}", stopWatch);
+        MAIN_LOGGER.getLoggerContext().reset();
     }
 
     public static void checkUpdateForm(final Configuration config) throws LyvApplicationException {
@@ -159,14 +139,7 @@ public final class Main {
         final var yangFiles = new ArrayList<String>();
         yangFiles.addAll(moduleNameValues);
         yangFiles.addAll(config.getYang());
-        final var lyvContext = LyvEffectiveModelContextFactory.create(yangFiles, config);
-        if (lyvContext.testedModules().isEmpty()) {
-            // Analyse format require only EffectiveModelContext
-            runLYV(null, config, format, lyvContext.context());
-        }
-        for (final var module : lyvContext.testedModules()) {
-            runLYV(module, config, format, lyvContext.context());
-        }
+        runLywForeachYangFile(yangFiles, config, format);
     }
 
     private static void runLyvForProvidedFolder(final Configuration config, final Format format)
@@ -189,15 +162,17 @@ public final class Main {
         runLywForeachYangFile(yangFiles, config, format);
     }
 
-    private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration configuration,
-            final Format formatter) throws LyvApplicationException {
-        final var lyvContext = LyvEffectiveModelContextFactory.create(yangFiles, configuration);
+    private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration config,
+            final Format format) throws LyvApplicationException {
+        final var lyvContext = LyvEffectiveModelContextFactory.create(yangFiles, config);
         if (lyvContext.testedModules().isEmpty()) {
             // Analyse format require only EffectiveModelContext
-            runLYV(null, configuration, formatter, lyvContext.context());
+            format.init(config, lyvContext.context(), null, lyvContext.schemaTree());
+            format.emit();
         }
         for (final Module module : lyvContext.testedModules()) {
-            runLYV(module, configuration, formatter, lyvContext.context());
+            format.init(config, lyvContext.context(), module, lyvContext.schemaTree());
+            format.emit();
         }
     }
 
@@ -345,37 +320,6 @@ public final class Main {
             MAIN_LOGGER.detachAndStopAllAppenders();
         } else {
             MAIN_LOGGER.setLevel(Level.INFO);
-        }
-    }
-
-    private static SchemaTree resolveSchemaTree(final String simplifyDir,
-            final EffectiveModelContext effectiveModelContext) throws LyvApplicationException {
-        final SchemaSelector schemaSelector = new SchemaSelector(effectiveModelContext);
-        if (simplifyDir == null) {
-            schemaSelector.noXml();
-        } else {
-            try (Stream<Path> path = Files.list(Paths.get(simplifyDir))) {
-                final List<File> xmlFiles = path
-                        .map(Path::toFile)
-                        .collect(Collectors.toList());
-
-                addXmlFilesToSchemaSelector(schemaSelector, xmlFiles);
-            } catch (final IOException e) {
-                throw new LyvApplicationException("Failed to open xml files", e);
-            }
-        }
-        return schemaSelector.getSchemaTree();
-    }
-
-    private static void addXmlFilesToSchemaSelector(final SchemaSelector schemaSelector, final List<File> xmlFiles)
-            throws LyvApplicationException {
-        for (final File xmlFile : xmlFiles) {
-            try (FileInputStream fis = new FileInputStream(xmlFile)) {
-                schemaSelector.addXml(fis);
-            } catch (final IOException | XMLStreamException | URISyntaxException e) {
-                throw new LyvApplicationException(
-                        String.format("Failed to fill schema from %s", xmlFile), e);
-            }
         }
     }
 
