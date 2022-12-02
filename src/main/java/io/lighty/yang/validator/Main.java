@@ -87,16 +87,21 @@ public final class Main {
             return;
         }
         setMainLoggerOutput(configuration);
-        final Stopwatch stopWatch = Stopwatch.createStarted();
+        startLyv(configuration, format);
+        MAIN_LOGGER.getLoggerContext().reset();
+    }
+
+    public static void startLyv(final Configuration config, final Format format) {
+        final var stopWatch = Stopwatch.createStarted();
         try {
-            if (configuration.getCheckUpdateFrom() != null && configuration.getFormat() == null) {
-                checkUpdateForm(configuration);
+            if (config.getCheckUpdateFrom() != null && config.getFormat() == null) {
+                checkUpdateForm(config);
             } else {
-                LOG.debug("Supported features: {} ", configuration.getSupportedFeatures());
-                if (configuration.getParseAll().isEmpty()) {
-                    runLyvForProvidedFiles(configuration, format);
+                LOG.debug("Supported features: {} ", config.getSupportedFeatures());
+                if (config.getParseAll().isEmpty()) {
+                    runLyvForProvidedFiles(config, format);
                 } else {
-                    runLyvForProvidedFolder(configuration, format);
+                    runLyvForProvidedFolder(config, format);
                 }
             }
         } catch (final LyvApplicationException e) {
@@ -104,7 +109,6 @@ public final class Main {
         }
         stopWatch.stop();
         LOG.debug("Elapsed time: {}", stopWatch);
-        MAIN_LOGGER.getLoggerContext().reset();
     }
 
     public static void checkUpdateForm(final Configuration config) throws LyvApplicationException {
