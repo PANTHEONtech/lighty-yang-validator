@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import org.opendaylight.yangtools.yang.common.QName;
 
+// TODO: make this Java 17 record
 public class Configuration {
 
     private String output;
