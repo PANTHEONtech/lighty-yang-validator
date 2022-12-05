@@ -7,11 +7,9 @@
  */
 package io.lighty.yang.validator.check.update.from;
 
-import static io.lighty.yang.validator.Main.getLyvContext;
-import static io.lighty.yang.validator.Main.runLYV;
+import static io.lighty.yang.validator.Main.checkUpdateForm;
 import static org.testng.Assert.assertEquals;
 
-import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.Cleanable;
 import io.lighty.yang.validator.Main;
 import io.lighty.yang.validator.config.Configuration;
@@ -106,11 +104,7 @@ public class RFC6020Test implements Cleanable {
         final Configuration config = builder.setUpdateFrom(oldFile)
                 .setYangModules(Collections.singletonList(newFile))
                 .build();
-
-        final var lyvContext = getLyvContext(ImmutableList.of(Paths.get(newFile).toString()), config);
-        final var modules = lyvContext.testedModules();
-        assertEquals(modules.size(), 1);
-        runLYV(modules.iterator().next(), config, null, lyvContext.context());
+        checkUpdateForm(config);
 
         final Path outLog = Paths.get(outPath).resolve(OUT);
         final String fileCreated = Files.readString(outLog);

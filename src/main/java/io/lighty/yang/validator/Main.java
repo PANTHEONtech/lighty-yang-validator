@@ -22,7 +22,6 @@ import io.lighty.yang.validator.config.ConfigurationBuilder;
 import io.lighty.yang.validator.exceptions.LyvApplicationException;
 import io.lighty.yang.validator.formats.Analyzer;
 import io.lighty.yang.validator.formats.Depends;
-import io.lighty.yang.validator.formats.Emitter;
 import io.lighty.yang.validator.formats.Format;
 import io.lighty.yang.validator.formats.FormatPlugin;
 import io.lighty.yang.validator.formats.JsTree;
@@ -30,27 +29,18 @@ import io.lighty.yang.validator.formats.JsonTree;
 import io.lighty.yang.validator.formats.MultiModulePrinter;
 import io.lighty.yang.validator.formats.NameRevision;
 import io.lighty.yang.validator.formats.Tree;
-import io.lighty.yang.validator.simplify.SchemaSelector;
-import io.lighty.yang.validator.simplify.SchemaTree;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.xml.stream.XMLStreamException;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.parser.api.YangParserException;
@@ -97,95 +87,63 @@ public final class Main {
             return;
         }
         setMainLoggerOutput(configuration);
+        startLyv(configuration, format);
+        MAIN_LOGGER.getLoggerContext().reset();
+    }
+
+    public static void startLyv(final Configuration config, final Format format) {
+        final var stopWatch = Stopwatch.createStarted();
         try {
-            if (configuration.getParseAll().isEmpty()) {
-                runLyvForProvidedFiles(configuration, format);
+            if (config.getCheckUpdateFrom() != null && config.getFormat() == null) {
+                checkUpdateForm(config);
             } else {
-                runLyvForProvidedFolder(configuration, format);
+                LOG.debug("Supported features: {} ", config.getSupportedFeatures());
+                if (config.getParseAll().isEmpty()) {
+                    runLyvForProvidedFiles(config, format);
+                } else {
+                    runLyvForProvidedFolder(config, format);
+                }
             }
         } catch (final LyvApplicationException e) {
             LOG.error("Exception in LYV application: {}", formatLyvExceptionMessage(e));
         }
-        MAIN_LOGGER.getLoggerContext().reset();
-    }
-
-    public static LyvEffectiveModelContext getLyvContext(final List<String> yangFiles, final Configuration config)
-            throws LyvApplicationException {
-        final var yangLibDirs = initYangDirsPath(config.getPath());
-        LOG.debug("Yang models dirs: {} ", yangLibDirs);
-        if (yangFiles.isEmpty() && config.getTreeConfiguration().isHelp()) {
-            return new LyvEffectiveModelContext(null);
-        }
-        final YangContextFactory contextFactory;
-        try {
-            contextFactory = new YangContextFactory(yangLibDirs, yangFiles, config.getSupportedFeatures(),
-                    config.isRecursive());
-        } catch (final IOException e) {
-            throw new LyvApplicationException("Failed to create YangContextFactory", e);
-        }
-        EffectiveModelContext context;
-        try {
-            context = contextFactory.createContext(config.getSimplify() != null);
-        } catch (final IOException | YangParserException e) {
-            throw new LyvApplicationException("Failed to assemble Effective Model Context", e);
-        }
-        return new LyvEffectiveModelContext(context, contextFactory.getModulesForTesting());
-    }
-
-    public static void runLYV(final Module module, final Configuration config,
-            final Emitter format, final EffectiveModelContext context) throws LyvApplicationException {
-        LOG.debug("Supported features: {} ", config.getSupportedFeatures());
-        final Stopwatch stopWatch = Stopwatch.createStarted();
-        if (config.getCheckUpdateFrom() == null && config.getFormat() != null) {
-            SchemaTree schemaTree = null;
-            if (context != null) {
-                schemaTree = resolveSchemaTree(config.getSimplify(), context);
-            }
-            format.init(config, context, module, schemaTree);
-            format.emit();
-        } else {
-            if (module == null) {
-                throw new LyvApplicationException("Yang model for Check-update-from was not specified."
-                        + " Please provide updated yang model for compare");
-            }
-            final EffectiveModelContext contextFrom;
-            try {
-                final YangContextFactory contextFactoryFrom =
-                        new YangContextFactory(initYangDirsPath(
-                                config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath()),
-                                Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
-                                config.isRecursive());
-                contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
-            } catch (final IOException | YangParserException e) {
-                throw new LyvApplicationException("Failed to assemble Effective Model Context", e);
-            }
-            final CheckUpdateFrom checkUpdateFrom = new CheckUpdateFrom(context,
-                    module, contextFrom, config.getCheckUpdateFrom(),
-                    config.getCheckUpdateFromConfiguration().getRfcVersion());
-            checkUpdateFrom.validate();
-            checkUpdateFrom.printErrors();
-        }
-
         stopWatch.stop();
         LOG.debug("Elapsed time: {}", stopWatch);
     }
 
-    private static void runLyvForProvidedFiles(final Configuration config,  final Format format)
+    public static void checkUpdateForm(final Configuration config) throws LyvApplicationException {
+        final var lyvContext = LyvEffectiveModelContextFactory.create(config.getYang(), config);
+        if (lyvContext.testedModules() == null) {
+            throw new LyvApplicationException("Yang model for Check-update-from was not specified."
+                    + " Please provide updated yang model for compare");
+        }
+        if (lyvContext.testedModules().size() != 1) {
+            throw new LyvApplicationException("Check-update-from option may be used with single module only");
+        }
+        final var module = lyvContext.testedModules().iterator().next();
+        final EffectiveModelContext contextFrom;
+        try {
+            final var contextFactoryFrom = new YangContextFactory(
+                    config.getCheckUpdateFromConfiguration().getCheckUpdateFromPath(),
+                    Collections.singletonList(config.getCheckUpdateFrom()), config.getSupportedFeatures(),
+                    config.isRecursive());
+            contextFrom = contextFactoryFrom.createContext(config.getSimplify() != null);
+        } catch (final IOException | YangParserException e) {
+            throw new LyvApplicationException("Failed to assemble Effective Model Context", e);
+        }
+        final var checkUpdateFrom = new CheckUpdateFrom(lyvContext.context(), module, contextFrom,
+                config.getCheckUpdateFrom(), config.getCheckUpdateFromConfiguration().getRfcVersion());
+        checkUpdateFrom.validate();
+        checkUpdateFrom.printErrors();
+    }
+
+    private static void runLyvForProvidedFiles(final Configuration config, final Format format)
             throws LyvApplicationException {
         final var moduleNameValues = config.getModuleNames();
         final var yangFiles = new ArrayList<String>();
-        if (moduleNameValues != null) {
-            yangFiles.addAll(moduleNameValues);
-        }
+        yangFiles.addAll(moduleNameValues);
         yangFiles.addAll(config.getYang());
-        final var lyvContext = getLyvContext(yangFiles, config);
-        if (lyvContext.testedModules().isEmpty()) {
-            // Analyse format require only EffectiveModelContext
-            runLYV(null, config, format, lyvContext.context());
-        }
-        for (final var module : lyvContext.testedModules()) {
-            runLYV(module, config, format, lyvContext.context());
-        }
+        runLywForeachYangFile(yangFiles, config, format);
     }
 
     private static void runLyvForProvidedFolder(final Configuration config, final Format format)
@@ -203,15 +161,47 @@ public final class Main {
                         String.join(",", parseAllDir)), e);
             }
         }
+        //FIXME: This method should be called only for model validation not for all formats.
+        generateHtmlAnalyzeOutput(yangFiles, config);
+        runLywForeachYangFile(yangFiles, config, format);
+    }
+
+    private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration config,
+            final Format format) throws LyvApplicationException {
+        final var lyvContext = LyvEffectiveModelContextFactory.create(yangFiles, config);
+        if (lyvContext.testedModules().isEmpty()) {
+            // Analyse format require only EffectiveModelContext
+            format.init(config, lyvContext.context(), null, lyvContext.schemaTree());
+            format.emit();
+        }
+        for (final Module module : lyvContext.testedModules()) {
+            format.init(config, lyvContext.context(), module, lyvContext.schemaTree());
+            format.emit();
+        }
+    }
+
+    private static void generateHtmlAnalyzeOutput(final List<String> yangFiles, final Configuration config)
+            throws LyvApplicationException {
         final var yangtoolsVersion = getYangtoolsVersion(EffectiveModelContext.class);
-        final var table = new CompilationTable(config.getOutput(), parseAllDir, yangtoolsVersion);
+        final var table = new CompilationTable(config.getOutput(), config.getParseAll(), yangtoolsVersion);
         final var newAppender = new CompilationTableAppender();
         newAppender.setContext(MAIN_LOGGER.getLoggerContext());
         newAppender.start();
         newAppender.setCompilationTable(table);
-
         MAIN_LOGGER.addAppender(newAppender);
-        runLywForeachYangFile(yangFiles, config, newAppender, table, format);
+        for (final String yangFile : yangFiles) {
+            final String name = yangFile.split("/")[yangFile.split("/").length - 1];
+            try {
+                newAppender.setYangName(name);
+                LyvEffectiveModelContextFactory.create(List.of(yangFile), config);
+                table.addRow(name, null, CompilationStatus.PASSED);
+            } catch (final LyvApplicationException e) {
+                final String message = formatLyvExceptionMessage(e);
+                table.addRow(name, message, CompilationStatus.FAILED);
+                LOG.error("name : {}, message: {}", name, message);
+            }
+        }
+        table.buildHtml();
     }
 
     private static Configuration getConfiguration(final Format format, final String[] args) {
@@ -237,28 +227,6 @@ public final class Main {
         formats.add(new JsTree());
         formats.add(new Analyzer());
         return new Format(formats);
-    }
-
-    private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration configuration,
-            final CompilationTableAppender newAppender, final CompilationTable table,
-            final Format formatter) throws LyvApplicationException {
-        final var lyvContext = getLyvContext(yangFiles, configuration);
-        if (lyvContext.testedModules().isEmpty()) {
-            // Analyse format require only EffectiveModelContext
-            runLYV(null, configuration, formatter, lyvContext.context());
-        }
-        for (final Module module : lyvContext.testedModules()) {
-            try {
-                newAppender.setYangName(module.getName());
-                runLYV(module, configuration, formatter, lyvContext.context());
-                table.addRow(module.getName(), null, CompilationStatus.PASSED);
-            } catch (final LyvApplicationException e) {
-                final String message = formatLyvExceptionMessage(e);
-                table.addRow(module.getName(), message, CompilationStatus.FAILED);
-                LOG.error("name : {}, message: {}", module.getName(), message);
-            }
-        }
-        table.buildHtml();
     }
 
     private static Throwable getSourceException(final LyvApplicationException exception) {
@@ -359,47 +327,6 @@ public final class Main {
         }
     }
 
-    private static SchemaTree resolveSchemaTree(final String simplifyDir,
-            final EffectiveModelContext effectiveModelContext) throws LyvApplicationException {
-        final SchemaSelector schemaSelector = new SchemaSelector(effectiveModelContext);
-        if (simplifyDir == null) {
-            schemaSelector.noXml();
-        } else {
-            try (Stream<Path> path = Files.list(Paths.get(simplifyDir))) {
-                final List<File> xmlFiles = path
-                        .map(Path::toFile)
-                        .collect(Collectors.toList());
-
-                addXmlFilesToSchemaSelector(schemaSelector, xmlFiles);
-            } catch (final IOException e) {
-                throw new LyvApplicationException("Failed to open xml files", e);
-            }
-        }
-        return schemaSelector.getSchemaTree();
-    }
-
-    private static void addXmlFilesToSchemaSelector(final SchemaSelector schemaSelector, final List<File> xmlFiles)
-            throws LyvApplicationException {
-        for (final File xmlFile : xmlFiles) {
-            try (FileInputStream fis = new FileInputStream(xmlFile)) {
-                schemaSelector.addXml(fis);
-            } catch (final IOException | XMLStreamException | URISyntaxException e) {
-                throw new LyvApplicationException(
-                        String.format("Failed to fill schema from %s", xmlFile), e);
-            }
-        }
-    }
-
-    private static List<String> initYangDirsPath(final List<String> paths) {
-        final List<String> yangDirs = new ArrayList<>();
-        if (paths != null) {
-            for (final String pathArg : paths) {
-                yangDirs.addAll(Arrays.asList(pathArg.split(":")));
-            }
-        }
-        return yangDirs;
-    }
-
     private static class CompilationTableAppender extends AppenderBase<ILoggingEvent> {
 
         private CompilationTable compilationTable = null;
@@ -426,11 +353,5 @@ public final class Main {
             this.yangName = name;
         }
 
-    }
-
-    public record LyvEffectiveModelContext(EffectiveModelContext context, List<Module> testedModules) {
-        public LyvEffectiveModelContext(final EffectiveModelContext context) {
-            this(context, List.of());
-        }
     }
 }

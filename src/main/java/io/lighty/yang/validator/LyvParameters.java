@@ -40,9 +40,11 @@ public class LyvParameters {
     public Namespace parseArguments() {
         lyvArgumentParser.addArgument("-m", "--module-name")
                 .nargs("*")
+                .setDefault(Collections.emptyList())
                 .help("validate yang model by module name.");
         lyvArgumentParser.addArgument("-e", "--features")
                 .nargs("*")
+                .setDefault(Collections.emptyList())
                 .help("feature is a string in the form [($namespace?revision=$revision)$local_name]."
                         + " This option is used to prune the data model by removing all nodes that are "
                         + "defined with a \"if-feature\".");

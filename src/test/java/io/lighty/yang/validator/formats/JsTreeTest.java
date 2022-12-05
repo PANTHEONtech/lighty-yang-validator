@@ -7,8 +7,7 @@
  */
 package io.lighty.yang.validator.formats;
 
-import static io.lighty.yang.validator.Main.getLyvContext;
-import static io.lighty.yang.validator.Main.runLYV;
+import static io.lighty.yang.validator.Main.startLyv;
 import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
@@ -35,11 +34,9 @@ public class JsTreeTest extends FormatTest {
         //testing for undeclared choice-case statement (no case inside of choice)
         setFormat();
         final String module = Paths.get(yangPath).resolve("undeclared.yang").toString();
+        builder.setYangModules(ImmutableList.of(module));
         final var configuration = builder.build();
-        final var lyvContext = getLyvContext(ImmutableList.of(module), configuration);
-        final var modules = lyvContext.testedModules();
-        assertEquals(modules.size(), 1);
-        runLYV(modules.iterator().next(), configuration, formatter, lyvContext.context());
+        startLyv(configuration, formatter);
         runJsTreeTest("undeclared.html");
     }
 
