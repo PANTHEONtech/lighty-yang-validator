@@ -112,7 +112,7 @@ public final class Main {
     }
 
     public static void checkUpdateForm(final Configuration config) throws LyvApplicationException {
-        final var lyvContext = LyvEffectiveModelContextFactory.create(config.getYang(), config);
+        final var lyvContext = LyvEffectiveModelContextFactory.create(config);
         if (lyvContext.testedModules() == null) {
             throw new LyvApplicationException("Yang model for Check-update-from was not specified."
                     + " Please provide updated yang model for compare");
@@ -193,7 +193,7 @@ public final class Main {
             final String name = yangFile.split("/")[yangFile.split("/").length - 1];
             try {
                 newAppender.setYangName(name);
-                LyvEffectiveModelContextFactory.create(List.of(yangFile), config);
+                LyvEffectiveModelContextFactory.create(yangFile, config);
                 table.addRow(name, null, CompilationStatus.PASSED);
             } catch (final LyvApplicationException e) {
                 final String message = formatLyvExceptionMessage(e);
