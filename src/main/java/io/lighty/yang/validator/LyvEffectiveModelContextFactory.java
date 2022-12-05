@@ -31,6 +31,16 @@ public final class LyvEffectiveModelContextFactory {
         // hidden on purpose
     }
 
+    // TODO encapsulate all logic here and remove other 'create' methods
+    public static LyvEffectiveModelContext create(final Configuration config) throws LyvApplicationException {
+        return create(config.getYang(), config);
+    }
+
+    public static LyvEffectiveModelContext create(final String yangFile, final Configuration config)
+            throws LyvApplicationException {
+        return create(List.of(yangFile), config);
+    }
+
     public static LyvEffectiveModelContext create(final List<String> yangFiles, final Configuration config)
             throws LyvApplicationException {
         if (yangFiles.isEmpty() && config.getTreeConfiguration().isHelp()) {
