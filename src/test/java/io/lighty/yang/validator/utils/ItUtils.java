@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 
 public final class ItUtils {
 
-    private static final String OUTPUT_FOLDER = "/out";
-    private static final String OUTPUT_LOG = "/out/out.log";
+    public static final String OUTPUT_FOLDER = "/out";
+    public static final String OUTPUT_LOG = "/out/out.log";
 
     private ItUtils() {
         throw new UnsupportedOperationException("Util class");
@@ -74,6 +74,14 @@ public final class ItUtils {
         final InputStream out = ItUtils.class.getResourceAsStream(path);
         assertNotNull(out);
         return new String(out.readAllBytes(), StandardCharsets.UTF_8);
+    }
+
+    public static String startLyvParseAllWithFileOutput(final String modelFolder) throws Exception {
+        final var resource = ItUtils.class.getClassLoader().getResource(modelFolder);
+        assertNotNull(resource);
+        final var outPath = ItUtils.class.getResource(OUTPUT_FOLDER).getFile();
+        final var args = new String[]{"-o", outPath, "-a", resource.getPath()};
+        return startLyvWithFileOutput(args);
     }
 
     public static String startLyvParseAllWithFileOutput(final String modelFolder, final String format)
