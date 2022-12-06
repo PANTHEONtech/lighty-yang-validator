@@ -9,6 +9,7 @@ package io.lighty.yang.validator;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.AssertJUnit.assertFalse;
 
 import io.lighty.yang.validator.formats.FormatPlugin;
 import io.lighty.yang.validator.utils.ItUtils;
@@ -30,6 +31,24 @@ public class IntegrationTest implements Cleanable {
         final String expectedOutput = ItUtils.getExpectedOutput("integrationTestTreeParseAll.txt");
 
         ItUtils.compareModulesAndAugmentData(outputWithoutGenInfo, expectedOutput);
+    }
+
+    @Test
+    public void noFormatParseAllValidationTest() throws Exception {
+        final var lyvOutput = ItUtils.startLyvParseAllWithFileOutput("integration/yang/parse/all");
+        assertFalse(lyvOutput.trim().isEmpty());
+        final var outputWithoutGenInfo = ItUtils.removeHtmlGeneratedInfo(lyvOutput);
+        assertTrue(outputWithoutGenInfo.trim().isEmpty());
+    }
+
+    @Test
+    public void noFormatValidationTest() throws Exception {
+        final var outPath = ItUtils.class.getResource(ItUtils.OUTPUT_FOLDER).getFile();
+        final var args = new String[]{"-o", outPath, "yang/deviation/model.yang"};
+        final var lyvOutput = ItUtils.startLyvWithFileOutput(args);
+        assertFalse(lyvOutput.trim().isEmpty());
+        final var outputWithoutGenInfo = ItUtils.removeHtmlGeneratedInfo(lyvOutput);
+        assertTrue(outputWithoutGenInfo.trim().isEmpty());
     }
 
     @Test

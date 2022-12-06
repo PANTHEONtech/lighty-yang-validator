@@ -143,7 +143,11 @@ public final class Main {
         final var yangFiles = new ArrayList<String>();
         yangFiles.addAll(moduleNameValues);
         yangFiles.addAll(config.getYang());
-        runLywForeachYangFile(yangFiles, config, format);
+        if (config.getFormat() != null) {
+            runLywForeachYangFile(yangFiles, config, format);
+        } else {
+            generateHtmlAnalyzeOutput(yangFiles, config);
+        }
     }
 
     private static void runLyvForProvidedFolder(final Configuration config, final Format format)
@@ -163,7 +167,9 @@ public final class Main {
         }
         //FIXME: This method should be called only for model validation not for all formats.
         generateHtmlAnalyzeOutput(yangFiles, config);
-        runLywForeachYangFile(yangFiles, config, format);
+        if (config.getFormat() != null) {
+            runLywForeachYangFile(yangFiles, config, format);
+        }
     }
 
     private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration config,
