@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 
 public final class ItUtils {
 
-    private static final String OUTPUT_FOLDER = "/out";
-    private static final String OUTPUT_LOG = "/out/out.log";
+    public static final String OUTPUT_FOLDER = "/out";
+    public static final String OUTPUT_LOG = "/out/out.log";
 
     private ItUtils() {
         throw new UnsupportedOperationException("Util class");
@@ -76,6 +76,14 @@ public final class ItUtils {
         return new String(out.readAllBytes(), StandardCharsets.UTF_8);
     }
 
+    public static String startLyvParseAllWithFileOutput(final String modelFolder) throws Exception {
+        final var resource = ItUtils.class.getClassLoader().getResource(modelFolder);
+        assertNotNull(resource);
+        final var outPath = ItUtils.class.getResource(OUTPUT_FOLDER).getFile();
+        final var args = new String[]{"-o", outPath, "-a", resource.getPath()};
+        return startLyvWithFileOutput(args);
+    }
+
     public static String startLyvParseAllWithFileOutput(final String modelFolder, final String format)
             throws IOException {
         final URL resource = ItUtils.class.getClassLoader().getResource(modelFolder);
@@ -93,15 +101,13 @@ public final class ItUtils {
     }
 
     public static String removeHtmlGeneratedInfo(final String text) {
-        final int length = text.length();
-        int cut = 0;
-        for (int i = length - 2; i >= 0; i--) {
-            if (text.charAt(i) == '\n') {
-                cut = i;
-                break;
+        final var split = text.split("\n");
+        for (final String resultLine : split) {
+            if (resultLine.contains("html generated to")) {
+                return text.replace(resultLine, "");
             }
         }
-        return text.substring(0, cut);
+        return text;
     }
 
     public static void compareModulesAndAugmentData(final String output, final String expected) {

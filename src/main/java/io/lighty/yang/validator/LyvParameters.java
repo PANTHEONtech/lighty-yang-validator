@@ -27,7 +27,7 @@ public class LyvParameters {
 
     private final ArgumentParser lyvArgumentParser = ArgumentParsers.newFor("LYV").build()
             .defaultHelp(true)
-            .version("Version: ${prog} 17.0.1-SNAPSHOT\nContact: sales@pantheon.tech")
+            .version("Version: ${prog} 17.0.1\nContact: sales@pantheon.tech")
             .description("Yangtools based yang module parser");
     private final Format formatter;
     private final String[] args;
@@ -40,9 +40,11 @@ public class LyvParameters {
     public Namespace parseArguments() {
         lyvArgumentParser.addArgument("-m", "--module-name")
                 .nargs("*")
+                .setDefault(Collections.emptyList())
                 .help("validate yang model by module name.");
         lyvArgumentParser.addArgument("-e", "--features")
                 .nargs("*")
+                .setDefault(Collections.emptyList())
                 .help("feature is a string in the form [($namespace?revision=$revision)$local_name]."
                         + " This option is used to prune the data model by removing all nodes that are "
                         + "defined with a \"if-feature\".");

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import org.opendaylight.yangtools.yang.common.QName;
 
+// TODO: make this Java 17 record
 public class Configuration {
 
     private String output;
@@ -20,11 +21,11 @@ public class Configuration {
     private boolean debug;
     private boolean quiet;
     private boolean recursive;
-    private List<String> moduleNames;
-    private List<String> path;
-    private List<String> yang;
-    private Set<QName> supportedFeatures;
-    private List<String> parseAll;
+    private List<String> moduleNames = List.of();
+    private List<String> path = List.of();
+    private List<String> yang = List.of();
+    private Set<QName> supportedFeatures = Set.of();
+    private List<String> parseAll = List.of();
     private DependConfiguration dependConfiguration;
     private CheckUpdateFromConfiguration checkUpdateFromConfiguration;
     private TreeConfiguration treeConfiguration;

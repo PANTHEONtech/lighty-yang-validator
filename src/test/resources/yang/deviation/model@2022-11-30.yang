@@ -1,0 +1,70 @@
+module model {
+  yang-version 1.1;
+  namespace "urn:ietf:params:xml:ns:yang:model";
+  prefix mo;
+
+  revision 2022-11-30 {
+    description
+      "Initial revision.";
+  }
+
+  container data-container {
+    list list-data {
+      key name;
+      unique "year";
+      leaf name {
+        type string;
+      }
+      leaf year {
+        type int8;
+      }
+    }
+    leaf country {
+      type string;
+    }
+  }
+
+  augment "/mo:data-container/mo:list-data" {
+    leaf month {
+      type string;
+    }
+  }
+
+  augment "/mo:data-container/mo:list-data" {
+    list sub-device {
+      key type;
+      unique "state";
+      leaf type {
+          type string;
+      }
+      leaf year {
+        type uint8;
+      }
+      leaf state {
+        type string;
+      }
+    }
+  }
+
+  augment "/mo:data-container" {
+    container device {
+      leaf enumType {
+        type enumeration {
+            enum ethernet;
+            enum atm;
+        }
+      }
+      must "enumType != 'ethernet'";
+    }
+  }
+  augment "/mo:data-container/mo:device" {
+    leaf model {
+      type string;
+    }
+  }
+  augment "/mo:data-container/mo:device" {
+    leaf manufacturer {
+      type string;
+    }
+  }
+}
