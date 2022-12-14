@@ -48,16 +48,16 @@ class TypePrinter {
 
     void printType(final TypeDefinition<?> type) {
         final String rootName = Util.getRootType(type).getQName().getLocalName();
-        if (type instanceof EnumTypeDefinition enumTypeDefinition) {
-            printEnumType(enumTypeDefinition);
-        } else if (type instanceof UnionTypeDefinition unionTypeDefinition) {
-            printUnionType(unionTypeDefinition);
-        } else if (type instanceof DecimalTypeDefinition decimalTypeDefinition) {
-            printDecimalType(rootName, decimalTypeDefinition);
-        } else if (type instanceof StringTypeDefinition stringType) {
-            printStringType(rootName, stringType);
-        } else if (type instanceof RangeRestrictedTypeDefinition<?, ?> rangeRestrictedTypeDefinition) {
-            printRangeRestictedType(rootName, rangeRestrictedTypeDefinition);
+        if (type instanceof EnumTypeDefinition) {
+            printEnumType(((EnumTypeDefinition) type));
+        } else if (type instanceof UnionTypeDefinition) {
+            printUnionType(((UnionTypeDefinition) type));
+        } else if (type instanceof DecimalTypeDefinition) {
+            printDecimalType(rootName, ((DecimalTypeDefinition) type));
+        } else if (type instanceof StringTypeDefinition) {
+            printStringType(rootName, ((StringTypeDefinition) type));
+        } else if (type instanceof RangeRestrictedTypeDefinition<?, ?>) {
+            printRangeRestictedType(rootName, ((RangeRestrictedTypeDefinition<?, ?>) type));
         } else {
             printer.printSimple("type", rootName);
         }

@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.parser.api.YangParserException;
@@ -158,7 +159,7 @@ public final class Main {
             try (var path = Files.list(Paths.get(dir))) {
                 final var collect = path
                         .map(Path::toString)
-                        .toList();
+                        .collect(Collectors.toUnmodifiableList());
                 yangFiles.addAll(collect);
             } catch (final IOException e) {
                 throw new LyvApplicationException(String.format("Could not Collect files from provided (%s) directory",

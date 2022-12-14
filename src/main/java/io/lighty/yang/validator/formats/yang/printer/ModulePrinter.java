@@ -299,16 +299,16 @@ public class ModulePrinter {
             if (schemaNode instanceof ContainerLike) {
                 printer.openStatement(Statement.CONTAINER, schemaNode.getQName().getLocalName());
                 printer.printConfig(schemaNode.isConfiguration());
-            } else if (schemaNode instanceof ListSchemaNode listSchemaNode) {
+            } else if (schemaNode instanceof ListSchemaNode) {
                 printer.openStatement(Statement.LIST, schemaNode.getQName().getLocalName());
                 final StringJoiner keyJoiner = new StringJoiner(" ", "key \"", "\"");
-                listSchemaNode.getKeyDefinition().stream()
+                ((ListSchemaNode) schemaNode).getKeyDefinition().stream()
                         .map(QName::getLocalName)
                         .forEach(keyJoiner::add);
                 printer.printSimple("", keyJoiner.toString());
-            } else if (schemaNode instanceof LeafSchemaNode leafSchemaNode) {
+            } else if (schemaNode instanceof LeafSchemaNode) {
                 printer.openStatement(Statement.LEAF, schemaNode.getQName().getLocalName());
-                typePrinter.printType(printer, leafSchemaNode);
+                typePrinter.printType(printer, ((LeafSchemaNode) schemaNode));
             } else if (schemaNode instanceof ChoiceSchemaNode) {
                 printer.openStatement(Statement.CHOICE, schemaNode.getQName().getLocalName());
             } else if (schemaNode instanceof CaseSchemaNode) {
