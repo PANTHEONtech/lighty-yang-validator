@@ -5,7 +5,6 @@ package io.lighty.yang.validator.exceptions;
  * found.
  */
 public class NotFoundException extends RuntimeException {
-
     public NotFoundException(final String customMessage, final String name) {
         super(customMessage + ", " + name + " not found.");
     }

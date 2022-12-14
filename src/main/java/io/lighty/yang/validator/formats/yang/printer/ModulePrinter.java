@@ -67,21 +67,21 @@ public class ModulePrinter {
 
     private final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTreesMap = new HashMap<>();
 
-    public ModulePrinter(final Set<SchemaTree> schemaTree, final EffectiveModelContext schemaContext,
+    public ModulePrinter(final Set<SchemaTree> schemaTree, final EffectiveModelContext context,
             final QNameModule moduleName, final OutputStream out, final Set<TypeDefinition<?>> usedTypes,
             final Set<String> usedImports) {
-        this(schemaTree, schemaContext, moduleName,
+        this(schemaTree, context, moduleName,
                 new IndentingPrinter(new PrintStream(out, false, Charset.defaultCharset())),
                 usedTypes, usedImports);
     }
 
-    public ModulePrinter(final Set<SchemaTree> schemaTree, final EffectiveModelContext schemaContext,
+    public ModulePrinter(final Set<SchemaTree> schemaTree, final EffectiveModelContext context,
             final QNameModule moduleName, final Logger out, final Set<TypeDefinition<?>> usedTypes,
             final Set<String> usedImports) {
-        this(schemaTree, schemaContext, moduleName, new IndentingLogger(out), usedTypes, usedImports);
+        this(schemaTree, context, moduleName, new IndentingLogger(out), usedTypes, usedImports);
     }
 
-    private ModulePrinter(final Set<SchemaTree> schemaTree, final EffectiveModelContext schemaContext,
+    private ModulePrinter(final Set<SchemaTree> schemaTree, final EffectiveModelContext context,
             final QNameModule moduleName, final Indenting printer, final Set<TypeDefinition<?>> usedTypes,
             final Set<String> usedImports) {
         this.usedImports = usedImports;
@@ -89,10 +89,10 @@ public class ModulePrinter {
         this.schemaTree = schemaTree;
         this.moduleName = moduleName;
         this.printer = new StatementPrinter(printer);
-        module = schemaContext.findModule(moduleName)
+        module = context.findModule(moduleName)
                 .orElseThrow(() -> new NotFoundException("Module ", moduleName.toString()));
         moduleToPrefix = module.getImports().stream()
-                .collect(Collectors.toMap(i -> schemaContext
+                .collect(Collectors.toMap(i -> context
                                 .findModules(i.getModuleName()).iterator().next().getQNameModule(),
                         ModuleImport::getPrefix));
         typePrinter = new SmartTypePrintingStrategy(module, moduleToPrefix);
@@ -208,7 +208,7 @@ public class ModulePrinter {
         return false;
     }
 
-    private Optional<GroupingDefinition> findMatchInGroupingDefinitions(
+    private static Optional<GroupingDefinition> findMatchInGroupingDefinitions(
             final List<GroupingDefinition> groupingDefinitions, final DataSchemaNode schemaNode) {
         Optional<GroupingDefinition> match;
         for (final GroupingDefinition grouping : groupingDefinitions) {
@@ -218,7 +218,7 @@ public class ModulePrinter {
             }
             final DataSchemaNode dataSchemaNode = dataChildByName.get();
 
-            if (!(dataSchemaNode instanceof EffectiveStatement || schemaNode instanceof EffectiveStatement)) {
+            if (!(dataSchemaNode instanceof EffectiveStatement) && !(schemaNode instanceof EffectiveStatement)) {
                 continue;
             }
             final Collection<? extends EffectiveStatement<?, ?>> effectiveStatements
@@ -236,7 +236,7 @@ public class ModulePrinter {
         return Optional.empty();
     }
 
-    private void resolveChoiceSchemaNode(final Set<SchemaTree> schemaTrees, final SchemaTree tree) {
+    private static void resolveChoiceSchemaNode(final Set<SchemaTree> schemaTrees, final SchemaTree tree) {
         boolean extendedTree = false;
         for (final SchemaTree st : schemaTrees) {
             if (st.getSchemaNode() instanceof ChoiceSchemaNode && st.getQname().equals(tree.getQname())) {
@@ -253,7 +253,7 @@ public class ModulePrinter {
         }
     }
 
-    private Optional<GroupingDefinition> getGroupingDefinitionMatch(final EffectiveStatement<?, ?> schemaNode,
+    private static Optional<GroupingDefinition> getGroupingDefinitionMatch(final EffectiveStatement<?, ?> schemaNode,
             final Collection<? extends EffectiveStatement<?, ?>> collection, final GroupingDefinition grouping) {
         boolean allSubstatementFound = true;
         for (final EffectiveStatement<?, ?> compare : schemaNode.effectiveSubstatements()) {
@@ -268,7 +268,7 @@ public class ModulePrinter {
         return Optional.empty();
     }
 
-    private boolean isSubstatementNotFound(final Collection<? extends EffectiveStatement<?, ?>> collection,
+    private static boolean isSubstatementNotFound(final Collection<? extends EffectiveStatement<?, ?>> collection,
             final EffectiveStatement<?, ?> compare) {
         final DeclaredStatement<?> compareDeclared = compare.getDeclared();
         for (final EffectiveStatement<?, ?> substatement : collection) {
@@ -300,17 +300,15 @@ public class ModulePrinter {
                 printer.openStatement(Statement.CONTAINER, schemaNode.getQName().getLocalName());
                 printer.printConfig(schemaNode.isConfiguration());
             } else if (schemaNode instanceof ListSchemaNode) {
-                final ListSchemaNode listSchemaNode = (ListSchemaNode) schemaNode;
                 printer.openStatement(Statement.LIST, schemaNode.getQName().getLocalName());
                 final StringJoiner keyJoiner = new StringJoiner(" ", "key \"", "\"");
-                listSchemaNode.getKeyDefinition().stream()
+                ((ListSchemaNode) schemaNode).getKeyDefinition().stream()
                         .map(QName::getLocalName)
                         .forEach(keyJoiner::add);
                 printer.printSimple("", keyJoiner.toString());
             } else if (schemaNode instanceof LeafSchemaNode) {
-                final LeafSchemaNode leafSchemaNode = (LeafSchemaNode) schemaNode;
                 printer.openStatement(Statement.LEAF, schemaNode.getQName().getLocalName());
-                typePrinter.printType(printer, leafSchemaNode);
+                typePrinter.printType(printer, ((LeafSchemaNode) schemaNode));
             } else if (schemaNode instanceof ChoiceSchemaNode) {
                 printer.openStatement(Statement.CHOICE, schemaNode.getQName().getLocalName());
             } else if (schemaNode instanceof CaseSchemaNode) {
@@ -441,7 +439,7 @@ public class ModulePrinter {
 
     private void printImports() {
         for (final ModuleImport anImport : module.getImports()) {
-            if (this.usedImports.contains(anImport.getModuleName())) {
+            if (usedImports.contains(anImport.getModuleName())) {
                 printer.openStatement(Statement.IMPORT, anImport.getModuleName());
                 printer.printSimple("prefix", anImport.getPrefix());
                 printer.closeStatement();
@@ -450,7 +448,8 @@ public class ModulePrinter {
         }
     }
 
-    private boolean isStAugmentOrStParentEqualsToAugmPath(final SchemaTree st, final AugmentationSchemaNode augmSN) {
+    private static boolean isStAugmentOrStParentEqualsToAugmPath(final SchemaTree st,
+            final AugmentationSchemaNode augmSN) {
         if (st.isAugmenting()) {
             final List<QName> qnamePath = st.getAbsolutePath().getNodeIdentifiers();
             if (qnamePath.size() > 1) {

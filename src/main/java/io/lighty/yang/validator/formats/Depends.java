@@ -10,7 +10,6 @@ package io.lighty.yang.validator.formats;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.DependConfiguration;
-import io.lighty.yang.validator.exceptions.NotFoundException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -21,10 +20,8 @@ import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.ModuleLike;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class Depends extends FormatPlugin {
 
@@ -45,21 +42,19 @@ public class Depends extends FormatPlugin {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
-        final DependConfiguration dependConfiguration = this.configuration.getDependConfiguration();
-        for (final RevisionSourceIdentifier source : this.sources) {
-            final Module module = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
+        if (testedModule != null) {
+            final DependConfiguration dependConfiguration = configuration.getDependConfiguration();
             final StringBuilder dependantsBuilder = new StringBuilder(MODULE);
-            dependantsBuilder.append(module.getName())
+            dependantsBuilder.append(testedModule.getName())
                     .append(AT);
-            module.getRevision().ifPresent(dependantsBuilder::append);
+            testedModule.getRevision().ifPresent(dependantsBuilder::append);
 
             dependantsBuilder.append(DEPENDS_TEXT);
             if (!dependConfiguration.isModuleImportsOnly()) {
-                resolveSubmodules(module, dependConfiguration);
+                resolveSubmodules(testedModule, dependConfiguration);
             }
             if (!dependConfiguration.isModuleIncludesOnly()) {
-                resolveImports(module, dependConfiguration);
+                resolveImports(testedModule, dependConfiguration);
             }
             for (final String name : modules) {
                 dependantsBuilder.append(name)
@@ -75,6 +70,8 @@ public class Depends extends FormatPlugin {
             }
             final String dependandsText = dependantsBuilder.toString();
             LOG.info("{}", dependandsText);
+        } else {
+            LOG.error("{}", EMPTY_MODULE_EXCEPTION);
         }
     }
 
@@ -84,13 +81,13 @@ public class Depends extends FormatPlugin {
             if (dependConfiguration.getExcludedModuleNames().contains(moduleName)) {
                 continue;
             }
-            resolveImportsInSchemaContextModules(dependConfiguration, moduleImport, moduleName);
+            resolveImportsInContextModules(dependConfiguration, moduleImport, moduleName);
         }
     }
 
-    private void resolveImportsInSchemaContextModules(final DependConfiguration dependConfiguration,
+    private void resolveImportsInContextModules(final DependConfiguration dependConfiguration,
             final ModuleImport moduleImport, final String moduleName) {
-        for (final Module contextModule : this.schemaContext.getModules()) {
+        for (final Module contextModule : modelContext.getModules()) {
             if (moduleName.equals(contextModule.getName()) && isRevisionsEqualsOrNull(moduleImport, contextModule)) {
                 addContextModuleToModulesAndResolveImports(dependConfiguration, contextModule);
                 break;
@@ -109,11 +106,11 @@ public class Depends extends FormatPlugin {
         }
     }
 
-    private boolean isRevisionsEqualsOrNull(final ModuleImport moduleImport, final Module contextModule) {
+    private static boolean isRevisionsEqualsOrNull(final ModuleImport moduleImport, final Module contextModule) {
         final Revision moduleImportRevision = moduleImport.getRevision().orElse(null);
         final Revision contextModuleRevision = contextModule.getRevision().orElse(null);
-        return (moduleImportRevision == null || contextModuleRevision == null)
-                || (contextModuleRevision.toString().equals(moduleImportRevision.toString()));
+        return moduleImportRevision == null || contextModuleRevision == null
+                || contextModuleRevision.toString().equals(moduleImportRevision.toString());
     }
 
     private void resolveSubmodules(final ModuleLike module, final DependConfiguration dependConfiguration) {

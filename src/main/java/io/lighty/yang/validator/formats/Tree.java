@@ -12,11 +12,10 @@ import static java.lang.Math.min;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import io.lighty.yang.validator.config.Configuration;
-import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
+import io.lighty.yang.validator.formats.utility.LyvStack;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,8 +42,6 @@ import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
-import org.opendaylight.yangtools.yang.model.util.SchemaInferenceStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,39 +58,34 @@ public class Tree extends FormatPlugin {
     private static final String NOTIFICATION = "notifications:";
 
     private Map<XMLNamespace, String> namespacePrefix = new HashMap<>();
-    private Module usedModule = null;
     private int treeDepth;
     private int lineLength;
 
     @Override
-    void init(final EffectiveModelContext context, final List<RevisionSourceIdentifier> testFilesSchemaSources,
-            final SchemaTree schemaTree, final Configuration config) {
-        super.init(context, testFilesSchemaSources, schemaTree, config);
-        this.namespacePrefix = new HashMap<>();
-        this.usedModule = null;
-        treeDepth = this.configuration.getTreeConfiguration().getTreeDepth();
-        final int len = this.configuration.getTreeConfiguration().getLineLength();
-        this.lineLength = len == 0 ? 10000 : len;
+    void init(final EffectiveModelContext context, final Module module, final SchemaTree schemaTree,
+            final Configuration config) {
+        super.init(context, module, schemaTree, config);
+        namespacePrefix = new HashMap<>();
+        treeDepth = configuration.getTreeConfiguration().getTreeDepth();
+        final int len = configuration.getTreeConfiguration().getLineLength();
+        lineLength = len == 0 ? 10000 : len;
     }
 
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
-        if (this.configuration.getTreeConfiguration().isHelp()) {
+        if (configuration.getTreeConfiguration().isHelp()) {
             printHelp();
-        }
-        for (final RevisionSourceIdentifier source : this.sources) {
-            usedModule = this.schemaContext.findModule(source.getName(), source.getRevision())
-                    .orElseThrow(() -> new NotFoundException("Module", source.getName()));
-            final String firstLine = MODULE + usedModule.getName();
+        } else if (testedModule != null) {
+            final String firstLine = MODULE + testedModule.getName();
             LOG.info("{}", firstLine.substring(0, min(firstLine.length(), lineLength)));
 
-            putSchemaContextModuleMatchedWithUsedModuleToNamespacePrefix();
+            putContextModuleMatchedWithUsedModuleToNamespacePrefix();
 
             final AtomicInteger rootNodes = new AtomicInteger(0);
-            for (final SchemaTree st : this.schemaTree.getChildren()) {
-                if (st.getQname().getModule().equals(usedModule.getQNameModule()) && !st.isAugmenting()) {
+            for (final SchemaTree st : schemaTree.getChildren()) {
+                if (st.getQname().getModule().equals(testedModule.getQNameModule()) && !st.isAugmenting()) {
                     rootNodes.incrementAndGet();
                 }
             }
@@ -108,18 +100,20 @@ public class Tree extends FormatPlugin {
             }
 
             // Rpcs
-            final Iterator<? extends RpcDefinition> rpcs = usedModule.getRpcs().iterator();
+            final Iterator<? extends RpcDefinition> rpcs = testedModule.getRpcs().iterator();
             if (rpcs.hasNext()) {
                 LOG.info("{}", RPCS.substring(0, min(RPCS.length(), lineLength)));
             }
             printLines(getRpcsLines(rpcs));
 
             // Notifications
-            final Iterator<? extends NotificationDefinition> notifications = usedModule.getNotifications().iterator();
+            final Iterator<? extends NotificationDefinition> notifications = testedModule.getNotifications().iterator();
             if (notifications.hasNext()) {
                 LOG.info("{}", NOTIFICATION.substring(0, min(NOTIFICATION.length(), lineLength)));
             }
             printLines(getNotificationLines(notifications));
+        } else {
+            LOG.error("{}", EMPTY_MODULE_EXCEPTION);
         }
     }
 
@@ -130,7 +124,7 @@ public class Tree extends FormatPlugin {
         final StringBuilder pathBuilder = new StringBuilder();
         for (final QName qname : st.getKey()) {
             pathBuilder.append(SLASH);
-            if (this.configuration.getTreeConfiguration().isPrefixMainModule()
+            if (configuration.getTreeConfiguration().isPrefixMainModule()
                     || namespacePrefix.containsKey(qname.getNamespace())) {
                 pathBuilder.append(namespacePrefix.get(qname.getNamespace()))
                         .append(COLON);
@@ -142,25 +136,23 @@ public class Tree extends FormatPlugin {
         int augmentationNodes = st.getValue().size();
         for (final SchemaTree value : st.getValue()) {
             final DataSchemaNode node = value.getSchemaNode();
-            final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList(),
-                    value.getAbsolutePath());
+            final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, value.getAbsolutePath());
             final ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
                     namespacePrefix);
             lines.add(consoleLine);
             resolveChildNodes(lines, new ArrayList<>(), value, --augmentationNodes > 0,
                     RpcInputOutput.OTHER, Collections.emptyList());
-            this.treeDepth++;
+            treeDepth++;
         }
         return lines;
     }
 
     private List<Line> getSchemaNodeLines(final AtomicInteger rootNodes) {
         final List<Line> lines = new ArrayList<>();
-        for (final SchemaTree st : this.schemaTree.getChildren()) {
-            if (st.getQname().getModule().equals(usedModule.getQNameModule()) && !st.isAugmenting()) {
+        for (final SchemaTree st : schemaTree.getChildren()) {
+            if (st.getQname().getModule().equals(testedModule.getQNameModule()) && !st.isAugmenting()) {
                 final DataSchemaNode node = st.getSchemaNode();
-                final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList(),
-                        st.getAbsolutePath());
+                final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, st.getAbsolutePath());
                 final ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData,
                         RpcInputOutput.OTHER, namespacePrefix);
                 lines.add(consoleLine);
@@ -170,17 +162,17 @@ public class Tree extends FormatPlugin {
                 }
                 resolveChildNodes(lines, new ArrayList<>(), st, rootNodes.decrementAndGet() > 0,
                         RpcInputOutput.OTHER, keyDefinitions);
-                this.treeDepth++;
+                treeDepth++;
             }
         }
         return lines;
     }
 
-    private void putSchemaContextModuleMatchedWithUsedModuleToNamespacePrefix() {
-        for (final Module m : this.schemaContext.getModules()) {
-            if (!m.getPrefix().equals(usedModule.getPrefix())
-                    || this.configuration.getTreeConfiguration().isPrefixMainModule()) {
-                if (this.configuration.getTreeConfiguration().isModulePrefix()) {
+    private void putContextModuleMatchedWithUsedModuleToNamespacePrefix() {
+        for (final Module m : modelContext.getModules()) {
+            if (!m.getPrefix().equals(testedModule.getPrefix())
+                    || configuration.getTreeConfiguration().isPrefixMainModule()) {
+                if (configuration.getTreeConfiguration().isModulePrefix()) {
                     namespacePrefix.put(m.getNamespace(), m.getName());
                 } else {
                     namespacePrefix.put(m.getNamespace(), m.getPrefix());
@@ -191,71 +183,67 @@ public class Tree extends FormatPlugin {
 
     private List<Line> getNotificationLines(final Iterator<? extends NotificationDefinition> notifications) {
         final List<Line> lines = new ArrayList<>();
-        final SchemaInferenceStack schemaIS = SchemaInferenceStack.of(this.schemaContext);
+        final LyvStack stack = new LyvStack();
         while (notifications.hasNext()) {
             final NotificationDefinition node = notifications.next();
-            schemaIS.enterSchemaTree(node.getQName());
-            final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList(),
-                    schemaIS.toSchemaNodeIdentifier());
+            stack.enter(node);
+            final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, stack);
             final ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
                     namespacePrefix);
             lines.add(consoleLine);
-            resolveChildNodes(lines, new ArrayList<>(), node, false, RpcInputOutput.OTHER,
-                    Collections.emptyList(), schemaIS);
-            this.treeDepth++;
-            schemaIS.exit();
+            resolveChildNodes(lines, new ArrayList<>(), node, false, RpcInputOutput.OTHER, Collections.emptyList(),
+                stack);
+            treeDepth++;
+            stack.exit();
         }
         return lines;
     }
 
     private List<Line> getRpcsLines(final Iterator<? extends RpcDefinition> rpcs) {
         final List<Line> lines = new ArrayList<>();
-        final SchemaInferenceStack schemaIS = SchemaInferenceStack.of(this.schemaContext);
+        final LyvStack stack = new LyvStack();
         while (rpcs.hasNext()) {
             final RpcDefinition node = rpcs.next();
-            schemaIS.enterSchemaTree(node.getQName());
-            LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, node, Collections.emptyList(),
-                    schemaIS.toSchemaNodeIdentifier());
+            stack.enter(node);
+            LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, stack);
             ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
                     namespacePrefix);
             lines.add(consoleLine);
             final boolean inputExists = !node.getInput().getChildNodes().isEmpty();
             final boolean outputExists = !node.getOutput().getChildNodes().isEmpty();
             if (inputExists) {
-                schemaIS.enterSchemaTree(node.getInput().getQName());
-                lyvNodeData = new LyvNodeData(this.schemaContext, node.getInput(), Collections.emptyList(),
-                        schemaIS.toSchemaNodeIdentifier());
+                stack.enter(node.getInput());
+                lyvNodeData = new LyvNodeData(modelContext, node.getInput(), stack);
                 consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), lyvNodeData,
-                        RpcInputOutput.INPUT, namespacePrefix);
+                    RpcInputOutput.INPUT, namespacePrefix);
                 lines.add(consoleLine);
                 final List<Boolean> isNextRpc = new ArrayList<>(Collections.singleton(rpcs.hasNext()));
                 resolveChildNodes(lines, isNextRpc, node.getInput(), outputExists, RpcInputOutput.INPUT,
-                        Collections.emptyList(), schemaIS);
-                schemaIS.exit();
-                this.treeDepth++;
+                    Collections.emptyList(), stack);
+                stack.exit();
+                treeDepth++;
             }
             if (outputExists) {
-                schemaIS.enterSchemaTree(node.getOutput().getQName());
-                lyvNodeData = new LyvNodeData(this.schemaContext, node.getOutput(), Collections.emptyList(),
-                        schemaIS.toSchemaNodeIdentifier());
+                stack.enter(node.getOutput());
+                lyvNodeData = new LyvNodeData(modelContext, node.getOutput(), stack);
                 consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), lyvNodeData,
-                        RpcInputOutput.OUTPUT, namespacePrefix);
+                    RpcInputOutput.OUTPUT, namespacePrefix);
                 lines.add(consoleLine);
                 final List<Boolean> isNextRpc = new ArrayList<>(Collections.singleton(rpcs.hasNext()));
                 resolveChildNodes(lines, isNextRpc, node.getOutput(), false, RpcInputOutput.OUTPUT,
-                        Collections.emptyList(), schemaIS);
-                schemaIS.exit();
-                this.treeDepth++;
+                    Collections.emptyList(), stack);
+                stack.exit();
+                treeDepth++;
             }
-            schemaIS.exit();
+            stack.exit();
         }
         return lines;
     }
 
     private Map<List<QName>, Set<SchemaTree>> getAugmentationMap() {
         final Map<List<QName>, Set<SchemaTree>> augments = new LinkedHashMap<>();
-        for (final SchemaTree st : this.schemaTree.getChildren()) {
-            if (st.getQname().getModule().equals(usedModule.getQNameModule()) && st.isAugmenting()) {
+        for (final SchemaTree st : schemaTree.getChildren()) {
+            if (st.getQname().getModule().equals(testedModule.getQNameModule()) && st.isAugmenting()) {
                 final Iterator<QName> iterator = st.getAbsolutePath().getNodeIdentifiers().iterator();
                 final List<QName> qnames = new ArrayList<>();
                 while (iterator.hasNext()) {
@@ -275,7 +263,7 @@ public class Tree extends FormatPlugin {
 
     private void resolveChildNodes(final List<Line> lines, final List<Boolean> isConnected, final SchemaTree st,
             final boolean hasNext, final RpcInputOutput inputOutput, final List<QName> keys) {
-        if (--this.treeDepth == 0) {
+        if (--treeDepth == 0) {
             return;
         }
         boolean actionExists = false;
@@ -304,9 +292,8 @@ public class Tree extends FormatPlugin {
     }
 
     private void resolveChildNodes(final List<Line> lines, final List<Boolean> isConnected, final SchemaNode node,
-            final boolean hasNext, final RpcInputOutput inputOutput, final List<QName> keys,
-            final SchemaInferenceStack schemaIS) {
-        if (--this.treeDepth == 0) {
+            final boolean hasNext, final RpcInputOutput inputOutput, final List<QName> keys, final LyvStack stack) {
+        if (--treeDepth == 0) {
             return;
         }
         boolean actionExists = false;
@@ -315,12 +302,12 @@ public class Tree extends FormatPlugin {
         }
         if (node instanceof DataNodeContainer) {
             isConnected.add(hasNext);
-            resolveDataNodeContainer(lines, isConnected, node, inputOutput, keys, actionExists, schemaIS);
+            resolveDataNodeContainer(lines, isConnected, node, inputOutput, keys, actionExists, stack);
             // remove last
             isConnected.remove(isConnected.size() - 1);
         } else if (node instanceof ChoiceSchemaNode) {
             isConnected.add(hasNext);
-            resolveChoiceSchemaNode(lines, isConnected, node, inputOutput, actionExists, schemaIS);
+            resolveChoiceSchemaNode(lines, isConnected, node, inputOutput, actionExists, stack);
             // remove last
             isConnected.remove(isConnected.size() - 1);
         }
@@ -330,9 +317,8 @@ public class Tree extends FormatPlugin {
             while (actions.hasNext()) {
                 final ActionDefinition action = actions.next();
                 isConnected.add(actions.hasNext());
-                schemaIS.enterSchemaTree(action.getQName());
-                LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, action, Collections.emptyList(),
-                        schemaIS.toSchemaNodeIdentifier());
+                stack.enter(action);
+                LyvNodeData lyvNodeData = new LyvNodeData(modelContext, action, stack);
                 ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData,
                         RpcInputOutput.OTHER, namespacePrefix);
                 lines.add(consoleLine);
@@ -340,31 +326,29 @@ public class Tree extends FormatPlugin {
                 final boolean outputExists = !action.getOutput().getChildNodes().isEmpty();
                 if (inputExists) {
                     isConnected.add(outputExists);
-                    schemaIS.enterSchemaTree(action.getInput().getQName());
-                    lyvNodeData = new LyvNodeData(this.schemaContext, action.getInput(), Collections.emptyList(),
-                            schemaIS.toSchemaNodeIdentifier());
+                    stack.enter(action.getInput());
+                    lyvNodeData = new LyvNodeData(modelContext, action.getInput(), stack);
                     consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.INPUT,
                             namespacePrefix);
                     lines.add(consoleLine);
                     resolveChildNodes(lines, isConnected, action.getInput(), outputExists, RpcInputOutput.INPUT,
-                            Collections.emptyList(), schemaIS);
-                    this.treeDepth++;
+                            Collections.emptyList(), stack);
+                    treeDepth++;
                     isConnected.remove(isConnected.size() - 1);
-                    schemaIS.exit();
+                    stack.exit();
                 }
                 if (outputExists) {
                     isConnected.add(false);
-                    schemaIS.enterSchemaTree(action.getOutput().getQName());
-                    lyvNodeData = new LyvNodeData(this.schemaContext, action.getOutput(), Collections.emptyList(),
-                            schemaIS.toSchemaNodeIdentifier());
-                    consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData,
-                            RpcInputOutput.OUTPUT, namespacePrefix);
+                    stack.enter(action.getOutput());
+                    lyvNodeData = new LyvNodeData(modelContext, action.getOutput(), stack);
+                    consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.OUTPUT,
+                        namespacePrefix);
                     lines.add(consoleLine);
                     resolveChildNodes(lines, isConnected, action.getOutput(), false, RpcInputOutput.OUTPUT,
-                            Collections.emptyList(), schemaIS);
-                    this.treeDepth++;
+                        Collections.emptyList(), stack);
+                    treeDepth++;
                     isConnected.remove(isConnected.size() - 1);
-                    schemaIS.exit();
+                    stack.exit();
                 }
                 isConnected.remove(isConnected.size() - 1);
             }
@@ -374,7 +358,7 @@ public class Tree extends FormatPlugin {
     private void resolveActions(final List<Line> lines, final List<Boolean> isConnected, final boolean hasNext,
             final Iterator<SchemaTree> actions) {
         final SchemaTree nextST = actions.next();
-        if (nextST.getQname().getModule().equals(usedModule.getQNameModule())) {
+        if (nextST.getQname().getModule().equals(testedModule.getQNameModule())) {
             resolveActions(lines, isConnected, hasNext, actions, nextST);
         }
     }
@@ -382,8 +366,7 @@ public class Tree extends FormatPlugin {
     private void resolveActions(final List<Line> lines, final List<Boolean> isConnected, final boolean hasNext,
             final Iterator<SchemaTree> actions, final SchemaTree actionSchemaTree) {
         final ActionDefinition action = actionSchemaTree.getActionNode();
-        LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, action, Collections.emptyList(),
-                actionSchemaTree.getAbsolutePath());
+        LyvNodeData lyvNodeData = new LyvNodeData(modelContext, action, actionSchemaTree.getAbsolutePath(), null);
         ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.OTHER,
                 namespacePrefix);
         lines.add(consoleLine);
@@ -402,26 +385,24 @@ public class Tree extends FormatPlugin {
         }
         if (inputExists) {
             isConnected.add(actions.hasNext() || hasNext);
-            lyvNodeData = new LyvNodeData(this.schemaContext, action.getInput(), Collections.emptyList(),
-                    inValue.getAbsolutePath());
+            lyvNodeData = new LyvNodeData(modelContext, action.getInput(), inValue.getAbsolutePath());
             consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.INPUT,
                     namespacePrefix);
             lines.add(consoleLine);
             resolveChildNodes(lines, isConnected, inValue, outputExists, RpcInputOutput.INPUT,
                     Collections.emptyList());
-            this.treeDepth++;
+            treeDepth++;
             isConnected.remove(isConnected.size() - 1);
         }
         if (outputExists) {
             isConnected.add(actions.hasNext() || hasNext);
-            lyvNodeData = new LyvNodeData(this.schemaContext, action.getOutput(), Collections.emptyList(),
-                    outValue.getAbsolutePath());
+            lyvNodeData = new LyvNodeData(modelContext, action.getOutput(), outValue.getAbsolutePath());
             consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.OUTPUT,
                     namespacePrefix);
             lines.add(consoleLine);
             resolveChildNodes(lines, isConnected, outValue, false, RpcInputOutput.OUTPUT,
                     Collections.emptyList());
-            this.treeDepth++;
+            treeDepth++;
             isConnected.remove(isConnected.size() - 1);
         }
     }
@@ -431,36 +412,33 @@ public class Tree extends FormatPlugin {
         final Iterator<SchemaTree> caseNodes = st.getDataSchemaNodeChildren().iterator();
         while (caseNodes.hasNext()) {
             final SchemaTree nextST = caseNodes.next();
-            if (nextST.getQname().getModule().equals(usedModule.getQNameModule())) {
+            if (nextST.getQname().getModule().equals(testedModule.getQNameModule())) {
                 final DataSchemaNode child = nextST.getSchemaNode();
-                final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, Collections.emptyList(),
-                        nextST.getAbsolutePath());
+                final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, child, nextST.getAbsolutePath());
                 final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
                         namespacePrefix);
                 lines.add(consoleLine);
                 resolveChildNodes(lines, isConnected, nextST, caseNodes.hasNext()
                         || actionExists, inputOutput, Collections.emptyList());
-                this.treeDepth++;
+                treeDepth++;
             }
         }
     }
 
     private void resolveChoiceSchemaNode(final List<Line> lines, final List<Boolean> isConnected, final SchemaNode node,
-            final RpcInputOutput inputOutput, final boolean actionExists, final SchemaInferenceStack schemaIS) {
-        final Collection<? extends CaseSchemaNode> cases = ((ChoiceSchemaNode) node).getCases();
-        final Iterator<? extends CaseSchemaNode> iterator = cases.iterator();
+            final RpcInputOutput inputOutput, final boolean actionExists, final LyvStack stack) {
+        final Iterator<? extends CaseSchemaNode> iterator = ((ChoiceSchemaNode) node).getCases().iterator();
         while (iterator.hasNext()) {
             final DataSchemaNode child = iterator.next();
-            schemaIS.enterSchemaTree(child.getQName());
-            final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, Collections.emptyList(),
-                    schemaIS.toSchemaNodeIdentifier());
+            stack.enter(child);
+            final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, child, stack);
             final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
                     namespacePrefix);
             lines.add(consoleLine);
             resolveChildNodes(lines, isConnected, child, iterator.hasNext() || actionExists, inputOutput,
-                    Collections.emptyList(), schemaIS);
-            schemaIS.exit();
-            this.treeDepth++;
+                    Collections.emptyList(), stack);
+            stack.exit();
+            treeDepth++;
         }
     }
 
@@ -471,10 +449,9 @@ public class Tree extends FormatPlugin {
         final Iterator<SchemaTree> childNodes = st.getDataSchemaNodeChildren().iterator();
         while (childNodes.hasNext()) {
             final SchemaTree nextST = childNodes.next();
-            if (nextST.getQname().getModule().equals(usedModule.getQNameModule())) {
+            if (nextST.getQname().getModule().equals(testedModule.getQNameModule())) {
                 final DataSchemaNode child = nextST.getSchemaNode();
-                final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, keys,
-                        nextST.getAbsolutePath());
+                final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, child, nextST.getAbsolutePath(), keys);
                 final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
                         namespacePrefix);
                 lines.add(consoleLine);
@@ -482,22 +459,21 @@ public class Tree extends FormatPlugin {
                 if (child instanceof ListSchemaNode) {
                     keyDefinitions = ((ListSchemaNode) child).getKeyDefinition();
                 }
-                resolveChildNodes(lines, isConnected, nextST, childNodes.hasNext()
-                        || actionExists, inputOutput, keyDefinitions);
-                this.treeDepth++;
+                resolveChildNodes(lines, isConnected, nextST, childNodes.hasNext() || actionExists, inputOutput,
+                    keyDefinitions);
+                treeDepth++;
             }
         }
     }
 
     private void resolveDataNodeContainer(final List<Line> lines, final List<Boolean> isConnected,
             final SchemaNode node, final RpcInputOutput inputOutput, final List<QName> keys,
-            final boolean actionExists, final SchemaInferenceStack schemaIS) {
+            final boolean actionExists, final LyvStack stack) {
         final Iterator<? extends DataSchemaNode> childNodes = ((DataNodeContainer) node).getChildNodes().iterator();
         while (childNodes.hasNext()) {
             final DataSchemaNode child = childNodes.next();
-            schemaIS.enterSchemaTree(child.getQName());
-            final LyvNodeData lyvNodeData = new LyvNodeData(this.schemaContext, child, keys,
-                    schemaIS.toSchemaNodeIdentifier());
+            stack.enter(child);
+            final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, child, stack, keys);
             final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
                     namespacePrefix);
             lines.add(consoleLine);
@@ -506,9 +482,9 @@ public class Tree extends FormatPlugin {
                 keyDefinitions = ((ListSchemaNode) child).getKeyDefinition();
             }
             resolveChildNodes(lines, isConnected, child, childNodes.hasNext() || actionExists, inputOutput,
-                    keyDefinitions, schemaIS);
-            schemaIS.exit();
-            this.treeDepth++;
+                    keyDefinitions, stack);
+            stack.exit();
+            treeDepth++;
         }
     }
 
@@ -521,7 +497,7 @@ public class Tree extends FormatPlugin {
         }
     }
 
-    private void printHelp() {
+    private static void printHelp() {
         LOG.info(
                 "tree - tree is printed in following format <status>--<flags> <name><opts> <type> <if-features>\n"
                         + "\n"

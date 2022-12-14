@@ -8,11 +8,11 @@
 package io.lighty.yang.validator.formats;
 
 import io.lighty.yang.validator.FormatTest;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
 import org.testng.Assert;
 
 public class NameRevisionTest extends FormatTest {
@@ -21,8 +21,8 @@ public class NameRevisionTest extends FormatTest {
     public void setFormat() {
         final List<FormatPlugin> formats = new ArrayList<>();
         formats.add(new NameRevision());
-        this.formatter = new Format(formats);
-        this.builder.setFormat("name-revision");
+        formatter = new Format(formats);
+        builder.setFormat("name-revision");
     }
 
     @Override
@@ -50,11 +50,15 @@ public class NameRevisionTest extends FormatTest {
         runNameRevisionTest("testModel-name-revision");
     }
 
+    @Override
+    public void runDeviationTest() throws Exception {
+        runNameRevisionTest("moduleDeviation-name-revision");
+    }
+
     private void runNameRevisionTest(final String comapreWithFileName) throws Exception {
-        final Path outLog = Paths.get(this.outPath).resolve("out.log");
-        final String fileCreated = FileUtils.readFileToString(outLog.toFile(), "utf-8");
-        final String compareWith = FileUtils.readFileToString(outLog.getParent()
-                .resolve("compare").resolve(comapreWithFileName).toFile(), "utf-8");
+        final Path outLog = Paths.get(outPath).resolve("out.log");
+        final String fileCreated = Files.readString(outLog);
+        final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
         Assert.assertEquals(fileCreated.replaceAll("\\s+", ""), compareWith.replaceAll("\\s+", ""));
     }
 

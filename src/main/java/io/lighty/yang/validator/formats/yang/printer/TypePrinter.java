@@ -49,21 +49,15 @@ class TypePrinter {
     void printType(final TypeDefinition<?> type) {
         final String rootName = Util.getRootType(type).getQName().getLocalName();
         if (type instanceof EnumTypeDefinition) {
-            final EnumTypeDefinition enumTypeDefinition = (EnumTypeDefinition) type;
-            printEnumType(enumTypeDefinition);
+            printEnumType(((EnumTypeDefinition) type));
         } else if (type instanceof UnionTypeDefinition) {
-            final UnionTypeDefinition unionTypeDefinition = (UnionTypeDefinition) type;
-            printUnionType(unionTypeDefinition);
+            printUnionType(((UnionTypeDefinition) type));
         } else if (type instanceof DecimalTypeDefinition) {
-            final DecimalTypeDefinition decimalTypeDefinition = ((DecimalTypeDefinition) type);
-            printDecimalType(rootName, decimalTypeDefinition);
+            printDecimalType(rootName, ((DecimalTypeDefinition) type));
         } else if (type instanceof StringTypeDefinition) {
-            final StringTypeDefinition stringType = (StringTypeDefinition) type;
-            printStringType(rootName, stringType);
-        } else if (type instanceof RangeRestrictedTypeDefinition) {
-            final RangeRestrictedTypeDefinition<?, ?> rangeRestrictedTypeDefinition
-                    = ((RangeRestrictedTypeDefinition<?, ?>) type);
-            printRangeRestictedType(rootName, rangeRestrictedTypeDefinition);
+            printStringType(rootName, ((StringTypeDefinition) type));
+        } else if (type instanceof RangeRestrictedTypeDefinition<?, ?>) {
+            printRangeRestictedType(rootName, ((RangeRestrictedTypeDefinition<?, ?>) type));
         } else {
             printer.printSimple("type", rootName);
         }
@@ -124,7 +118,7 @@ class TypePrinter {
         printer.closeStatement();
     }
 
-    private boolean isRestricted(final LengthConstraint lengthConstraint) {
+    private static boolean isRestricted(final LengthConstraint lengthConstraint) {
         final Set<Range<Integer>> asRanges = lengthConstraint.getAllowedRanges().asRanges();
         if (asRanges.size() > 1) {
             return true;
@@ -133,12 +127,11 @@ class TypePrinter {
         return range.lowerEndpoint() != 0 || range.upperEndpoint() != Integer.MAX_VALUE;
     }
 
-    private String rangeToString(final RangeSet<? extends Number> rangeSet) {
+    private static String rangeToString(final RangeSet<? extends Number> rangeSet) {
         return rangeSet.asRanges().stream()
                 .map(range -> range.lowerEndpoint() + ".." + range.upperEndpoint())
                 .collect(Collectors.joining(" | "));
     }
-
 
     private void printEnum(final EnumTypeDefinition.EnumPair enumPair) {
         printer.openStatement(Statement.ENUM, enumPair.getName());

@@ -7,16 +7,16 @@
  */
 package io.lighty.yang.validator.formats;
 
-import static io.lighty.yang.validator.Main.runLYV;
+import static io.lighty.yang.validator.Main.startLyv;
+import static org.testng.Assert.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.FormatTest;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
-import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class JsTreeTest extends FormatTest {
@@ -25,16 +25,18 @@ public class JsTreeTest extends FormatTest {
     public void setFormat() {
         final List<FormatPlugin> formats = new ArrayList<>();
         formats.add(new JsTree());
-        this.formatter = new Format(formats);
-        this.builder.setFormat("jstree");
+        formatter = new Format(formats);
+        builder.setFormat("jstree");
     }
 
     @Test
     public void testUndeclared() throws Exception {
         //testing for undeclared choice-case statement (no case inside of choice)
         setFormat();
-        final String module = Paths.get(this.yangPath).resolve("undeclared.yang").toString();
-        runLYV(ImmutableList.of(module), this.builder.build(), this.formatter);
+        final String module = Paths.get(yangPath).resolve("undeclared.yang").toString();
+        builder.setYangModules(ImmutableList.of(module));
+        final var configuration = builder.build();
+        startLyv(configuration, formatter);
         runJsTreeTest("undeclared.html");
     }
 
@@ -63,12 +65,16 @@ public class JsTreeTest extends FormatTest {
         runJsTreeTest("testModel.html");
     }
 
+    @Override
+    public void runDeviationTest() throws Exception {
+        runJsTreeTest("moduleDeviation.html");
+    }
+
     private void runJsTreeTest(final String comapreWithFileName) throws Exception {
-        final Path outLog = Paths.get(this.outPath).resolve("out.log");
-        final String fileCreated = FileUtils.readFileToString(outLog.toFile(), "utf-8");
-        final String compareWith = FileUtils.readFileToString(outLog.getParent()
-                .resolve("compare").resolve(comapreWithFileName).toFile(), "utf-8");
-        Assert.assertEquals(fileCreated.replaceAll("\\s+", ""), compareWith.replaceAll("\\s+", ""));
+        final Path outLog = Paths.get(outPath).resolve("out.log");
+        final String fileCreated = Files.readString(outLog);
+        final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
+        assertEquals(fileCreated.replaceAll("\\s+", ""), compareWith.replaceAll("\\s+", ""));
     }
 
 }

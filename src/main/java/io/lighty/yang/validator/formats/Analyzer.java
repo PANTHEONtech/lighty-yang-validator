@@ -31,7 +31,7 @@ public class Analyzer extends FormatPlugin {
 
     @Override
     void emitFormat() {
-        final Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(this.schemaContext.getModules());
+        final Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(modelContext.getModules());
         for (final DeclaredStatement<?> declaredStatement : statements) {
             analyzeSubstatement(declaredStatement);
         }
@@ -51,21 +51,21 @@ public class Analyzer extends FormatPlugin {
         return declaredStatements;
     }
 
-    private boolean submodulesAreNotEmpty(final Collection<? extends ModuleLike> submodules) {
+    private static boolean submodulesAreNotEmpty(final Collection<? extends ModuleLike> submodules) {
         return submodules != null && !submodules.isEmpty();
     }
 
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     private void printOut() {
-        for (final Map.Entry<String, Integer> entry : new TreeMap<>(this.counter).entrySet()) {
+        for (final Map.Entry<String, Integer> entry : new TreeMap<>(counter).entrySet()) {
             LOG.info("{}: {}", entry.getKey(), entry.getValue());
         }
     }
 
     private void analyzeSubstatement(final DeclaredStatement<?> subStatement) {
         final String name = subStatement.statementDefinition().getStatementName().getLocalName();
-        counter.compute(name, (key, val) -> (val == null) ? 1 : val + 1);
+        counter.compute(name, (key, val) -> val == null ? 1 : val + 1);
         final Collection<? extends DeclaredStatement<?>> substatements = subStatement.declaredSubstatements();
         for (final DeclaredStatement<?> nextSubstatement : substatements) {
             analyzeSubstatement(nextSubstatement);

@@ -1,93 +1,32 @@
 package io.lighty.yang.validator.formats.utility;
 
+import static java.util.Objects.requireNonNull;
+
 public enum SchemaHtmlEnum {
-    CONTAINER("container") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-folder-open\"></i></span> </td>";
-        }
-    },
-    LIST("list") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-list\"></i></span> </td>";
-        }
-    },
-    LEAF("leaf") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-leaf\"></i></span> </td>";
-        }
-    },
-    LEAF_LIST("leaf-list") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fab fa-pagelines\"></i></span> </td>";
-        }
-    },
-    AUGMENT("augment") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-external-link-alt\"></i></span> </td>";
-        }
-    },
-    RPC("rpc") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-envelope\"></i></span> </td>";
-        }
-    },
-    NOTIFICATION("notification") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-bell\"></i></span> </td>";
-        }
-    },
-    CHOICE("choice") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-tasks\"></i></span> </td>";
-        }
-    },
-    CASE("case") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-check\"></i></span> </td>";
-        }
-    },
-    INPUT("input") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-share\"></i></span> </td>";
-        }
-    },
-    OUTPUT("output") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-reply\"></i></span> </td>";
-        }
-    },
-    ACTION("action") {
-        @Override
-        public String getHtmlValue() {
-            return " <span><i class=\"fas fa-play\"></i></span> </td>";
-        }
-    },
-    EMPTY("") {
-        @Override
-        public String getHtmlValue() {
-            return "";
-        }
-    };
+    CONTAINER("container",       " <span><i class=\"fas fa-folder-open\"></i></span> </td>"),
+    LIST("list",                 " <span><i class=\"fas fa-list\"></i></span> </td>"),
+    LEAF("leaf",                 " <span><i class=\"fas fa-leaf\"></i></span> </td>"),
+    LEAF_LIST("leaf-list",       " <span><i class=\"fab fa-pagelines\"></i></span> </td>"),
+    AUGMENT("augment",           " <span><i class=\"fas fa-external-link-alt\"></i></span> </td>"),
+    RPC("rpc",                   " <span><i class=\"fas fa-envelope\"></i></span> </td>"),
+    NOTIFICATION("notification", " <span><i class=\"fas fa-bell\"></i></span> </td>"),
+    CHOICE("choice",             " <span><i class=\"fas fa-tasks\"></i></span> </td>"),
+    CASE("case",                 " <span><i class=\"fas fa-check\"></i></span> </td>"),
+    INPUT("input",               " <span><i class=\"fas fa-share\"></i></span> </td>"),
+    OUTPUT("output",             " <span><i class=\"fas fa-reply\"></i></span> </td>"),
+    ACTION("action",             " <span><i class=\"fas fa-play\"></i></span> </td>"),
+    EMPTY("", "");
 
     private final String schemaName;
+    private final String htmlValue;
 
-    SchemaHtmlEnum(final String schemaName) {
-        this.schemaName = schemaName;
+    SchemaHtmlEnum(final String schemaName, final String htmlValue) {
+        this.schemaName = requireNonNull(schemaName);
+        this.htmlValue = requireNonNull(htmlValue);
     }
 
     public String getSchemaName() {
-        return this.schemaName;
+        return schemaName;
     }
 
     public static SchemaHtmlEnum getSchemaHtmlEnumByName(final String value) {
@@ -99,5 +38,7 @@ public enum SchemaHtmlEnum {
         return SchemaHtmlEnum.EMPTY;
     }
 
-    public abstract String getHtmlValue();
+    public String getHtmlValue() {
+        return htmlValue;
+    }
 }

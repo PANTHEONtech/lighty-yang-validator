@@ -7,8 +7,7 @@
  */
 package io.lighty.yang.validator.check.update.from;
 
-import static io.lighty.yang.validator.Main.runLYV;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static io.lighty.yang.validator.Main.checkUpdateForm;
 import static org.testng.Assert.assertEquals;
 
 import io.lighty.yang.validator.Cleanable;
@@ -17,11 +16,11 @@ import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.config.ConfigurationBuilder;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -43,32 +42,32 @@ public class RFC6020Test implements Cleanable {
 
     @BeforeClass
     public void init() {
-        this.outPath = RFC6020Test.class.getResource("/out").getFile();
-        this.yangPath = RFC6020Test.class.getResource("/yang").getFile();
+        outPath = RFC6020Test.class.getResource("/out").getFile();
+        yangPath = RFC6020Test.class.getResource("/yang").getFile();
     }
 
     @BeforeMethod
     public void setUpOutput() throws Exception {
-        this.constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
-        this.constructor.setAccessible(true);
-        this.method = Main.class.getDeclaredMethod("setMainLoggerOutput", Configuration.class);
-        final Main mainClass = this.constructor.newInstance();
-        this.method.setAccessible(true);
-        final List<String> path = Collections.singletonList(this.yangPath);
-        this.builder = new ConfigurationBuilder()
+        constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
+        constructor.setAccessible(true);
+        method = Main.class.getDeclaredMethod("setMainLoggerOutput", Configuration.class);
+        final Main mainClass = constructor.newInstance();
+        method.setAccessible(true);
+        final List<String> path = Collections.singletonList(yangPath);
+        builder = new ConfigurationBuilder()
                 .setRecursive(false)
-                .setOutput(this.outPath)
+                .setOutput(outPath)
                 .setPath(path)
                 .setParseAll(Collections.emptyList())
                 .setCheckUpdateFromConfiguration(7950, path);
-        this.method.invoke(mainClass, this.builder.build());
+        method.invoke(mainClass, builder.build());
     }
 
     @AfterMethod
     public void removeOuptut() throws Exception {
         tearDown();
-        this.method.setAccessible(false);
-        this.constructor.setAccessible(false);
+        method.setAccessible(false);
+        constructor.setAccessible(false);
     }
 
     @Test
@@ -105,13 +104,11 @@ public class RFC6020Test implements Cleanable {
         final Configuration config = builder.setUpdateFrom(oldFile)
                 .setYangModules(Collections.singletonList(newFile))
                 .build();
+        checkUpdateForm(config);
 
-        runLYV(config.getYang(), config, null);
-
-        final Path outLog = Paths.get(this.outPath).resolve(OUT);
-        final String fileCreated = FileUtils.readFileToString(outLog.toFile(), UTF_8);
-        final String compareWith = FileUtils.readFileToString(outLog.getParent()
-                .resolve(COMPARE).resolve(comapreFile).toFile(), UTF_8);
+        final Path outLog = Paths.get(outPath).resolve(OUT);
+        final String fileCreated = Files.readString(outLog);
+        final String compareWith = Files.readString(outLog.resolveSibling(COMPARE).resolve(comapreFile));
 
         assertEquals(fileCreated, compareWith);
     }

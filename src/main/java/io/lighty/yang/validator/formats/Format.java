@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.api.Module;
 
 public class Format implements Emitter, CommandLineOptions {
 
@@ -40,14 +40,13 @@ public class Format implements Emitter, CommandLineOptions {
     }
 
     @Override
-    public void init(final Configuration config, final EffectiveModelContext context,
-            final List<RevisionSourceIdentifier> testFilesSchemaSources,
+    public void init(final Configuration config, final EffectiveModelContext context, final Module module,
             final SchemaTree schemaTree) {
         final String format = config.getFormat();
         for (final FormatPlugin plugin : this.formatPlugins) {
             if (plugin.getHelp().getName().equals(format)) {
                 this.usedFormat = plugin;
-                this.usedFormat.init(context, testFilesSchemaSources, schemaTree, config);
+                this.usedFormat.init(context, module, schemaTree, config);
             }
         }
     }

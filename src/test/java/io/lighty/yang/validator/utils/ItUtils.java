@@ -17,15 +17,13 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.io.IOUtils;
 
 public final class ItUtils {
 
-    private static final String OUTPUT_FOLDER = "/out";
-    private static final String OUTPUT_LOG = "/out/out.log";
+    public static final String OUTPUT_FOLDER = "/out";
+    public static final String OUTPUT_LOG = "/out/out.log";
 
     private ItUtils() {
         throw new UnsupportedOperationException("Util class");
@@ -75,7 +73,15 @@ public final class ItUtils {
     public static String loadLyvOutput(final String path) throws IOException {
         final InputStream out = ItUtils.class.getResourceAsStream(path);
         assertNotNull(out);
-        return IOUtils.toString(out, StandardCharsets.UTF_8);
+        return new String(out.readAllBytes(), StandardCharsets.UTF_8);
+    }
+
+    public static String startLyvParseAllWithFileOutput(final String modelFolder) throws Exception {
+        final var resource = ItUtils.class.getClassLoader().getResource(modelFolder);
+        assertNotNull(resource);
+        final var outPath = ItUtils.class.getResource(OUTPUT_FOLDER).getFile();
+        final var args = new String[]{"-o", outPath, "-a", resource.getPath()};
+        return startLyvWithFileOutput(args);
     }
 
     public static String startLyvParseAllWithFileOutput(final String modelFolder, final String format)
@@ -91,19 +97,17 @@ public final class ItUtils {
         final InputStream inputStream = ItUtils.class.getClassLoader()
                 .getResourceAsStream(String.format("integration/compare/%s", fileName));
         assertNotNull(inputStream);
-        return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+        return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
     }
 
     public static String removeHtmlGeneratedInfo(final String text) {
-        final int length = text.length();
-        int cut = 0;
-        for (int i = length - 2; i >= 0; i--) {
-            if (text.charAt(i) == '\n') {
-                cut = i;
-                break;
+        final var split = text.split("\n");
+        for (final String resultLine : split) {
+            if (resultLine.contains("html generated to")) {
+                return text.replace(resultLine, "");
             }
         }
-        return text.substring(0, cut);
+        return text;
     }
 
     public static void compareModulesAndAugmentData(final String output, final String expected) {
@@ -123,19 +127,19 @@ public final class ItUtils {
     public static void compareMixedOutput(final String output, final String expected, final String splitFormat) {
         final List<String> splitExp = Arrays.stream(expected.split(splitFormat))
                 .map(String::trim)
-                .filter(t -> !(t.isBlank() || t.isEmpty()))
+                .filter(t -> (!t.isBlank() && !t.isEmpty()))
                 .collect(Collectors.toList());
         final List<String> splitOut = Arrays.stream(output.split(splitFormat))
                 .map(String::trim)
-                .filter(t -> !(t.isBlank() || t.isEmpty()))
+                .filter(t -> (!t.isBlank() && !t.isEmpty()))
                 .collect(Collectors.toList());
         verifyTwoUnsortedArrays(splitOut, splitExp);
     }
 
     public static void verifyTwoUnsortedArrays(final List<String> splitOut, final List<String> splitExp) {
         verifyLengthOfElements(splitOut, splitExp);
-        Collections.sort(splitExp);
-        Collections.sort(splitOut);
+        splitExp.sort(null);
+        splitOut.sort(null);
         assertEquals(splitOut, splitExp);
     }
 

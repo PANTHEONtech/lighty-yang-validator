@@ -9,9 +9,8 @@ package io.lighty.yang.validator.formats;
 
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.simplify.SchemaTree;
-import java.util.List;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.repo.api.RevisionSourceIdentifier;
+import org.opendaylight.yangtools.yang.model.api.Module;
 
 public interface Emitter {
 
@@ -20,11 +19,10 @@ public interface Emitter {
      *
      * @param config                 all the configuration chosen by user
      * @param context                yang schema context
-     * @param testFilesSchemaSources yang modules that are tested
+     * @param module                 yang modules that are tested
      * @param schemaTree             Tree representation of schema nodes
      */
-    void init(Configuration config, EffectiveModelContext context,
-            List<RevisionSourceIdentifier> testFilesSchemaSources, SchemaTree schemaTree);
+    void init(Configuration config, EffectiveModelContext context, Module module, SchemaTree schemaTree);
 
     /**
      * Create logic and emit output.
