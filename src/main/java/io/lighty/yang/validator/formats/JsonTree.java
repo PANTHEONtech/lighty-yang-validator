@@ -46,7 +46,6 @@ import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
-import org.opendaylight.yangtools.yang.model.repo.api.SourceIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,31 +87,28 @@ public class JsonTree extends FormatPlugin {
     private static final String COLON = ":";
 
     @Override
-    void init(final EffectiveModelContext context, final List<SourceIdentifier> testFilesSchemaSources,
-            final SchemaTree schemaTree, final Configuration config) {
-        super.init(context, testFilesSchemaSources, schemaTree, config);
+    void init(final EffectiveModelContext context, final Module module, final SchemaTree schemaTree,
+            final Configuration config) {
+        super.init(context, module, schemaTree, config);
     }
 
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat() {
-        final LyvStack stack = new LyvStack();
-
-        for (final SourceIdentifier source : sources) {
-            final Module module = schemaContext.findModule(source.name().getLocalName(), source.revision())
-                    .orElseThrow(() -> new NotFoundException(MODULE_STRING, source.name().getLocalName()));
-            final JSONObject moduleMetadata = resolveModuleMetadata(module);
+        if (testedModule != null) {
+            final LyvStack stack = new LyvStack();
+            final JSONObject moduleMetadata = resolveModuleMetadata(testedModule);
             final JSONObject jsonTree = new JSONObject();
 
-            appendChildNodesToJsonTree(module, jsonTree, stack);
+            appendChildNodesToJsonTree(testedModule, jsonTree, stack);
             stack.clear();
-            appendNotificationsToJsonTree(module, jsonTree, stack);
+            appendNotificationsToJsonTree(testedModule, jsonTree, stack);
             stack.clear();
-            appendRpcsToJsonTree(module, jsonTree, stack);
+            appendRpcsToJsonTree(testedModule, jsonTree, stack);
             stack.clear();
 
-            for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
+            for (final AugmentationSchemaNode augmentation : testedModule.getAugmentations()) {
                 stack.enter(augmentation.getTargetPath());
                 final JSONObject augmentationJson = new JSONObject();
                 final boolean isConfig = isAugmentConfig(augmentation);
@@ -133,13 +129,15 @@ public class JsonTree extends FormatPlugin {
                 }
 
                 appendActionsToAugmentationJson(augmentation, augmentationJson, stack);
-                appendNotificationsToAugmentationJson(module, augmentationJson, stack);
+                appendNotificationsToAugmentationJson(testedModule, augmentationJson, stack);
                 jsonTree.append(AUGMENTS, augmentationJson);
                 stack.clear();
             }
             jsonTree.put(MODULE, moduleMetadata);
             final String jsonTreeText = jsonTree.toString(4);
             LOG.info("{}", jsonTreeText);
+        } else {
+            LOG.error("{}", EMPTY_MODULE_EXCEPTION);
         }
     }
 
@@ -236,7 +234,7 @@ public class JsonTree extends FormatPlugin {
             //        We should use DataNodeContainer.findDataTreeChild(path) and iteratively move parent, i.e. we do
             //        not need qNames at all!
             qNames.add(path);
-            final Optional<DataSchemaNode> optDataTreeChild = schemaContext.findDataTreeChild(qNames);
+            final Optional<DataSchemaNode> optDataTreeChild = modelContext.findDataTreeChild(qNames);
 
             if (optDataTreeChild.isPresent()) {
                 final DataSchemaNode dataTreeChild = optDataTreeChild.orElseThrow();
@@ -335,7 +333,7 @@ public class JsonTree extends FormatPlugin {
                 jsonLeafType.append(BASE, base.getQName().getLocalName());
             }
         } else {
-            final String prefix = schemaContext.findModule(typeqName.getNamespace(), typeqName.getRevision())
+            final String prefix = modelContext.findModule(typeqName.getNamespace(), typeqName.getRevision())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, typeqName.getNamespace().toString()))
                     .getPrefix();
             type = prefix + COLON + typeqName.getLocalName();
@@ -387,7 +385,7 @@ public class JsonTree extends FormatPlugin {
     private String resolvePath(final SchemaNodeIdentifier pathFromRoot) {
         final StringBuilder path = new StringBuilder(SLASH);
         for (final QName pathQname : pathFromRoot.getNodeIdentifiers()) {
-            schemaContext.findModule(pathQname.getModule()).ifPresent(module1 -> path.append(module1.getPrefix()));
+            modelContext.findModule(pathQname.getModule()).ifPresent(module1 -> path.append(module1.getPrefix()));
             // FIXME: this produces trailing slashes
             path.append(COLON).append(pathQname.getLocalName()).append(SLASH);
         }

@@ -8,6 +8,8 @@
 package io.lighty.yang.validator.config;
 
 import io.lighty.yang.validator.LyvParameters;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -111,7 +113,7 @@ public class ConfigurationBuilder {
         configuration.setOutput(namespace.getString("output"));
         configuration.setDebug(namespace.getBoolean("debug"));
         configuration.setQuiet(namespace.getBoolean("quiet"));
-        configuration.setPath(namespace.getList("path"));
+        configuration.setPath(splitYangDirsPath(namespace.getList("path")));
         configuration.setYangModules(namespace.getList("yang"));
         configuration.setRecursive(namespace.getBoolean("recursive"));
         configuration.setFormat(namespace.getString("format"));
@@ -134,7 +136,8 @@ public class ConfigurationBuilder {
         configuration.setDependConfiguration(dependConfiguration);
         configuration.setUpdateFrom(namespace.getString("check_update_from"));
         final CheckUpdateFromConfiguration checkUpdateFromConfiguration = new CheckUpdateFromConfiguration(
-                namespace.getInt("rfc_version"), namespace.getList("check_update_from_path"));
+                namespace.getInt("rfc_version"),
+                splitYangDirsPath(namespace.getList("check_update_from_path")));
         configuration.setCheckUpdateFromConfiguration(checkUpdateFromConfiguration);
         return this;
     }
@@ -152,5 +155,15 @@ public class ConfigurationBuilder {
 
     public Configuration build() {
         return configuration;
+    }
+
+    private static List<String> splitYangDirsPath(final List<String> paths) {
+        final List<String> yangDirs = new ArrayList<>();
+        if (paths != null) {
+            for (final String pathArg : paths) {
+                yangDirs.addAll(Arrays.asList(pathArg.split(":")));
+            }
+        }
+        return yangDirs;
     }
 }
