@@ -9,8 +9,12 @@ package io.lighty.yang.validator.formats;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
+import io.lighty.yang.validator.config.Configuration;
+import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.Revision;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
+import org.opendaylight.yangtools.yang.model.api.Module;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +29,9 @@ public class NameRevision extends FormatPlugin {
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
-    public void emitFormat() {
+    public void emitFormat(final Module module, final EffectiveModelContext context, final SchemaTree schemaTree,
+            final Configuration config) {
+        this.testedModule = module;
         if (testedModule != null) {
             final Optional<Revision> revision = testedModule.getRevision();
             String moduleName = testedModule.getName();
@@ -46,5 +52,10 @@ public class NameRevision extends FormatPlugin {
     @Override
     public Optional<GroupArguments> getGroupArguments() {
         return Optional.empty();
+    }
+
+    @Override
+    void close() {
+
     }
 }

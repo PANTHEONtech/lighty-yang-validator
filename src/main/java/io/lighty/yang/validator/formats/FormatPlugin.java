@@ -29,10 +29,9 @@ public abstract class FormatPlugin {
     Path output;
     Configuration configuration;
 
-    void init(final EffectiveModelContext context, final Module module,
+    void init(final EffectiveModelContext context,
             final SchemaTree tree, final Configuration config) {
         this.modelContext = context;
-        this.testedModule = module;
         this.schemaTree = tree;
         this.configuration = config;
         final String out = config.getOutput();
@@ -46,7 +45,8 @@ public abstract class FormatPlugin {
     /**
      * Logic of the plugin. Use logger to print
      */
-    abstract void emitFormat();
+    abstract void emitFormat(Module module, EffectiveModelContext context, SchemaTree schemaTree,
+            Configuration config);
 
     /**
      * This serves to generate help about current plugin, in case that user will use --help option with `lyv` command.
@@ -59,4 +59,6 @@ public abstract class FormatPlugin {
      * This serves to resolve configurations based on specific format.
      */
     public abstract Optional<GroupArguments> getGroupArguments();
+
+    abstract void close();
 }

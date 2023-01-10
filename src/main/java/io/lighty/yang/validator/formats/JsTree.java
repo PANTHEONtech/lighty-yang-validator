@@ -10,8 +10,10 @@ package io.lighty.yang.validator.formats;
 import com.google.common.io.Resources;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
+import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.formats.utility.LyvStack;
+import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +35,7 @@ import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
@@ -53,7 +56,9 @@ public class JsTree extends FormatPlugin {
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
-    public void emitFormat() {
+    public void emitFormat(final Module module, final EffectiveModelContext context, final SchemaTree schemaTree,
+            final Configuration config) {
+        this.testedModule = module;
         if (testedModule != null) {
             namespacePrefix = new HashMap<>();
             final SingletonListInitializer singletonListInitializer = new SingletonListInitializer(1);
@@ -377,6 +382,11 @@ public class JsTree extends FormatPlugin {
     @Override
     public Optional<GroupArguments> getGroupArguments() {
         return Optional.empty();
+    }
+
+    @Override
+    void close() {
+
     }
 
     private static class SingletonListInitializer {

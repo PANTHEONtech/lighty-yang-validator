@@ -9,6 +9,8 @@ package io.lighty.yang.validator.formats;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
+import io.lighty.yang.validator.config.Configuration;
+import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +18,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
+import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleLike;
 import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
@@ -30,7 +34,8 @@ public class Analyzer extends FormatPlugin {
     private final Map<String, Integer> counter = new HashMap<>();
 
     @Override
-    void emitFormat() {
+    void emitFormat(final Module module,  final EffectiveModelContext context, final SchemaTree schemaTree,
+            final Configuration config) {
         final Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(modelContext.getModules());
         for (final DeclaredStatement<?> declaredStatement : statements) {
             analyzeSubstatement(declaredStatement);
@@ -85,5 +90,10 @@ public class Analyzer extends FormatPlugin {
         // TODO make option to ignore some specific keywords
         // TODO make option to search only for some specific keywords
         return Optional.empty();
+    }
+
+    @Override
+    void close() {
+
     }
 }

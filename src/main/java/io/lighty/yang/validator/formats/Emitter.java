@@ -19,13 +19,13 @@ public interface Emitter {
      *
      * @param config                 all the configuration chosen by user
      * @param context                yang schema context
-     * @param module                 yang modules that are tested
      * @param schemaTree             Tree representation of schema nodes
      */
-    void init(Configuration config, EffectiveModelContext context, Module module, SchemaTree schemaTree);
+    void init(Configuration config, EffectiveModelContext context, SchemaTree schemaTree);
 
     /**
      * Create logic and emit output.
      */
-    void emit();
+    void emit(Module module, EffectiveModelContext context, SchemaTree schemaTree,
+            Configuration config);
 }

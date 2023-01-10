@@ -16,6 +16,7 @@ import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.FileAppender;
 import com.google.common.base.Stopwatch;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.checkupdatefrom.CheckUpdateFrom;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.config.ConfigurationBuilder;
@@ -172,18 +173,26 @@ public final class Main {
         }
     }
 
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+            justification = "Valid output from LYV is dependent on Logback output")
     private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration config,
             final Format format) throws LyvApplicationException {
         final var lyvContext = LyvEffectiveModelContextFactory.create(yangFiles, config);
+        format.init(config, lyvContext.context(), lyvContext.schemaTree());
         if (lyvContext.testedModules().isEmpty()) {
             // Analyse format require only EffectiveModelContext
-            format.init(config, lyvContext.context(), null, lyvContext.schemaTree());
-            format.emit();
+            format.emit(null, lyvContext.context(), lyvContext.schemaTree(), config);
         }
-        for (final Module module : lyvContext.testedModules()) {
-            format.init(config, lyvContext.context(), module, lyvContext.schemaTree());
-            format.emit();
+
+        int size = lyvContext.testedModules().size();
+        for (int i = 0; i < size; i++) {
+            final Module module = lyvContext.testedModules().get(i);
+            format.emit(module, lyvContext.context(), lyvContext.schemaTree(), config);
+            if (config.getFormat().equals("json-tree") && i < size - 1) {
+                LOG.info(",");
+            }
         }
+        format.close();
     }
 
     private static void generateHtmlAnalyzeOutput(final List<String> yangFiles, final Configuration config)

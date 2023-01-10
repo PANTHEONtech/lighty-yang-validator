@@ -8,6 +8,7 @@
 package io.lighty.yang.validator.formats;
 
 import io.lighty.yang.validator.GroupArguments;
+import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.exceptions.NotFoundException;
 import io.lighty.yang.validator.formats.yang.printer.ModulePrinter;
 import io.lighty.yang.validator.simplify.SchemaTree;
@@ -29,6 +30,7 @@ import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.QNameModule;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
@@ -49,7 +51,9 @@ public class MultiModulePrinter extends FormatPlugin {
     private final Map<QNameModule, Set<SchemaTree>> subtrees = new HashMap<>();
 
     @Override
-    protected void emitFormat() {
+    protected void emitFormat(final Module module, final EffectiveModelContext context, final SchemaTree schemaTree,
+            final Configuration config) {
+        this.testedModule = module;
         if (testedModule != null) {
             splitTree(this.schemaTree);
             if (this.output != null) {
@@ -182,6 +186,11 @@ public class MultiModulePrinter extends FormatPlugin {
     @Override
     public Optional<GroupArguments> getGroupArguments() {
         return Optional.empty();
+    }
+
+    @Override
+    void close() {
+
     }
 }
 

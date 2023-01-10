@@ -9,7 +9,9 @@ package io.lighty.yang.validator.formats;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
+import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.config.DependConfiguration;
+import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import net.sourceforge.argparse4j.impl.choice.CollectionArgumentChoice;
 import org.opendaylight.yangtools.yang.common.Revision;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleImport;
 import org.opendaylight.yangtools.yang.model.api.ModuleLike;
@@ -42,7 +45,9 @@ public class Depends extends FormatPlugin {
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
-    public void emitFormat() {
+    public void emitFormat(final Module module, final EffectiveModelContext context, final SchemaTree schemaTree,
+            final Configuration config) {
+        this.testedModule = module;
         if (testedModule != null) {
             final DependConfiguration dependConfiguration = configuration.getDependConfiguration();
             final StringBuilder dependantsBuilder = new StringBuilder(MODULE);
@@ -174,5 +179,10 @@ public class Depends extends FormatPlugin {
                 Collections.singletonList("--exclude-module-name"), false, "*", Collections.emptyList(),
                 new CollectionArgumentChoice<>(Collections.emptyList()), List.class);
         return Optional.of(groupArguments);
+    }
+
+    @Override
+    void close() {
+
     }
 }

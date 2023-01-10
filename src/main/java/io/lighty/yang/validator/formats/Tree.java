@@ -62,9 +62,9 @@ public class Tree extends FormatPlugin {
     private int lineLength;
 
     @Override
-    void init(final EffectiveModelContext context, final Module module, final SchemaTree schemaTree,
+    void init(final EffectiveModelContext context, final SchemaTree schemaTree,
             final Configuration config) {
-        super.init(context, module, schemaTree, config);
+        super.init(context, schemaTree, config);
         namespacePrefix = new HashMap<>();
         treeDepth = configuration.getTreeConfiguration().getTreeDepth();
         final int len = configuration.getTreeConfiguration().getLineLength();
@@ -74,7 +74,10 @@ public class Tree extends FormatPlugin {
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
-    public void emitFormat() {
+    public void emitFormat(final Module module, final EffectiveModelContext context, final SchemaTree schemaTree,
+            final Configuration config) {
+        init(context,schemaTree,config);
+        this.testedModule = module;
         if (configuration.getTreeConfiguration().isHelp()) {
             printHelp();
         } else if (testedModule != null) {
@@ -560,5 +563,10 @@ public class Tree extends FormatPlugin {
                 Collections.singletonList("--tree-prefix-main-module"), true, null, null,
                 new CollectionArgumentChoice<>(Collections.emptyList()), Boolean.TYPE);
         return Optional.of(groupArguments);
+    }
+
+    @Override
+    void close() {
+
     }
 }
