@@ -1,4 +1,4 @@
-{
+{"parsed-models": [{
     "children": [
         {
             "path": "/test:result-container/",
@@ -379,4 +379,4 @@
             "status": "CURRENT"
         }
     ]
-}
+}]}
