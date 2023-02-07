@@ -13,7 +13,7 @@
     <parent>
         <groupId>io.lighty.core</groupId>
         <artifactId>lighty-parent</artifactId>
-        <version>17.1.0</version>
+        <version>17.2.0</version>
     </parent>
 
     <groupId>io.lighty.yang.validator</groupId>
