@@ -13,7 +13,7 @@
             <list-data>
                 <device>device3</device>
             </list-data>
-            <decimal-data>5</decimal-data>
+            <decimal-data>3</decimal-data>
             <union-data>unbounded</union-data>
             <int-leaf-list>10</int-leaf-list>
             <int-leaf-list>15</int-leaf-list>
