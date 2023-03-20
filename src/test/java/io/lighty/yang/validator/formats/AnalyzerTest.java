@@ -85,7 +85,7 @@ public class AnalyzerTest implements Cleanable {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
-        Assert.assertEquals(fileCreated, compareWith);
+        Assert.assertEquals(fileCreated.trim(), compareWith.trim());
     }
 
 }

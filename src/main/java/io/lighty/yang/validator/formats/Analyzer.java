@@ -40,7 +40,7 @@ public class Analyzer extends FormatPlugin {
         for (final DeclaredStatement<?> declaredStatement : statements) {
             analyzeSubstatement(declaredStatement);
         }
-        printOut();
+        printOut(module);
     }
 
     private Set<DeclaredStatement<?>> getRecursivelyDeclaredStatements(final Collection<? extends ModuleLike> modules) {
@@ -61,11 +61,15 @@ public class Analyzer extends FormatPlugin {
     }
 
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
-                        justification = "Valid output from LYV is dependent on Logback output")
-    private void printOut() {
+            justification = "Valid output from LYV is dependent on Logback output")
+    private void printOut(Module module) {
+        if (module != null) {
+            LOG.info("{}@{}:", module.getName(), module.getRevision().get());
+        }
         for (final Map.Entry<String, Integer> entry : new TreeMap<>(counter).entrySet()) {
             LOG.info("{}: {}", entry.getKey(), entry.getValue());
         }
+        LOG.info("\n");
     }
 
     private void analyzeSubstatement(final DeclaredStatement<?> subStatement) {

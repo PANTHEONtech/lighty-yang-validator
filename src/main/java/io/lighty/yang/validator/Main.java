@@ -30,6 +30,7 @@ import io.lighty.yang.validator.formats.JsonTree;
 import io.lighty.yang.validator.formats.MultiModulePrinter;
 import io.lighty.yang.validator.formats.NameRevision;
 import io.lighty.yang.validator.formats.Tree;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -181,6 +182,9 @@ public final class Main {
         format.init(config, lyvContext.context(), lyvContext.schemaTree());
         if (lyvContext.testedModules().isEmpty()) {
             // Analyse format require only EffectiveModelContext
+            if (!yangFiles.isEmpty() && config.getFormat().equals("analyze")) {
+                LOG.info("{}:", new File(yangFiles.get(0)).getName());
+            }
             format.emit(null, lyvContext.context(), lyvContext.schemaTree(), config);
         }
 
