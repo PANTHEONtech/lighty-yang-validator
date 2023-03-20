@@ -59,7 +59,8 @@ Use `-r` or `--recursive` option to search for the files recursively, within the
   * yang
   * json-tree
   * jstree
-  * name-revision.
+  * name-revision
+  * analyze
 
 * **Simplify YANG**: Use `-s` or `--simplify` option, to to simplify the YANG file. The YANG file will be simplified,
   based on the nodes used in the XML file. Use with `-o` to specify output directory where will be simplified yang generated.
@@ -118,6 +119,11 @@ Use `-r` or `--recursive` option to search for the files recursively, within the
 * **yang**: generates a yang file (used with simplify will print
 the simplified yang file)
 
+* **analyze**: the analyze function counts the occurrence of each keyword
+in a model, including keywords from any imported models (if module
+A has 2 default keywords, module B has 3 default keywords, and module B imports 
+module A, then the analyze function would report that module B has 5 default keywords in total)
+
 ## Examples
 
 * Validate: To **validate the module only**:
@@ -150,6 +156,12 @@ the simplified yang file)
 ```
 ./lyv -o \<path_to_output_directory> -s
 \<path_to_xml_files> -p \<path_to_yang_modules> -f yang
+```
+
+* **Analyze module**: To use ***analyze format***:
+
+```
+./lyv -f analyze \<path_to_the_yang_module>
 ```
 
 # References
