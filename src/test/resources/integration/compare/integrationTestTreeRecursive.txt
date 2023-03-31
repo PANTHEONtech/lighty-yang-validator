@@ -21,8 +21,8 @@ module: ietf-interfaces-modified
   |     +--ro last-change?       yang:date-and-time
   |     +--ro if-index       int32 {if-mib}?
   |     +--ro phys-address?       string
-  |     +--ro higher-layer-if*    -> ParsedPathExpression{steps=LocationPathSteps{locationPath=YangLocationPath{absolute=true, steps=[Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)interfaces}, Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)interface}, Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)name}]}}, originalString=/ifm:interfaces/ifm:interface/ifm:name}
-  |     +--ro lower-layer-if*    -> ParsedPathExpression{steps=LocationPathSteps{locationPath=YangLocationPath{absolute=true, steps=[Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)interfaces}, Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)interface}, Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)name}]}}, originalString=/ifm:interfaces/ifm:interface/ifm:name}
+  |     +--ro higher-layer-if*    -> /ifm:interfaces/ifm:interface/ifm:name
+  |     +--ro lower-layer-if*    -> /ifm:interfaces/ifm:interface/ifm:name
   |     +--ro speed?       yang:gauge64
   |     +--ro statistics
   |        +--ro discontinuity-time       yang:date-and-time
@@ -48,8 +48,8 @@ module: ietf-interfaces-modified
         x--ro last-change?       yang:date-and-time
         x--ro if-index       int32 {if-mib}?
         x--ro phys-address?       string
-        x--ro higher-layer-if*    -> ParsedPathExpression{steps=LocationPathSteps{locationPath=YangLocationPath{absolute=true, steps=[Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)interfaces-state}, Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)interface}, Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)name}]}}, originalString=/ifm:interfaces-state/ifm:interface/ifm:name}
-        x--ro lower-layer-if*    -> ParsedPathExpression{steps=LocationPathSteps{locationPath=YangLocationPath{absolute=true, steps=[Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)interfaces-state}, Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)interface}, Step{axis=child, qname=(urn:ietf:params:xml:ns:yang:ietf-interfaces-modified?revision=2018-02-20)name}]}}, originalString=/ifm:interfaces-state/ifm:interface/ifm:name}
+        x--ro higher-layer-if*    -> /ifm:interfaces-state/ifm:interface/ifm:name
+        x--ro lower-layer-if*    -> /ifm:interfaces-state/ifm:interface/ifm:name
         x--ro speed?       yang:gauge64
         x--ro statistics
            x--ro discontinuity-time       yang:date-and-time
