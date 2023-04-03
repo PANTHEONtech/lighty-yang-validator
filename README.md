@@ -1,4 +1,4 @@
-# :cloud_with_lightning: lighty YANG Validator 18
+# :cloud_with_lightning: lighty YANG Validator 19
 
 This tool validates YANG modules using the YANG-Tools parser. If there are any problems parsing the module, it will show the stacktrace with the problem, linking to the corresponding module.
 
