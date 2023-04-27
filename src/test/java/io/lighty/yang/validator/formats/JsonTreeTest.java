@@ -7,13 +7,17 @@
  */
 package io.lighty.yang.validator.formats;
 
+import static io.lighty.yang.validator.Main.startLyv;
+
 import io.lighty.yang.validator.FormatTest;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import org.testng.Assert;
+import org.testng.annotations.Test;
 
 public class JsonTreeTest extends FormatTest {
 
@@ -53,6 +57,34 @@ public class JsonTreeTest extends FormatTest {
     @Override
     public void runDeviationTest() throws Exception {
         runJsonTreeTest("ModuleDeviation.json");
+    }
+
+    @Test
+    public void testMultipleFiles() throws IOException {
+        final var module1 = Paths.get(yangPath + "/ietf-connection-oriented-oam@2019-04-16.yang").toString();
+        final var module2 = Paths.get(yangPath + "/ietf-routing@2018-03-13.yang").toString();
+        builder.setYangModules(List.of(module1, module2));
+        final List<FormatPlugin> formats = new ArrayList<>();
+        formats.add(new JsonTree());
+        formatter = new Format(formats);
+        builder.setFormat("json-tree");
+        final var configuration = builder.build();
+        startLyv(configuration, formatter);
+        final var outLog = Paths.get(outPath).resolve("out.log");
+        final String fileCreated = Files.readString(outLog).substring(Files.readString(outLog).indexOf("{"));
+        final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve("multipleModules.json"));
+        final String compareModel1 = Files.readString(
+                outLog.resolveSibling("compare").resolve("connectionOrientedOam.json"))
+                .replaceFirst("\\{\\s+\"parsed-models\": \\[\\s+\\{\n", "")
+                .replaceFirst("]\n\\s*}$", "").replaceAll("\\n\\s*", "");
+        final String compareModel2 = Files.readString(
+                outLog.resolveSibling("compare").resolve("routing.json"))
+                .replaceFirst("\\{\\s+\"parsed-models\": \\[\\s+\\{\n", "")
+                .replaceFirst("]\n\\s*}$", "").replaceAll("\\n\\s*", "");
+
+        Assert.assertEquals(fileCreated.replaceAll("\\s+", ""), compareWith.replaceAll("\\s+", ""));
+        Assert.assertTrue(fileCreated.replaceAll("\\s+", "").contains(compareModel1.replaceAll("\\s+", "")));
+        Assert.assertTrue(fileCreated.replaceAll("\\s+", "").contains(compareModel2.replaceAll("\\s+", "")));
     }
 
     private void runJsonTreeTest(final String comapreWithFileName) throws Exception {
