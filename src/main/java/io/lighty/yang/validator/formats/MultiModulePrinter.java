@@ -49,8 +49,8 @@ public class MultiModulePrinter extends FormatPlugin {
     private final Map<QNameModule, Set<SchemaTree>> subtrees = new HashMap<>();
 
     @Override
-    protected void emitFormat() {
-        if (testedModule != null) {
+    protected void emitFormat(final Module module) {
+        if (module != null) {
             splitTree(this.schemaTree);
             if (this.output != null) {
                 try {
@@ -66,13 +66,13 @@ public class MultiModulePrinter extends FormatPlugin {
                 subtrees.putIfAbsent(name, Collections.emptySet());
             }
             //print each yang module
-            printEachYangModule();
+            printEachYangModule(module);
         } else {
             LOG.error(EMPTY_MODULE_EXCEPTION);
         }
     }
 
-    private void printEachYangModule() {
+    private void printEachYangModule(Module testedModule) {
         for (final Map.Entry<QNameModule, Set<SchemaTree>> entry : subtrees.entrySet()) {
             final Module module = this.modelContext.findModule(entry.getKey())
                     .orElseThrow(() -> new NotFoundException(MODULE_STRING, entry.getKey().toString()));

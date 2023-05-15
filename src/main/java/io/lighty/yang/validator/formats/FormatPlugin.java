@@ -24,15 +24,12 @@ public abstract class FormatPlugin {
             + " contains file/files with .yang extension";
 
     EffectiveModelContext modelContext;
-    Module testedModule;
     SchemaTree schemaTree;
     Path output;
     Configuration configuration;
 
-    void init(final EffectiveModelContext context, final Module module,
-            final SchemaTree tree, final Configuration config) {
+    void init(final EffectiveModelContext context, final SchemaTree tree, final Configuration config) {
         this.modelContext = context;
-        this.testedModule = module;
         this.schemaTree = tree;
         this.configuration = config;
         final String out = config.getOutput();
@@ -46,7 +43,14 @@ public abstract class FormatPlugin {
     /**
      * Logic of the plugin. Use logger to print
      */
-    abstract void emitFormat();
+    abstract void emitFormat(Module module);
+
+    /**
+     * Close after printing out the module.
+     */
+    protected void close() {
+        // no-op by default
+    }
 
     /**
      * This serves to generate help about current plugin, in case that user will use --help option with `lyv` command.

@@ -50,28 +50,28 @@ public class JsTree extends FormatPlugin {
 
     private Map<XMLNamespace, String> namespacePrefix = new HashMap<>();
 
-    @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
-                        justification = "Valid output from LYV is dependent on Logback output")
-    public void emitFormat() {
-        if (testedModule != null) {
+            justification = "Valid output from LYV is dependent on Logback output")
+    @Override
+    public void emitFormat(final Module module) {
+        if (module != null) {
             namespacePrefix = new HashMap<>();
             final SingletonListInitializer singletonListInitializer = new SingletonListInitializer(1);
 
             // Nodes
-            printLines(getChildNodesLines(singletonListInitializer, testedModule));
+            printLines(getChildNodesLines(singletonListInitializer, module));
 
             // Augmentations
-            for (final AugmentationSchemaNode augNode : testedModule.getAugmentations()) {
+            for (final AugmentationSchemaNode augNode : module.getAugmentations()) {
                 printLines(getAugmentationNodesLines(singletonListInitializer.getSingletonListWithIncreasedValue(),
                         augNode));
             }
 
             // Rpcs
-            printLines(getRpcsLines(singletonListInitializer, testedModule));
+            printLines(getRpcsLines(singletonListInitializer, module));
 
             // Notifications
-            printLines(getNotificationsLines(singletonListInitializer, testedModule));
+            printLines(getNotificationsLines(singletonListInitializer, module));
 
             LOG.info("</table>");
             LOG.info("</div>");

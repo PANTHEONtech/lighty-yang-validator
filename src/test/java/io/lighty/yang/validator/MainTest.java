@@ -73,8 +73,8 @@ public class MainTest implements Cleanable {
                 .setOutput(outPath)
                 .build();
         for (final Module module : effectiveModelContext.getModules()) {
-            format.init(config, effectiveModelContext, module, schemaTree);
-            format.emit();
+            format.init(config, effectiveModelContext, schemaTree);
+            format.emit(module);
         }
         contextFactory =
                 new YangContextFactory(ImmutableList.of(outPath), ImmutableList.of(), Collections.emptySet(), false);
