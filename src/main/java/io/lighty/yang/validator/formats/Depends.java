@@ -42,20 +42,20 @@ public class Depends extends FormatPlugin {
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
-    public void emitFormat() {
-        if (testedModule != null) {
+    public void emitFormat(final Module module) {
+        if (module != null) {
             final DependConfiguration dependConfiguration = configuration.getDependConfiguration();
             final StringBuilder dependantsBuilder = new StringBuilder(MODULE);
-            dependantsBuilder.append(testedModule.getName())
+            dependantsBuilder.append(module.getName())
                     .append(AT);
-            testedModule.getRevision().ifPresent(dependantsBuilder::append);
+            module.getRevision().ifPresent(dependantsBuilder::append);
 
             dependantsBuilder.append(DEPENDS_TEXT);
             if (!dependConfiguration.isModuleImportsOnly()) {
-                resolveSubmodules(testedModule, dependConfiguration);
+                resolveSubmodules(module, dependConfiguration);
             }
             if (!dependConfiguration.isModuleIncludesOnly()) {
-                resolveImports(testedModule, dependConfiguration);
+                resolveImports(module, dependConfiguration);
             }
             for (final String name : modules) {
                 dependantsBuilder.append(name)

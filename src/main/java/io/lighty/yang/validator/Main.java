@@ -175,15 +175,16 @@ public final class Main {
     private static void runLywForeachYangFile(final List<String> yangFiles, final Configuration config,
             final Format format) throws LyvApplicationException {
         final var lyvContext = LyvEffectiveModelContextFactory.create(yangFiles, config);
+        format.init(config, lyvContext.context(), lyvContext.schemaTree());
         if (lyvContext.testedModules().isEmpty()) {
             // Analyse format require only EffectiveModelContext
-            format.init(config, lyvContext.context(), null, lyvContext.schemaTree());
-            format.emit();
+            format.emit(null);
         }
+
         for (final Module module : lyvContext.testedModules()) {
-            format.init(config, lyvContext.context(), module, lyvContext.schemaTree());
-            format.emit();
+            format.emit(module);
         }
+        format.close();
     }
 
     private static void generateHtmlAnalyzeOutput(final List<String> yangFiles, final Configuration config)

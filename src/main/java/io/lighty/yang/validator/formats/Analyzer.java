@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleLike;
 import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
@@ -30,7 +31,7 @@ public class Analyzer extends FormatPlugin {
     private final Map<String, Integer> counter = new HashMap<>();
 
     @Override
-    void emitFormat() {
+    void emitFormat(final Module module) {
         final Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(modelContext.getModules());
         for (final DeclaredStatement<?> declaredStatement : statements) {
             analyzeSubstatement(declaredStatement);

@@ -11,6 +11,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.Revision;
+import org.opendaylight.yangtools.yang.model.api.Module;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,10 +26,10 @@ public class NameRevision extends FormatPlugin {
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
-    public void emitFormat() {
-        if (testedModule != null) {
-            final Optional<Revision> revision = testedModule.getRevision();
-            String moduleName = testedModule.getName();
+    public void emitFormat(final Module module) {
+        if (module != null) {
+            final Optional<Revision> revision = module.getRevision();
+            String moduleName = module.getName();
             if (revision.isPresent()) {
                 moduleName += ET + revision.get();
             }

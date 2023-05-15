@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.jdt.annotation.Nullable;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
@@ -86,29 +87,31 @@ public class JsonTree extends FormatPlugin {
     private static final String SLASH = "/";
     private static final String COLON = ":";
 
+    private JSONArray parsedModels;
+
     @Override
-    void init(final EffectiveModelContext context, final Module module, final SchemaTree schemaTree,
-            final Configuration config) {
-        super.init(context, module, schemaTree, config);
+    void init(final EffectiveModelContext context, final SchemaTree schemaTree, final Configuration config) {
+        super.init(context, schemaTree, config);
+        this.parsedModels = new JSONArray();
     }
 
-    @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
-    public void emitFormat() {
-        if (testedModule != null) {
+    @Override
+    public void emitFormat(final Module module) {
+        if (module != null) {
             final LyvStack stack = new LyvStack();
-            final JSONObject moduleMetadata = resolveModuleMetadata(testedModule);
+            final JSONObject moduleMetadata = resolveModuleMetadata(module);
             final JSONObject jsonTree = new JSONObject();
 
-            appendChildNodesToJsonTree(testedModule, jsonTree, stack);
+            appendChildNodesToJsonTree(module, jsonTree, stack);
             stack.clear();
-            appendNotificationsToJsonTree(testedModule, jsonTree, stack);
+            appendNotificationsToJsonTree(module, jsonTree, stack);
             stack.clear();
-            appendRpcsToJsonTree(testedModule, jsonTree, stack);
+            appendRpcsToJsonTree(module, jsonTree, stack);
             stack.clear();
 
-            for (final AugmentationSchemaNode augmentation : testedModule.getAugmentations()) {
+            for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
                 stack.enter(augmentation.getTargetPath());
                 final JSONObject augmentationJson = new JSONObject();
                 final boolean isConfig = isAugmentConfig(augmentation);
@@ -129,16 +132,23 @@ public class JsonTree extends FormatPlugin {
                 }
 
                 appendActionsToAugmentationJson(augmentation, augmentationJson, stack);
-                appendNotificationsToAugmentationJson(testedModule, augmentationJson, stack);
+                appendNotificationsToAugmentationJson(module, augmentationJson, stack);
                 jsonTree.append(AUGMENTS, augmentationJson);
                 stack.clear();
             }
             jsonTree.put(MODULE, moduleMetadata);
-            final String jsonTreeText = jsonTree.toString(4);
-            LOG.info("{}", jsonTreeText);
+            parsedModels.put(jsonTree);
         } else {
             LOG.error("{}", EMPTY_MODULE_EXCEPTION);
         }
+    }
+
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+                        justification = "Valid output from LYV is dependent on Logback output")
+    @Override
+    public void close() {
+        LOG.info("{}", new JSONObject().put("parsed-models", parsedModels).toString(4));
+        parsedModels.clear();
     }
 
     private void appendNotificationsToAugmentationJson(final Module module, final JSONObject augmentationJson,

@@ -40,18 +40,23 @@ public class Format implements Emitter, CommandLineOptions {
     }
 
     @Override
-    public void init(final Configuration config, final EffectiveModelContext context, final Module module,
-            final SchemaTree schemaTree) {
+    public void init(final Configuration config, final EffectiveModelContext context, final SchemaTree schemaTree) {
         final String format = config.getFormat();
         for (final FormatPlugin plugin : this.formatPlugins) {
             if (plugin.getHelp().getName().equals(format)) {
                 this.usedFormat = plugin;
-                this.usedFormat.init(context, module, schemaTree, config);
+                this.usedFormat.init(context, schemaTree, config);
             }
         }
     }
 
-    public void emit() {
-        this.usedFormat.emitFormat();
+    @Override
+    public void emit(final Module module) {
+        this.usedFormat.emitFormat(module);
+    }
+
+    @Override
+    public void close() {
+        this.usedFormat.close();
     }
 }
