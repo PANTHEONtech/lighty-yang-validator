@@ -1,0 +1,10 @@
+<div> <b> module name <NAME_REVISION>, namespace <NAMESPACE>, prefix <PREFIX> </b></div><div>
+<button type="button" id="expander" class="btn btn-danger">Expand All</button>
+<button type="button" id="collapser" class="btn btn-info">Collapse All</button>
+  <table id="basic" class="table table-bordered table-striped simple-tree-table">
+<th> element </th>
+<th> schema </th>
+<th> type </th>
+<th> flag </th>
+<th> status </th>
+<th> path </th>

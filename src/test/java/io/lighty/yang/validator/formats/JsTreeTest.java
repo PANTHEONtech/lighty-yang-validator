@@ -75,7 +75,7 @@ public class JsTreeTest extends FormatTest {
     public void testMultipleFiles() throws IOException {
         final String module1 = Paths.get(yangPath + "/ietf-connection-oriented-oam@2019-04-16.yang").toString();
         final String module2 = Paths.get(yangPath + "/ietf-routing@2018-03-13.yang").toString();
-        builder.setYangModules(ImmutableList.of(module1, module2));
+        builder.setYangModules(List.of(module1, module2));
         final List<FormatPlugin> formats = new ArrayList<>();
         formats.add(new JsTree());
         formatter = new Format(formats);
