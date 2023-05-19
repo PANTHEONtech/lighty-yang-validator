@@ -10,8 +10,10 @@ package io.lighty.yang.validator.formats;
 import com.google.common.io.Resources;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
+import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.formats.utility.LyvStack;
+import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +35,7 @@ import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
@@ -72,12 +75,8 @@ public class JsTree extends FormatPlugin {
 
             // Notifications
             printLines(getNotificationsLines(singletonListInitializer, module));
-
             LOG.info("</table>");
             LOG.info("</div>");
-            LOG.info("{}", loadJS());
-            LOG.info("</body>");
-            LOG.info("</html>");
         } else {
             LOG.error(EMPTY_MODULE_EXCEPTION);
         }
@@ -155,7 +154,7 @@ public class JsTree extends FormatPlugin {
     private List<Line> getChildNodesLines(final SingletonListInitializer singletonListInitializer,
             final Module module) {
         final List<Line> lines = new ArrayList<>();
-        final String headerText = prepareHeader(module);
+        final String headerText = prepareModule(module);
         LOG.info("{}", headerText);
         for (final Module m : modelContext.getModules()) {
             if (!m.getPrefix().equals(module.getPrefix())) {
@@ -249,10 +248,22 @@ public class JsTree extends FormatPlugin {
         return text;
     }
 
-    private static String prepareHeader(final Module module) {
+    private static String prepareHeader() {
+        final URL url = Resources.getResource("header");
+        String text = "";
+        try {
+            text = Resources.toString(url, StandardCharsets.UTF_8);
+        } catch (final IOException e) {
+            LOG.error("Can not load text from header file");
+        }
+
+        return text;
+    }
+
+    private static String prepareModule(final Module module) {
         final StringBuilder nameRevision = new StringBuilder(module.getName());
         module.getRevision().ifPresent(value -> nameRevision.append("@").append(value));
-        final URL url = Resources.getResource("header");
+        final URL url = Resources.getResource("module");
         String text = "";
         try {
             text = Resources.toString(url, StandardCharsets.UTF_8);
@@ -260,7 +271,7 @@ public class JsTree extends FormatPlugin {
             text = text.replace("<NAMESPACE>", module.getNamespace().toString());
             text = text.replace("<PREFIX>", module.getPrefix());
         } catch (final IOException e) {
-            LOG.error("Can not load text from header file");
+            LOG.error("Can not load text from module file");
         }
 
         return text;
@@ -369,6 +380,16 @@ public class JsTree extends FormatPlugin {
         }
     }
 
+
+    @Override
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+            justification = "Valid output from LYV is dependent on Logback output")
+    void init(EffectiveModelContext context, SchemaTree tree, Configuration config) {
+        super.init(context, tree, config);
+        final String headerText = prepareHeader();
+        LOG.info("{}", headerText);
+    }
+
     @Override
     public Help getHelp() {
         return new Help(HELP_NAME, HELP_DESCRIPTION);
@@ -377,6 +398,15 @@ public class JsTree extends FormatPlugin {
     @Override
     public Optional<GroupArguments> getGroupArguments() {
         return Optional.empty();
+    }
+
+    @Override
+    @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
+            justification = "Valid output from LYV is dependent on Logback output")
+    public void close() {
+        LOG.info("{}", loadJS());
+        LOG.info("</body>");
+        LOG.info("</html>");
     }
 
     private static class SingletonListInitializer {
