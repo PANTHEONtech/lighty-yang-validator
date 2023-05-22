@@ -56,15 +56,14 @@ public class Tree extends FormatPlugin {
     private static final String COLON = ":";
     private static final String RPCS = "RPCs:";
     private static final String NOTIFICATION = "notifications:";
+    private static final Map<XMLNamespace, String> NAMESPACE_PREFIX = new HashMap<>();
 
-    private Map<XMLNamespace, String> namespacePrefix = new HashMap<>();
     private int treeDepth;
     private int lineLength;
 
     @Override
     void init(final EffectiveModelContext context, final SchemaTree schemaTree, final Configuration config) {
         super.init(context, schemaTree, config);
-        namespacePrefix = new HashMap<>();
         treeDepth = configuration.getTreeConfiguration().getTreeDepth();
         final int len = configuration.getTreeConfiguration().getLineLength();
         lineLength = len == 0 ? 10000 : len;
@@ -74,6 +73,7 @@ public class Tree extends FormatPlugin {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     public void emitFormat(final Module module) {
+        NAMESPACE_PREFIX.clear();
         if (configuration.getTreeConfiguration().isHelp()) {
             printHelp();
         } else if (module != null) {
@@ -124,8 +124,8 @@ public class Tree extends FormatPlugin {
         for (final QName qname : st.getKey()) {
             pathBuilder.append(SLASH);
             if (configuration.getTreeConfiguration().isPrefixMainModule()
-                    || namespacePrefix.containsKey(qname.getNamespace())) {
-                pathBuilder.append(namespacePrefix.get(qname.getNamespace()))
+                    || NAMESPACE_PREFIX.containsKey(qname.getNamespace())) {
+                pathBuilder.append(NAMESPACE_PREFIX.get(qname.getNamespace()))
                         .append(COLON);
             }
             pathBuilder.append(qname.getLocalName());
@@ -137,7 +137,7 @@ public class Tree extends FormatPlugin {
             final DataSchemaNode node = value.getSchemaNode();
             final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, value.getAbsolutePath());
             final ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
-                    namespacePrefix);
+                NAMESPACE_PREFIX);
             lines.add(consoleLine);
             resolveChildNodes(lines, new ArrayList<>(), value, --augmentationNodes > 0,
                     RpcInputOutput.OTHER, Collections.emptyList(), module);
@@ -153,7 +153,7 @@ public class Tree extends FormatPlugin {
                 final DataSchemaNode node = st.getSchemaNode();
                 final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, st.getAbsolutePath());
                 final ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData,
-                        RpcInputOutput.OTHER, namespacePrefix);
+                        RpcInputOutput.OTHER, NAMESPACE_PREFIX);
                 lines.add(consoleLine);
                 List<QName> keyDefinitions = Collections.emptyList();
                 if (node instanceof ListSchemaNode) {
@@ -172,9 +172,9 @@ public class Tree extends FormatPlugin {
             if (!m.getPrefix().equals(module.getPrefix())
                     || configuration.getTreeConfiguration().isPrefixMainModule()) {
                 if (configuration.getTreeConfiguration().isModulePrefix()) {
-                    namespacePrefix.put(m.getNamespace(), m.getName());
+                    NAMESPACE_PREFIX.put(m.getNamespace(), m.getName());
                 } else {
-                    namespacePrefix.put(m.getNamespace(), m.getPrefix());
+                    NAMESPACE_PREFIX.put(m.getNamespace(), m.getPrefix());
                 }
             }
         }
@@ -188,7 +188,7 @@ public class Tree extends FormatPlugin {
             stack.enter(node);
             final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, stack);
             final ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
-                    namespacePrefix);
+                NAMESPACE_PREFIX);
             lines.add(consoleLine);
             resolveChildNodes(lines, new ArrayList<>(), node, false, RpcInputOutput.OTHER, Collections.emptyList(),
                 stack);
@@ -206,7 +206,7 @@ public class Tree extends FormatPlugin {
             stack.enter(node);
             LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, stack);
             ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
-                    namespacePrefix);
+                NAMESPACE_PREFIX);
             lines.add(consoleLine);
             final boolean inputExists = !node.getInput().getChildNodes().isEmpty();
             final boolean outputExists = !node.getOutput().getChildNodes().isEmpty();
@@ -214,7 +214,7 @@ public class Tree extends FormatPlugin {
                 stack.enter(node.getInput());
                 lyvNodeData = new LyvNodeData(modelContext, node.getInput(), stack);
                 consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), lyvNodeData,
-                    RpcInputOutput.INPUT, namespacePrefix);
+                    RpcInputOutput.INPUT, NAMESPACE_PREFIX);
                 lines.add(consoleLine);
                 final List<Boolean> isNextRpc = new ArrayList<>(Collections.singleton(rpcs.hasNext()));
                 resolveChildNodes(lines, isNextRpc, node.getInput(), outputExists, RpcInputOutput.INPUT,
@@ -226,7 +226,7 @@ public class Tree extends FormatPlugin {
                 stack.enter(node.getOutput());
                 lyvNodeData = new LyvNodeData(modelContext, node.getOutput(), stack);
                 consoleLine = new ConsoleLine(Collections.singletonList(rpcs.hasNext()), lyvNodeData,
-                    RpcInputOutput.OUTPUT, namespacePrefix);
+                    RpcInputOutput.OUTPUT, NAMESPACE_PREFIX);
                 lines.add(consoleLine);
                 final List<Boolean> isNextRpc = new ArrayList<>(Collections.singleton(rpcs.hasNext()));
                 resolveChildNodes(lines, isNextRpc, node.getOutput(), false, RpcInputOutput.OUTPUT,
@@ -319,7 +319,7 @@ public class Tree extends FormatPlugin {
                 stack.enter(action);
                 LyvNodeData lyvNodeData = new LyvNodeData(modelContext, action, stack);
                 ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData,
-                        RpcInputOutput.OTHER, namespacePrefix);
+                        RpcInputOutput.OTHER, NAMESPACE_PREFIX);
                 lines.add(consoleLine);
                 final boolean inputExists = !action.getInput().getChildNodes().isEmpty();
                 final boolean outputExists = !action.getOutput().getChildNodes().isEmpty();
@@ -328,7 +328,7 @@ public class Tree extends FormatPlugin {
                     stack.enter(action.getInput());
                     lyvNodeData = new LyvNodeData(modelContext, action.getInput(), stack);
                     consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.INPUT,
-                            namespacePrefix);
+                        NAMESPACE_PREFIX);
                     lines.add(consoleLine);
                     resolveChildNodes(lines, isConnected, action.getInput(), outputExists, RpcInputOutput.INPUT,
                             Collections.emptyList(), stack);
@@ -341,7 +341,7 @@ public class Tree extends FormatPlugin {
                     stack.enter(action.getOutput());
                     lyvNodeData = new LyvNodeData(modelContext, action.getOutput(), stack);
                     consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.OUTPUT,
-                        namespacePrefix);
+                        NAMESPACE_PREFIX);
                     lines.add(consoleLine);
                     resolveChildNodes(lines, isConnected, action.getOutput(), false, RpcInputOutput.OUTPUT,
                         Collections.emptyList(), stack);
@@ -367,7 +367,7 @@ public class Tree extends FormatPlugin {
         final ActionDefinition action = actionSchemaTree.getActionNode();
         LyvNodeData lyvNodeData = new LyvNodeData(modelContext, action, actionSchemaTree.getAbsolutePath(), null);
         ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.OTHER,
-                namespacePrefix);
+            NAMESPACE_PREFIX);
         lines.add(consoleLine);
         boolean inputExists = false;
         boolean outputExists = false;
@@ -386,7 +386,7 @@ public class Tree extends FormatPlugin {
             isConnected.add(actions.hasNext() || hasNext);
             lyvNodeData = new LyvNodeData(modelContext, action.getInput(), inValue.getAbsolutePath());
             consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.INPUT,
-                    namespacePrefix);
+                NAMESPACE_PREFIX);
             lines.add(consoleLine);
             resolveChildNodes(lines, isConnected, inValue, outputExists, RpcInputOutput.INPUT,
                     Collections.emptyList(), module);
@@ -397,7 +397,7 @@ public class Tree extends FormatPlugin {
             isConnected.add(actions.hasNext() || hasNext);
             lyvNodeData = new LyvNodeData(modelContext, action.getOutput(), outValue.getAbsolutePath());
             consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, RpcInputOutput.OUTPUT,
-                    namespacePrefix);
+                NAMESPACE_PREFIX);
             lines.add(consoleLine);
             resolveChildNodes(lines, isConnected, outValue, false, RpcInputOutput.OUTPUT,
                     Collections.emptyList(), module);
@@ -415,7 +415,7 @@ public class Tree extends FormatPlugin {
                 final DataSchemaNode child = nextST.getSchemaNode();
                 final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, child, nextST.getAbsolutePath());
                 final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
-                        namespacePrefix);
+                    NAMESPACE_PREFIX);
                 lines.add(consoleLine);
                 resolveChildNodes(lines, isConnected, nextST, caseNodes.hasNext()
                         || actionExists, inputOutput, Collections.emptyList(), module);
@@ -432,7 +432,7 @@ public class Tree extends FormatPlugin {
             stack.enter(child);
             final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, child, stack);
             final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
-                    namespacePrefix);
+                NAMESPACE_PREFIX);
             lines.add(consoleLine);
             resolveChildNodes(lines, isConnected, child, iterator.hasNext() || actionExists, inputOutput,
                     Collections.emptyList(), stack);
@@ -452,7 +452,7 @@ public class Tree extends FormatPlugin {
                 final DataSchemaNode child = nextST.getSchemaNode();
                 final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, child, nextST.getAbsolutePath(), keys);
                 final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
-                        namespacePrefix);
+                    NAMESPACE_PREFIX);
                 lines.add(consoleLine);
                 List<QName> keyDefinitions = Collections.emptyList();
                 if (child instanceof ListSchemaNode) {
@@ -474,7 +474,7 @@ public class Tree extends FormatPlugin {
             stack.enter(child);
             final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, child, stack, keys);
             final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
-                    namespacePrefix);
+                NAMESPACE_PREFIX);
             lines.add(consoleLine);
             List<QName> keyDefinitions = Collections.emptyList();
             if (child instanceof ListSchemaNode) {
