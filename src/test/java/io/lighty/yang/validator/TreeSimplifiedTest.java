@@ -10,7 +10,6 @@ package io.lighty.yang.validator;
 import static io.lighty.yang.validator.Main.startLyv;
 import static org.testng.Assert.assertEquals;
 
-import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.config.ConfigurationBuilder;
 import io.lighty.yang.validator.formats.Format;
@@ -71,7 +70,7 @@ public class TreeSimplifiedTest implements Cleanable {
     public void runTreeSimplifiedTest() throws Exception {
         prepare("tree", new Tree());
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         final Path outLog = Paths.get(outPath).resolve("out.log");
@@ -85,7 +84,7 @@ public class TreeSimplifiedTest implements Cleanable {
     public void runYangSimplifiedTest() throws Exception {
         prepare("yang", new MultiModulePrinter());
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         final Path outLog = Paths.get(outPath).resolve("ietf-interfaces@2018-02-20.yang");

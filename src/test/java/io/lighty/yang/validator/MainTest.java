@@ -7,7 +7,6 @@
  */
 package io.lighty.yang.validator;
 
-import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.config.ConfigurationBuilder;
 import io.lighty.yang.validator.formats.Format;
@@ -60,7 +59,7 @@ public class MainTest implements Cleanable {
         xmlFiles = Files.list(xmlPath)
                 .map(Path::toFile)
                 .collect(Collectors.toList());
-        YangContextFactory contextFactory = new YangContextFactory(ImmutableList.of(yangPath), ImmutableList.of(),
+        YangContextFactory contextFactory = new YangContextFactory(List.of(yangPath), List.of(),
                 Collections.emptySet(), false);
         EffectiveModelContext effectiveModelContext = contextFactory.createContext(true);
 
@@ -77,7 +76,7 @@ public class MainTest implements Cleanable {
             format.emit();
         }
         contextFactory =
-                new YangContextFactory(ImmutableList.of(outPath), ImmutableList.of(), Collections.emptySet(), false);
+                new YangContextFactory(List.of(outPath), List.of(), Collections.emptySet(), false);
         effectiveModelContext = contextFactory.createContext(true);
         for (final File xmlFile : xmlFiles) {
             try (InputStream input = new FileInputStream(xmlFile)) {
