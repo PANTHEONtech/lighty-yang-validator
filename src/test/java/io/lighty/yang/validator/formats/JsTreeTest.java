@@ -10,7 +10,6 @@ package io.lighty.yang.validator.formats;
 import static io.lighty.yang.validator.Main.startLyv;
 import static org.testng.Assert.assertEquals;
 
-import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.FormatTest;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,7 +33,7 @@ public class JsTreeTest extends FormatTest {
         //testing for undeclared choice-case statement (no case inside of choice)
         setFormat();
         final String module = Paths.get(yangPath).resolve("undeclared.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runJsTreeTest("undeclared.html");

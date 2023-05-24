@@ -9,7 +9,6 @@ package io.lighty.yang.validator;
 
 import static io.lighty.yang.validator.Main.startLyv;
 
-import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.config.ConfigurationBuilder;
 import io.lighty.yang.validator.formats.Format;
@@ -17,6 +16,7 @@ import io.lighty.yang.validator.formats.TreeTest;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
+import java.util.List;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -65,7 +65,7 @@ public abstract class FormatTest implements Cleanable {
         //only root tree
         setFormat();
         final String module = Paths.get(this.yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runInterfacesTest();
@@ -76,7 +76,7 @@ public abstract class FormatTest implements Cleanable {
         //contains augmentations
         setFormat();
         final String module = Paths.get(this.yangPath).resolve("ietf-ip@2018-02-22.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runIpTest();
@@ -88,7 +88,7 @@ public abstract class FormatTest implements Cleanable {
         setFormat();
         final String module =
                 Paths.get(this.yangPath).resolve("ietf-connection-oriented-oam@2019-04-16.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runConnectionOrentedOamTest();
@@ -99,7 +99,7 @@ public abstract class FormatTest implements Cleanable {
         //contains actions
         setFormat();
         final String module = Paths.get(this.yangPath).resolve("ietf-routing@2018-03-13.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runRoutingTest();
@@ -112,7 +112,7 @@ public abstract class FormatTest implements Cleanable {
          */
         setFormat();
         final String module = Paths.get(this.yangPath).resolve("test_model@2020-12-03.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runCustomModuleTest();
@@ -123,7 +123,7 @@ public abstract class FormatTest implements Cleanable {
         setFormat();
         final var deviation = Paths.get(yangPath + "/deviation/deviation@2022-11-30.yang").toString();
         final var module = Paths.get(yangPath + "/deviation/model@2022-11-30.yang").toString();
-        builder.setYangModules(ImmutableList.of(module, deviation));
+        builder.setYangModules(List.of(module, deviation));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runDeviationTest();
