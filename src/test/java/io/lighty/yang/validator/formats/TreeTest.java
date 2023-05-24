@@ -9,7 +9,6 @@ package io.lighty.yang.validator.formats;
 
 import static io.lighty.yang.validator.Main.startLyv;
 
-import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.FormatTest;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,7 +34,7 @@ public class TreeTest extends FormatTest {
         setFormat();
         builder.setTreeConfiguration(0, 0, false, false, true);
         final String module = Paths.get(yangPath).resolve("ietf-ip@2018-02-22.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runTreeTest("ip-prefix-main-module.tree");
@@ -46,7 +45,7 @@ public class TreeTest extends FormatTest {
         setFormat();
         builder.setTreeConfiguration(0, 0, false, true, false);
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runTreeTest("interfaces-prefix-module.tree");
@@ -57,7 +56,7 @@ public class TreeTest extends FormatTest {
         setFormat();
         builder.setTreeConfiguration(0, 20, false, false, false);
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runTreeTest("interfaces-line-length.tree");
@@ -77,7 +76,7 @@ public class TreeTest extends FormatTest {
         setFormat();
         builder.setTreeConfiguration(3, 0, false, false, false);
         final String module = Paths.get(yangPath).resolve("ietf-interfaces@2018-02-20.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runTreeTest("interfaces-limited-depth.tree");

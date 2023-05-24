@@ -7,7 +7,6 @@
  */
 package io.lighty.yang.validator;
 
-import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.List;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
@@ -26,7 +25,7 @@ public final class LyvEffectiveModelContext {
     }
 
     public LyvEffectiveModelContext(final EffectiveModelContext context, final SchemaTree schemaTree) {
-        this(context, schemaTree, ImmutableList.of());
+        this(context, schemaTree, List.of());
     }
 
     public EffectiveModelContext context() {
