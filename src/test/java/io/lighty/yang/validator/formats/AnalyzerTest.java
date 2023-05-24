@@ -9,7 +9,6 @@ package io.lighty.yang.validator.formats;
 
 import static io.lighty.yang.validator.Main.startLyv;
 
-import com.google.common.collect.ImmutableList;
 import io.lighty.yang.validator.Cleanable;
 import io.lighty.yang.validator.Main;
 import io.lighty.yang.validator.MainTest;
@@ -74,7 +73,7 @@ public class AnalyzerTest implements Cleanable {
     @Test
     public void analyzeTest() throws Exception {
         final String module = Paths.get(yangPath).resolve("ietf-netconf-common@2013-10-21.yang").toString();
-        builder.setYangModules(ImmutableList.of(module));
+        builder.setYangModules(List.of(module));
         final var configuration = builder.build();
         startLyv(configuration, formatter);
         runAnalyzeTest("ietf-netconf-common-analyzed");
