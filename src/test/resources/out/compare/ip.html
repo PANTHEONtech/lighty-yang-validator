@@ -92,9 +92,9 @@ table.simple-tree-table tr.tree-closed .tree-icon:after {
   </style>
 </head><body>
 <div> <b> module name ietf-ip@2018-02-22, namespace urn:ietf:params:xml:ns:yang:ietf-ip, prefix ip </b></div><div>
-    <button type="button" id="expander" class="btn btn-danger">Expand All</button>
-    <button type="button" id="collapser" class="btn btn-info">Collapse All</button>
-    <table id="basic" class="table table-bordered table-striped simple-tree-table">
+    <button type="button" id="expander-ietf-ip" class="btn btn-danger">Expand All</button>
+    <button type="button" id="collapser-ietf-ip" class="btn btn-info">Collapse All</button>
+    <table id="basic-ietf-ip" class="table table-bordered table-striped simple-tree-table">
         <th> element </th>
         <th> schema </th>
         <th> type </th>
@@ -574,17 +574,14 @@ $.fn.simpleTreeTable = function(options) {
 
 $.SimpleTreeTable = SimpleTreeTable;
 
-    $('.table.table-bordered.table-striped.simple-tree-table').simpleTreeTable({
-  expander: $('#expander'),
-  collapser: $('#collapser')
+//AddTableLogic
+$(document).ready(function () {
+ $('#basic-ietf-ip').simpleTreeTable({
+expander: $('#expander-ietf-ip'),
+collapser: $('#collapser-ietf-ip')
+});
 });
 
-$('#collapsed').simpleTreeTable({
-  opened: 'none',
-});
-$('#collapsed').simpleTreeTable({
-  margin: 25
-});
 </script>
 </body>
 </html>
