@@ -236,11 +236,39 @@ public class JsTree extends FormatPlugin {
         return inputOutputOther;
     }
 
-    private static String loadJS() {
+    private static String loadJS(Collection<Module> modules) {
         final URL url = Resources.getResource("js");
         String text = "";
         try {
             text = Resources.toString(url, StandardCharsets.UTF_8);
+
+            final StringBuilder moduleCode = new StringBuilder();
+
+            for (Module module : modules) {
+
+                // Define the multi-line string to add
+                final String multiLineStringToAdd =
+                    " $('#basic-" + module.getName()
+                        + "').simpleTreeTable({\n"
+                        + "expander: $('#expander-" + module.getName() + "'),\n"
+                        + "collapser: $('#collapser-" + module.getName() + "')\n});\n";
+                moduleCode.append(multiLineStringToAdd);
+            }
+
+            // Encapsulate module code within $(document).ready(function () {...});
+            final String encapsulatedCode = "\n$(document).ready(function () {\n" + moduleCode + "});\n";
+
+            // Find the index of the placeholder comment
+            final String placeholderComment = "//AddTableLogic";
+            final int commentIndex = text.indexOf(placeholderComment);
+
+            if (commentIndex != -1) {
+                // Insert the encapsulated code after the comment
+                final StringBuilder modifiedText = new StringBuilder(text);
+                modifiedText.insert(commentIndex + placeholderComment.length(), encapsulatedCode);
+                text = modifiedText.toString();
+            }
+
         } catch (final IOException e) {
             LOG.error("Can not load text from js file");
         }
@@ -267,6 +295,9 @@ public class JsTree extends FormatPlugin {
         String text = "";
         try {
             text = Resources.toString(url, StandardCharsets.UTF_8);
+            text = text.replace("expander", "expander-" + module.getName());
+            text = text.replace("collapser", "collapser-" + module.getName());
+            text = text.replace("basic", "basic-" + module.getName());
             text = text.replace("<NAME_REVISION>", nameRevision);
             text = text.replace("<NAMESPACE>", module.getNamespace().toString());
             text = text.replace("<PREFIX>", module.getPrefix());
@@ -403,8 +434,8 @@ public class JsTree extends FormatPlugin {
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
             justification = "Valid output from LYV is dependent on Logback output")
-    public void close() {
-        LOG.info("{}", loadJS());
+    public void close(Collection<Module> modules) {
+        LOG.info("{}", loadJS(modules));
         LOG.info("</body>");
         LOG.info("</html>");
     }

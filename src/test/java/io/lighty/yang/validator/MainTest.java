@@ -74,7 +74,7 @@ public class MainTest implements Cleanable {
         for (final Module module : effectiveModelContext.getModules()) {
             format.emit(module);
         }
-        format.close();
+        format.close((Collection<Module>) effectiveModelContext.getModules());
         contextFactory =
                 new YangContextFactory(List.of(outPath), List.of(), Collections.emptySet(), false);
         effectiveModelContext = contextFactory.createContext(true);
