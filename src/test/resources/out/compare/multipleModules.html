@@ -92,9 +92,9 @@
     </style>
 </head><body>
 <div> <b> module name ietf-connection-oriented-oam@2019-04-16, namespace urn:ietf:params:xml:ns:yang:ietf-connection-oriented-oam, prefix co-oam </b></div><div>
-    <button type="button" id="expander" class="btn btn-danger">Expand All</button>
-    <button type="button" id="collapser" class="btn btn-info">Collapse All</button>
-    <table id="basic" class="table table-bordered table-striped simple-tree-table">
+    <button type="button" id="expander-ietf-connection-oriented-oam" class="btn btn-danger">Expand All</button>
+    <button type="button" id="collapser-ietf-connection-oriented-oam" class="btn btn-info">Collapse All</button>
+    <table id="basic-ietf-connection-oriented-oam" class="table table-bordered table-striped simple-tree-table">
         <th> element </th>
         <th> schema </th>
         <th> type </th>
@@ -334,9 +334,9 @@ a technology-specific model.">defect-null <span><i class="fas fa-leaf"></i></spa
     </table>
 </div>
 <div> <b> module name ietf-routing@2018-03-13, namespace urn:ietf:params:xml:ns:yang:ietf-routing, prefix rt </b></div><div>
-    <button type="button" id="expander" class="btn btn-danger">Expand All</button>
-    <button type="button" id="collapser" class="btn btn-info">Collapse All</button>
-    <table id="basic" class="table table-bordered table-striped simple-tree-table">
+    <button type="button" id="expander-ietf-routing" class="btn btn-danger">Expand All</button>
+    <button type="button" id="collapser-ietf-routing" class="btn btn-info">Collapse All</button>
+    <table id="basic-ietf-routing" class="table table-bordered table-striped simple-tree-table">
         <th> element </th>
         <th> schema </th>
         <th> type </th>
@@ -916,17 +916,18 @@ inserted into the RIB.">last-updated <span><i class="fas fa-leaf"></i></span> </
 
     $.SimpleTreeTable = SimpleTreeTable;
 
-    $('.table.table-bordered.table-striped.simple-tree-table').simpleTreeTable({
-      expander: $('#expander'),
-      collapser: $('#collapser')
+    //AddTableLogic
+    $(document).ready(function () {
+      $('#basic-ietf-connection-oriented-oam').simpleTreeTable({
+        expander: $('#expander-ietf-connection-oriented-oam'),
+        collapser: $('#collapser-ietf-connection-oriented-oam')
+      });
+      $('#basic-ietf-routing').simpleTreeTable({
+        expander: $('#expander-ietf-routing'),
+        collapser: $('#collapser-ietf-routing')
+      });
     });
 
-    $('#collapsed').simpleTreeTable({
-      opened: 'none',
-    });
-    $('#collapsed').simpleTreeTable({
-      margin: 25
-    });
 </script>
 </body>
 </html>
