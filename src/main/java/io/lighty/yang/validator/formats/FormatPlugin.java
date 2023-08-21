@@ -13,6 +13,7 @@ import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
@@ -47,8 +48,10 @@ public abstract class FormatPlugin {
 
     /**
      * Close after printing out the module.
+     *
+     * @param modules collection of {@link Module} objects
      */
-    protected void close() {
+    protected void close(final Collection<Module> modules) {
         // no-op by default
     }
 
