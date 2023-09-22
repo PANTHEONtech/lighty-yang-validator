@@ -59,15 +59,10 @@ import org.opendaylight.yangtools.yang.data.util.ParserStreamUtils;
 import org.opendaylight.yangtools.yang.data.util.SimpleNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.codec.TypeAwareCodec;
 import org.opendaylight.yangtools.yang.model.api.AnyxmlSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ContainerLike;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.util.SchemaInferenceStack;
 import org.w3c.dom.Document;
-
 
 /**
  * This class provides functionality for parsing an XML source containing YANG-modeled data. It disallows multiple
@@ -121,20 +116,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
             IOException {
         if (reader.hasNext()) {
             reader.nextTag();
-            final AbstractNodeDataWithSchema<?> nodeDataWithSchema;
-            if (parentNode instanceof ContainerLike) {
-                nodeDataWithSchema = new ContainerNodeDataWithSchema((ContainerLike) parentNode);
-            } else if (parentNode instanceof ListSchemaNode) {
-                nodeDataWithSchema = new ListNodeDataWithSchema((ListSchemaNode) parentNode);
-            } else if (parentNode instanceof AnyxmlSchemaNode) {
-                nodeDataWithSchema = new AnyXmlNodeDataWithSchema((AnyxmlSchemaNode) parentNode);
-            } else if (parentNode instanceof LeafSchemaNode) {
-                nodeDataWithSchema = new LeafNodeDataWithSchema((LeafSchemaNode) parentNode);
-            } else if (parentNode instanceof LeafListSchemaNode) {
-                nodeDataWithSchema = new LeafListNodeDataWithSchema((LeafListSchemaNode) parentNode);
-            } else {
-                throw new IllegalStateException("Unsupported schema node type " + parentNode.getClass() + ".");
-            }
+            final var nodeDataWithSchema = AbstractNodeDataWithSchema.of(parentNode);
             final SchemaInferenceStack schemaIS = SchemaInferenceStack.of(codecs.getEffectiveModelContext());
             read(reader, nodeDataWithSchema, reader.getLocalName(), tree, schemaIS);
             nodeDataWithSchema.write(writer);
