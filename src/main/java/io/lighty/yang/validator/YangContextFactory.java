@@ -22,6 +22,7 @@ import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.YangConstants;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
+import org.opendaylight.yangtools.yang.model.api.stmt.FeatureSet;
 import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
 import org.opendaylight.yangtools.yang.parser.api.YangParser;
 import org.opendaylight.yangtools.yang.parser.api.YangParserException;
@@ -64,7 +65,7 @@ final class YangContextFactory {
     EffectiveModelContext createContext(final boolean useAllFiles) throws IOException, YangParserException {
         final YangParser parser = PARSER_FACTORY.createParser();
         if (supportedFeatures != null && !supportedFeatures.isEmpty()) {
-            parser.setSupportedFeatures(supportedFeatures);
+            parser.setSupportedFeatures(FeatureSet.of(supportedFeatures));
         }
 
         final List<String> names = new ArrayList<>();
