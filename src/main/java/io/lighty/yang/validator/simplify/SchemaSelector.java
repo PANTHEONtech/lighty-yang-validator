@@ -18,7 +18,7 @@ import javax.xml.stream.XMLStreamReader;
 import org.opendaylight.yangtools.yang.data.api.schema.stream.NormalizedNodeStreamWriter;
 import org.opendaylight.yangtools.yang.data.codec.xml.XmlCodecFactory;
 import org.opendaylight.yangtools.yang.data.impl.schema.ImmutableNormalizedNodeStreamWriter;
-import org.opendaylight.yangtools.yang.data.impl.schema.NormalizedNodeResult;
+import org.opendaylight.yangtools.yang.data.impl.schema.NormalizationResultHolder;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.ActionNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
@@ -55,7 +55,7 @@ public class SchemaSelector {
     private void fillUsedSchema(final InputStream input, final SchemaTree st)
             throws XMLStreamException, IOException, URISyntaxException {
         final XMLStreamReader reader = FACTORY.createXMLStreamReader(input);
-        final NormalizedNodeResult result = new NormalizedNodeResult();
+        final NormalizationResultHolder result = new NormalizationResultHolder();
         final NormalizedNodeStreamWriter streamWriter = ImmutableNormalizedNodeStreamWriter.from(result);
         try (var xmlParser = new TrackingXmlParserStream(streamWriter, codecs, effectiveModelContext, true, st)) {
             xmlParser.parse(reader);

@@ -33,7 +33,7 @@ import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
 import org.opendaylight.yangtools.yang.data.api.schema.stream.NormalizedNodeStreamWriter;
 import org.opendaylight.yangtools.yang.data.codec.xml.XmlParserStream;
 import org.opendaylight.yangtools.yang.data.impl.schema.ImmutableNormalizedNodeStreamWriter;
-import org.opendaylight.yangtools.yang.data.impl.schema.NormalizedNodeResult;
+import org.opendaylight.yangtools.yang.data.impl.schema.NormalizationResultHolder;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.testng.Assert;
@@ -81,14 +81,13 @@ public class MainTest implements Cleanable {
         effectiveModelContext = contextFactory.createContext(true);
         for (final File xmlFile : xmlFiles) {
             try (InputStream input = new FileInputStream(xmlFile)) {
-                final NormalizedNodeResult result = new NormalizedNodeResult();
+                final NormalizationResultHolder result = new NormalizationResultHolder();
                 final NormalizedNodeStreamWriter streamWriter = ImmutableNormalizedNodeStreamWriter.from(result);
                 try (var xmlParser = XmlParserStream.create(streamWriter, effectiveModelContext)) {
                     reader = FACTORY.createXMLStreamReader(input);
                     xmlParser.parse(reader);
                 }
-                Assert.assertTrue(result.isFinished());
-                final NormalizedNode node = result.getResult();
+                final var node = result.getResult().data();
                 Assert.assertTrue(node instanceof ContainerNode);
                 final Collection<DataContainerChild> value = ((ContainerNode) node).body();
                 Assert.assertEquals(value.size(), 1);
