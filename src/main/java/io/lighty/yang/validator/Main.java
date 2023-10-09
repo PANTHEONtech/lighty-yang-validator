@@ -334,7 +334,7 @@ public final class Main {
         }
     }
 
-    private static class CompilationTableAppender extends AppenderBase<ILoggingEvent> {
+    private static final class CompilationTableAppender extends AppenderBase<ILoggingEvent> {
 
         private CompilationTable compilationTable = null;
         private String yangName;
