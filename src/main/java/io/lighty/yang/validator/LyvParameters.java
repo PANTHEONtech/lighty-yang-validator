@@ -27,7 +27,7 @@ public class LyvParameters {
 
     private final ArgumentParser lyvArgumentParser = ArgumentParsers.newFor("LYV").build()
             .defaultHelp(true)
-            .version("Version: ${prog} 19.2.0\nContact: sales@pantheon.tech")
+            .version("Version: ${prog} 19.3.0-SNAPSHOT\nContact: sales@pantheon.tech")
             .description("Yangtools based yang module parser");
     private final Format formatter;
     private final String[] args;
