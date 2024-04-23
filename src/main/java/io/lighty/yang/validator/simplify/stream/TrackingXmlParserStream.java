@@ -117,7 +117,7 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
         if (reader.hasNext()) {
             reader.nextTag();
             final var nodeDataWithSchema = AbstractNodeDataWithSchema.of(parentNode);
-            final SchemaInferenceStack schemaIS = SchemaInferenceStack.of(codecs.getEffectiveModelContext());
+            final SchemaInferenceStack schemaIS = SchemaInferenceStack.of(codecs.modelContext());
             read(reader, nodeDataWithSchema, reader.getLocalName(), tree, schemaIS);
             nodeDataWithSchema.write(writer);
         }
