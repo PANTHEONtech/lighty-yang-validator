@@ -22,8 +22,9 @@ import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.YangConstants;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
+import org.opendaylight.yangtools.yang.model.api.source.YangTextSource;
 import org.opendaylight.yangtools.yang.model.api.stmt.FeatureSet;
-import org.opendaylight.yangtools.yang.model.repo.api.YangTextSchemaSource;
+import org.opendaylight.yangtools.yang.model.spi.source.FileYangTextSource;
 import org.opendaylight.yangtools.yang.parser.api.YangParser;
 import org.opendaylight.yangtools.yang.parser.api.YangParserException;
 import org.opendaylight.yangtools.yang.parser.api.YangParserFactory;
@@ -70,17 +71,17 @@ final class YangContextFactory {
 
         final List<String> names = new ArrayList<>();
         for (final File file : testFiles) {
-            final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forPath(file.toPath());
-            names.add(yangTextSchemaSource.getIdentifier().name().getLocalName());
-            parser.addSource(yangTextSchemaSource);
+            final YangTextSource yangTextSource = new FileYangTextSource(file.toPath());
+            names.add(yangTextSource.sourceId().name().getLocalName());
+            parser.addSource(yangTextSource);
         }
         for (final File file : libFiles) {
-            final YangTextSchemaSource yangTextSchemaSource = YangTextSchemaSource.forPath(file.toPath());
-            if (!names.contains(yangTextSchemaSource.getIdentifier().name().getLocalName())) {
+            final YangTextSource yangTextSource = new FileYangTextSource(file.toPath());
+            if (!names.contains(yangTextSource.sourceId().name().getLocalName())) {
                 if (useAllFiles) {
-                    parser.addSource(yangTextSchemaSource);
+                    parser.addSource(yangTextSource);
                 } else {
-                    parser.addLibSource(YangTextSchemaSource.forPath(file.toPath()));
+                    parser.addLibSource(new FileYangTextSource(file.toPath()));
                 }
             }
         }
