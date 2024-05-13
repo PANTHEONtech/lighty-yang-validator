@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
 import org.opendaylight.yangtools.yang.data.api.schema.ContainerNode;
 import org.opendaylight.yangtools.yang.data.api.schema.DataContainerChild;
 import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
@@ -51,7 +50,6 @@ public class MainTest implements Cleanable {
 
     @Test
     public void testSimplifyWithYangFormat() throws Exception {
-        XMLStreamReader reader;
         final List<File> xmlFiles;
         final String yangPath = MainTest.class.getResource("/yang").getFile();
         final String outPath = MainTest.class.getResource("/out").getFile();
@@ -83,7 +81,7 @@ public class MainTest implements Cleanable {
                 final NormalizedNodeResult result = new NormalizedNodeResult();
                 final NormalizedNodeStreamWriter streamWriter = ImmutableNormalizedNodeStreamWriter.from(result);
                 try (var xmlParser = XmlParserStream.create(streamWriter, effectiveModelContext)) {
-                    reader = FACTORY.createXMLStreamReader(input);
+                    final var reader = FACTORY.createXMLStreamReader(input);
                     xmlParser.parse(reader);
                 }
                 Assert.assertTrue(result.isFinished());
