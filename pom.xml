@@ -27,6 +27,7 @@
     <properties>
         <application.main.class>io.lighty.yang.validator.Main</application.main.class>
         <application.attach.zip>true</application.attach.zip>
+        <logback-version>1.5.8</logback-version>
     </properties>
 
     <dependencies>
@@ -37,12 +38,12 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-core</artifactId>
-            <version>1.5.7</version>
+            <version>${logback-version}</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.7</version>
+            <version>${logback-version}</version>
         </dependency>
 
         <dependency>
