@@ -325,15 +325,5 @@ $.fn.simpleTreeTable = function(options) {
 
 $.SimpleTreeTable = SimpleTreeTable;
 
-	$('#basic').simpleTreeTable({
-  expander: $('#expander'),
-  collapser: $('#collapser')
-});
-
-$('#collapsed').simpleTreeTable({
-  opened: 'none',
-});
-$('#collapsed').simpleTreeTable({
-  margin: 25
-});
+//AddTableLogic
 </script>
