@@ -147,7 +147,10 @@ public class MultiModulePrinter extends FormatPlugin {
         final TypeDefinition<?> rootType = getRootType(type);
         final String rootLocalName = rootType.getQName().getLocalName();
         if (!Objects.equals(rootLocalName, type.getQName().getLocalName()) && !rootLocalName.equals("boolean")) {
-            final QNameModule mod = QNameModule.create(type.getQName().getNamespace(), type.getQName().getRevision());
+            final QNameModule mod = type.getQName().getRevision().isPresent()
+                ? QNameModule.of(type.getQName().getNamespace(), type.getQName().getRevision().get())
+                : QNameModule.of(type.getQName().getNamespace());
+
             usedImportedTypeDefs.computeIfAbsent(mod, k -> new TreeSet<>(Comparator.comparing(SchemaNode::getQName)))
                     .add(type);
             usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
