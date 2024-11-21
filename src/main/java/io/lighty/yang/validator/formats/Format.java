@@ -12,6 +12,7 @@ import io.lighty.yang.validator.LyvParameters;
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
@@ -56,7 +57,7 @@ public class Format implements Emitter, CommandLineOptions {
     }
 
     @Override
-    public void close() {
-        this.usedFormat.close();
+    public void close(Collection<Module> modules) {
+        this.usedFormat.close(modules);
     }
 }
