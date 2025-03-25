@@ -29,7 +29,7 @@
 
         <application.main.class>io.lighty.yang.validator.Main</application.main.class>
         <application.attach.zip>true</application.attach.zip>
-        <logback-version>1.5.17</logback-version>
+        <logback-version>1.5.18</logback-version>
     </properties>
 
     <dependencies>
