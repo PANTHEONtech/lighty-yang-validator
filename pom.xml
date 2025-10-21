@@ -25,9 +25,6 @@
     <packaging>jar</packaging>
 
     <properties>
-        <!-- FIXME remove maven.compiler.release property when bumping to lighty.io 22 -->
-        <maven.compiler.release>21</maven.compiler.release>
-
         <application.main.class>io.lighty.yang.validator.Main</application.main.class>
         <application.attach.zip>true</application.attach.zip>
         <logback-version>1.5.18</logback-version>
