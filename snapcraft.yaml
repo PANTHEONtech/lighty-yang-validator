@@ -1,0 +1,22 @@
+name: lighty-yang-validator
+version: '21.0'
+summary: lighty YANG Validator 21
+description: This tool validates YANG modules using the YANG-Tools parser. If there are any problems parsing the module, it will show the stacktrace with the problem, linking to the corresponding module.
+confinement: classic
+grade: stable
+base: core24
+
+apps:
+  lighty-yang-validator:
+    command: java -jar $SNAP/jar/my-app.jar
+    plugs: [network, development]
+
+// FIXME https://forum.snapcraft.io/t/migrate-to-core24/39393
+parts:
+  lighty-yang-validator:
+    plugin: maven
+    source: .
+    java-packages:
+      - openjdk-21-jre-headless
+    build-packages:
+      - maven
