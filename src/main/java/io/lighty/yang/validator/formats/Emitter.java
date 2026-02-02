@@ -9,6 +9,7 @@ package io.lighty.yang.validator.formats;
 
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.simplify.SchemaTree;
+import java.util.Collection;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
 
@@ -33,5 +34,5 @@ public interface Emitter {
     /**
      * Close after printing out the module.
      */
-    void close();
+    void close(Collection<Module> modules);
 }
