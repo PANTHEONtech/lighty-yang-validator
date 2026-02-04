@@ -55,6 +55,11 @@ public class NameRevisionTest extends FormatTest {
         runNameRevisionTest("moduleDeviation-name-revision");
     }
 
+    @Override
+    public void runMultipleFilesTest() throws Exception {
+        runNameRevisionTest("multipleModules-name-revision");
+    }
+
     private void runNameRevisionTest(final String comapreWithFileName) throws Exception {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);
