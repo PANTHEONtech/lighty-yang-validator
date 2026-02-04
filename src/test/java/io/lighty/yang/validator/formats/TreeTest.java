@@ -112,6 +112,11 @@ public class TreeTest extends FormatTest {
         runTreeTest("module-deviation.tree");
     }
 
+    @Override
+    public void runMultipleFilesTest() throws Exception {
+        runTreeTest("multipleModules.tree");
+    }
+
     private void runTreeTest(final String comapreWithFileName) throws Exception {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);

@@ -134,6 +134,11 @@ public class DependsTest extends FormatTest {
         runDependendsTest("moduleDeviation-dependencies");
     }
 
+    @Override
+    public void runMultipleFilesTest() throws Exception {
+        runDependendsTest("multipleModules-dependencies");
+    }
+
     private void runDependendsTest(final String comapreWithFileName) throws Exception {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);
