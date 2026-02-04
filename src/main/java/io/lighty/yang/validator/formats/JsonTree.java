@@ -146,7 +146,7 @@ public class JsonTree extends FormatPlugin {
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
     @Override
-    public void close() {
+    public void close(final Collection<Module> modules) {
         LOG.info("{}", new JSONObject().put("parsed-models", parsedModels).toString(4));
         parsedModels.clear();
     }

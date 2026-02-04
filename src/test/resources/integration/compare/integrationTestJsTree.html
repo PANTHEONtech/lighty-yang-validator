@@ -92,9 +92,9 @@ table.simple-tree-table tr.tree-closed .tree-icon:after {
   </style>
 </head><body>
 <div> <b> module name test_model@2020-12-03, namespace test:testspace, prefix test </b></div><div>
-<button type="button" id="expander" class="btn btn-danger">Expand All</button>
-<button type="button" id="collapser" class="btn btn-info">Collapse All</button>
-  <table id="basic" class="table table-bordered table-striped simple-tree-table">
+<button type="button" id="expander-test_model" class="btn btn-danger">Expand All</button>
+<button type="button" id="collapser-test_model" class="btn btn-info">Collapse All</button>
+  <table id="basic-test_model" class="table table-bordered table-striped simple-tree-table">
 <th> element </th>
 <th> schema </th>
 <th> type </th>
@@ -462,17 +462,14 @@ $.fn.simpleTreeTable = function(options) {
 
 $.SimpleTreeTable = SimpleTreeTable;
 
-	$('#basic').simpleTreeTable({
-  expander: $('#expander'),
-  collapser: $('#collapser')
+//AddTableLogic
+$(document).ready(function () {
+  $('#basic-test_model').simpleTreeTable({
+    expander: $('#expander-test_model'),
+    collapser: $('#collapser-test_model')
+  });
 });
 
-$('#collapsed').simpleTreeTable({
-  opened: 'none',
-});
-$('#collapsed').simpleTreeTable({
-  margin: 25
-});
 </script>
 </body>
 </html>
