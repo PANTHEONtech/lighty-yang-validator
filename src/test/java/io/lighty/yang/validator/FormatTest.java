@@ -17,11 +17,13 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.nio.file.Paths;
 import java.util.List;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class FormatTest implements Cleanable {
 
     protected String yangPath;
@@ -32,7 +34,7 @@ public abstract class FormatTest implements Cleanable {
     private Method method;
     private Constructor<Main> constructor;
 
-    @BeforeClass
+    @BeforeAll
     public void init() {
         outPath = TreeTest.class.getResource("/out").getFile();
         yangPath = MainTest.class.getResource("/yang").getFile();
@@ -42,7 +44,7 @@ public abstract class FormatTest implements Cleanable {
                 .setOutput(this.outPath);
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUpOutput() throws Exception {
         this.constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
         this.constructor.setAccessible(true);
@@ -53,7 +55,7 @@ public abstract class FormatTest implements Cleanable {
         this.method.invoke(mainClass, this.builder.build());
     }
 
-    @AfterMethod
+    @AfterEach
     public void removeOuptut() throws Exception {
         tearDown();
         this.method.setAccessible(false);
