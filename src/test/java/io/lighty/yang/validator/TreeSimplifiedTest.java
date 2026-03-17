@@ -8,7 +8,7 @@
 package io.lighty.yang.validator;
 
 import static io.lighty.yang.validator.Main.startLyv;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.lighty.yang.validator.config.Configuration;
 import io.lighty.yang.validator.config.ConfigurationBuilder;
@@ -24,11 +24,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TreeSimplifiedTest implements Cleanable {
 
     private String yangPath;
@@ -39,13 +41,13 @@ public class TreeSimplifiedTest implements Cleanable {
     private Method method;
     private Constructor<Main> constructor;
 
-    @BeforeClass
+    @BeforeAll
     public void init() {
         outPath = TreeSimplifiedTest.class.getResource("/out").getFile();
         yangPath = TreeSimplifiedTest.class.getResource("/yang").getFile();
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUpOutput() throws Exception {
         constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
         constructor.setAccessible(true);
@@ -59,7 +61,7 @@ public class TreeSimplifiedTest implements Cleanable {
         method.invoke(mainClass, builder.build());
     }
 
-    @AfterMethod
+    @AfterEach
     public void removeOuptut() throws Exception {
         tearDown();
         method.setAccessible(false);

@@ -7,9 +7,9 @@
  */
 package io.lighty.yang.validator.utils;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.lighty.yang.validator.Main;
 import java.io.IOException;

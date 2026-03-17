@@ -7,13 +7,14 @@
  */
 package io.lighty.yang.validator.formats;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import io.lighty.yang.validator.FormatTest;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.testng.Assert;
 
 public class NameRevisionTest extends FormatTest {
 
@@ -64,7 +65,7 @@ public class NameRevisionTest extends FormatTest {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
-        Assert.assertEquals(fileCreated.replaceAll("\\s+", ""), compareWith.replaceAll("\\s+", ""));
+        assertEquals(compareWith.replaceAll("\\s+", ""), fileCreated.replaceAll("\\s+", ""));
     }
 
 }

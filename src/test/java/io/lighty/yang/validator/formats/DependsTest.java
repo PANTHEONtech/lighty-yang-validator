@@ -8,7 +8,7 @@
 package io.lighty.yang.validator.formats;
 
 import static io.lighty.yang.validator.Main.startLyv;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.lighty.yang.validator.FormatTest;
 import java.nio.file.Files;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 public class DependsTest extends FormatTest {
 

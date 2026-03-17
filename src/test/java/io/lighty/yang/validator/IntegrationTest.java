@@ -7,19 +7,22 @@
  */
 package io.lighty.yang.validator;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.AssertJUnit.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.lighty.yang.validator.formats.FormatPlugin;
 import io.lighty.yang.validator.utils.ItUtils;
 import java.io.IOException;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IntegrationTest implements Cleanable {
 
-    @AfterClass
+    @AfterAll
     public void cleanOutput() throws IOException {
         tearDown();
     }
@@ -44,7 +47,10 @@ public class IntegrationTest implements Cleanable {
     @Test
     public void noFormatValidationTest() throws Exception {
         final var outPath = ItUtils.class.getResource(ItUtils.OUTPUT_FOLDER).getFile();
-        final var args = new String[]{"-o", outPath, "yang/deviation/model.yang"};
+        final var modelResource = ItUtils.class.getClassLoader().getResource(
+            "yang/deviation/model@2022-11-30.yang");
+        assertNotNull(modelResource);
+        final var args = new String[]{"-o", outPath, modelResource.getFile()};
         final var lyvOutput = ItUtils.startLyvWithFileOutput(args);
         assertFalse(lyvOutput.trim().isEmpty());
         final var outputWithoutGenInfo = ItUtils.removeHtmlGeneratedInfo(lyvOutput);
@@ -70,7 +76,7 @@ public class IntegrationTest implements Cleanable {
     public void treeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "tree");
         final String expectedOutput = ItUtils.getExpectedOutput("integrationTestTree.txt");
-        assertEquals(lyvOutput, expectedOutput);
+        assertEquals(expectedOutput, lyvOutput);
     }
 
     @Test
@@ -78,7 +84,7 @@ public class IntegrationTest implements Cleanable {
         final String lyvOutput = ItUtils.startRecursivelyLyvWithFileOutput("yang",
                 "integration/yang/ietf-interfaces-modified@2018-02-20.yang", "tree");
         final String expectedOutput = ItUtils.getExpectedOutput("integrationTestTreeRecursive.txt");
-        assertEquals(lyvOutput, expectedOutput);
+        assertEquals(expectedOutput, lyvOutput);
     }
 
     @Test
@@ -110,7 +116,7 @@ public class IntegrationTest implements Cleanable {
     public void jsonTreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "json-tree");
         final String expectedOutput = ItUtils.getExpectedOutput("integrationTestJsonTree.json");
-        assertEquals(lyvOutput, expectedOutput);
+        assertEquals(expectedOutput, lyvOutput);
     }
 
     @Test
@@ -125,7 +131,7 @@ public class IntegrationTest implements Cleanable {
     public void jstreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "jstree");
         final String expectedOutput = ItUtils.getExpectedOutput("integrationTestJsTree.html");
-        assertEquals(lyvOutput.replaceAll(" \n", "\n"), expectedOutput);
+        assertEquals(expectedOutput, lyvOutput.replaceAll(" \n", "\n"));
     }
 
     @Test
