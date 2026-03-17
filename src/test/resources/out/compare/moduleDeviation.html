@@ -92,9 +92,9 @@ table.simple-tree-table tr.tree-closed .tree-icon:after {
   </style>
 </head><body>
 <div> <b> module name deviation@2022-11-30, namespace urn:ietf:params:xml:ns:yang:deviation, prefix dev </b></div><div>
-  <button type="button" id="expander" class="btn btn-danger">Expand All</button>
-  <button type="button" id="collapser" class="btn btn-info">Collapse All</button>
-  <table id="basic" class="table table-bordered table-striped simple-tree-table">
+  <button type="button" id="expander-deviation" class="btn btn-danger">Expand All</button>
+  <button type="button" id="collapser-deviation" class="btn btn-info">Collapse All</button>
+  <table id="basic-deviation" class="table table-bordered table-striped simple-tree-table">
     <th> element </th>
     <th> schema </th>
     <th> type </th>
@@ -104,9 +104,9 @@ table.simple-tree-table tr.tree-closed .tree-icon:after {
   </table>
 </div>
 <div> <b> module name model@2022-11-30, namespace urn:ietf:params:xml:ns:yang:model, prefix mo </b></div><div>
-  <button type="button" id="expander" class="btn btn-danger">Expand All</button>
-  <button type="button" id="collapser" class="btn btn-info">Collapse All</button>
-  <table id="basic" class="table table-bordered table-striped simple-tree-table">
+  <button type="button" id="expander-model" class="btn btn-danger">Expand All</button>
+  <button type="button" id="collapser-model" class="btn btn-info">Collapse All</button>
+  <table id="basic-model" class="table table-bordered table-striped simple-tree-table">
     <th> element </th>
     <th> schema </th>
     <th> type </th>
@@ -467,17 +467,18 @@ $.fn.simpleTreeTable = function(options) {
 
 $.SimpleTreeTable = SimpleTreeTable;
 
-    $('.table.table-bordered.table-striped.simple-tree-table').simpleTreeTable({
-  expander: $('#expander'),
-  collapser: $('#collapser')
+//AddTableLogic
+$(document).ready(function () {
+ $('#basic-deviation').simpleTreeTable({
+expander: $('#expander-deviation'),
+collapser: $('#collapser-deviation')
+});
+ $('#basic-model').simpleTreeTable({
+expander: $('#expander-model'),
+collapser: $('#collapser-model')
+});
 });
 
-$('#collapsed').simpleTreeTable({
-  opened: 'none',
-});
-$('#collapsed').simpleTreeTable({
-  margin: 25
-});
 </script>
 </body>
 </html>

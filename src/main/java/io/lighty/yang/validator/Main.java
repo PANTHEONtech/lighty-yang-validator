@@ -184,7 +184,7 @@ public final class Main {
         for (final Module module : lyvContext.testedModules()) {
             format.emit(module);
         }
-        format.close();
+        format.close(lyvContext.testedModules());
     }
 
     private static void generateHtmlAnalyzeOutput(final List<String> yangFiles, final Configuration config)

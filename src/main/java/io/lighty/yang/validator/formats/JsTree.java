@@ -15,7 +15,6 @@ import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.formats.utility.LyvStack;
 import io.lighty.yang.validator.simplify.SchemaTree;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -236,16 +235,45 @@ public class JsTree extends FormatPlugin {
         return inputOutputOther;
     }
 
-    private static String loadJS() {
-        final URL url = Resources.getResource("js");
-        String text = "";
+    private static String loadJS(final Collection<Module> modules) {
+        final var url = Resources.getResource("js");
+        var text = "";
         try {
             text = Resources.toString(url, StandardCharsets.UTF_8);
         } catch (final IOException e) {
             LOG.error("Can not load text from js file");
         }
 
+        // Find the index of the placeholder comment
+        final var placeholderComment = "//AddTableLogic";
+        final var commentIndex = text.indexOf(placeholderComment);
+
+        if (commentIndex != -1) {
+            // Insert the encapsulated code after the comment
+            final var modifiedText = new StringBuilder(text);
+            final var simpleTreeTableJQuery = getSimpleTreeTableJQuery(modules);
+            modifiedText.insert(commentIndex + placeholderComment.length(), simpleTreeTableJQuery);
+            text = modifiedText.toString();
+        }
+
         return text;
+    }
+
+    private static String getSimpleTreeTableJQuery(final Collection<Module> modules) {
+        final var moduleCode = new StringBuilder();
+        for (final var module : modules) {
+            // Define the multi-line string to add
+            final var multiLineStringToAdd = """
+                  $('#basic-%1$s').simpleTreeTable({
+                    expander: $('#expander-%1$s'),
+                    collapser: $('#collapser-%1$s')
+                  });
+                """.formatted(module.getName());
+            moduleCode.append(multiLineStringToAdd);
+        }
+
+        // Encapsulate module code within $(document).ready(function () {...});
+        return "\n$(document).ready(function () {\n" + moduleCode + "});\n";
     }
 
     private static String prepareHeader() {
@@ -267,6 +295,9 @@ public class JsTree extends FormatPlugin {
         var text = "";
         try {
             text = Resources.toString(url, StandardCharsets.UTF_8);
+            text = text.replace("id=\"expander\"", "id=\"expander-" + module.getName() + "\"");
+            text = text.replace("id=\"collapser\"", "id=\"collapser-" + module.getName() + "\"");
+            text = text.replace("id=\"basic\"", "id=\"basic-" + module.getName() + "\"");
             text = text.replace("<NAME_REVISION>", nameRevision);
             text = text.replace("<NAMESPACE>", module.getNamespace().toString());
             text = text.replace("<PREFIX>", module.getPrefix());
@@ -402,8 +433,8 @@ public class JsTree extends FormatPlugin {
     @Override
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
             justification = "Valid output from LYV is dependent on Logback output")
-    public void close() {
-        LOG.info("{}", loadJS());
+    public void close(final Collection<Module> modules) {
+        LOG.info("{}", loadJS(modules));
         LOG.info("</body>");
         LOG.info("</html>");
     }
