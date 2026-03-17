@@ -129,6 +129,17 @@ public abstract class FormatTest implements Cleanable {
         runDeviationTest();
     }
 
+    @Test
+    public void testMultipleFiles() throws Exception {
+        setFormat();
+        final var module1 = Paths.get(yangPath + "/ietf-connection-oriented-oam@2019-04-16.yang").toString();
+        final var module2 = Paths.get(yangPath + "/ietf-routing@2018-03-13.yang").toString();
+        builder.setYangModules(List.of(module1, module2));
+        final var configuration = builder.build();
+        startLyv(configuration, formatter);
+        runMultipleFilesTest();
+    }
+
     public abstract void setFormat();
 
     public abstract void runInterfacesTest() throws Exception;
@@ -141,6 +152,8 @@ public abstract class FormatTest implements Cleanable {
 
     public abstract void runCustomModuleTest() throws Exception;
 
-    public  abstract void runDeviationTest() throws Exception;
+    public abstract void runDeviationTest() throws Exception;
+
+    public abstract void runMultipleFilesTest() throws Exception;
 
 }
