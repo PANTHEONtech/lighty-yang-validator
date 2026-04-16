@@ -51,8 +51,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Main class of Yang parser system test.
  *
- * <p>
- * yang-model-validator [-f features] [-h help] [-p path] yangFiles...
+ * <p>yang-model-validator [-f features] [-h help] [-p path] yangFiles...
  * -f,--features &lt;arg&gt;   features is a string in the form
  * [feature(,feature)*] and feature is a string in the form
  * [($namespace?revision=$revision)$local_name].
