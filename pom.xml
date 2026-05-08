@@ -27,7 +27,7 @@
     <properties>
         <application.main.class>io.lighty.yang.validator.Main</application.main.class>
         <application.attach.zip>true</application.attach.zip>
-        <logback-version>1.5.25</logback-version>
+        <logback-version>1.5.32</logback-version>
     </properties>
 
     <dependencies>
@@ -124,7 +124,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>3.5.0</version>
                 <executions>
                     <!-- Copy files from "src/main/assembly/resources" and move it to build target directory -->
                     <execution>
