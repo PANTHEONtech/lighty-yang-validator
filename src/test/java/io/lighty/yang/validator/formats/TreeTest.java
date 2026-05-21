@@ -15,8 +15,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TreeTest extends FormatTest {
 
@@ -121,7 +121,7 @@ public class TreeTest extends FormatTest {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
-        Assert.assertEquals(fileCreated, compareWith);
+        Assertions.assertEquals(compareWith, fileCreated);
     }
 
 }

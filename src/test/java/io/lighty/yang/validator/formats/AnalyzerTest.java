@@ -21,12 +21,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AnalyzerTest implements Cleanable {
 
     private String yangPath;
@@ -36,7 +38,7 @@ public class AnalyzerTest implements Cleanable {
     private Method method;
     private Constructor<Main> constructor;
 
-    @BeforeClass
+    @BeforeAll
     public void init() {
         outPath = TreeTest.class.getResource("/out").getFile();
         yangPath = MainTest.class.getResource("/yang").getFile();
@@ -46,7 +48,7 @@ public class AnalyzerTest implements Cleanable {
                 .setOutput(outPath);
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUpOutput() throws Exception {
         constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
         constructor.setAccessible(true);
@@ -62,7 +64,7 @@ public class AnalyzerTest implements Cleanable {
         builder.setTreeConfiguration(0, 0, false, false, false);
     }
 
-    @AfterMethod
+    @AfterEach
     public void removeOuptut() throws Exception {
         tearDown();
         method.setAccessible(false);
@@ -84,7 +86,7 @@ public class AnalyzerTest implements Cleanable {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
-        Assert.assertEquals(fileCreated, compareWith);
+        Assertions.assertEquals(compareWith, fileCreated);
     }
 
 }

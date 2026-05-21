@@ -26,6 +26,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.xml.stream.XMLInputFactory;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.opendaylight.yangtools.yang.data.api.schema.ContainerNode;
 import org.opendaylight.yangtools.yang.data.api.schema.DataContainerChild;
 import org.opendaylight.yangtools.yang.data.api.schema.stream.NormalizedNodeStreamWriter;
@@ -34,15 +38,13 @@ import org.opendaylight.yangtools.yang.data.impl.schema.ImmutableNormalizedNodeS
 import org.opendaylight.yangtools.yang.data.impl.schema.NormalizationResultHolder;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
-import org.testng.Assert;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.Test;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MainTest implements Cleanable {
 
     private static final XMLInputFactory FACTORY = XMLInputFactory.newInstance();
 
-    @AfterTest
+    @AfterAll
     public void removeOuptut() throws Exception {
         tearDown();
     }
@@ -85,9 +87,9 @@ public class MainTest implements Cleanable {
                     xmlParser.parse(reader);
                 }
                 final var node = result.getResult().data();
-                Assert.assertTrue(node instanceof ContainerNode);
+                Assertions.assertTrue(node instanceof ContainerNode);
                 final Collection<DataContainerChild> value = ((ContainerNode) node).body();
-                Assert.assertEquals(value.size(), 1);
+                Assertions.assertEquals(1, value.size());
             }
         }
     }

@@ -8,7 +8,7 @@
 package io.lighty.yang.validator.check.update.from;
 
 import static io.lighty.yang.validator.Main.checkUpdateForm;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.lighty.yang.validator.Cleanable;
 import io.lighty.yang.validator.Main;
@@ -21,11 +21,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class RFC6020Test implements Cleanable {
 
     private static final String NEW = "/checkUpdateFromYangWithProblems/new/";
@@ -40,13 +42,13 @@ public class RFC6020Test implements Cleanable {
     private Method method;
     private Constructor<Main> constructor;
 
-    @BeforeClass
+    @BeforeAll
     public void init() {
         outPath = RFC6020Test.class.getResource("/out").getFile();
         yangPath = RFC6020Test.class.getResource("/yang").getFile();
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUpOutput() throws Exception {
         constructor = (Constructor<Main>) Main.class.getDeclaredConstructors()[0];
         constructor.setAccessible(true);
@@ -63,7 +65,7 @@ public class RFC6020Test implements Cleanable {
         method.invoke(mainClass, builder.build());
     }
 
-    @AfterMethod
+    @AfterEach
     public void removeOuptut() throws Exception {
         tearDown();
         method.setAccessible(false);
