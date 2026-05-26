@@ -143,7 +143,7 @@ public class DependsTest extends FormatTest {
         final Path outLog = Paths.get(outPath).resolve("out.log");
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(outLog.resolveSibling("compare").resolve(comapreWithFileName));
-        assertEquals(fileCreated.replaceAll("\\s+", ""), compareWith.replaceAll("\\s+", ""));
+        assertEquals(compareWith.replaceAll("\\s+", ""), fileCreated.replaceAll("\\s+", ""));
     }
 
 }

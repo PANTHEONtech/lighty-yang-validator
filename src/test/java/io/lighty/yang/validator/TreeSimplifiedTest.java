@@ -79,7 +79,7 @@ public class TreeSimplifiedTest implements Cleanable {
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(
             outLog.resolveSibling("compare").resolve("interfacesSimplified.tree"));
-        assertEquals(fileCreated, compareWith);
+        assertEquals(compareWith, fileCreated);
     }
 
     @Test
@@ -93,7 +93,7 @@ public class TreeSimplifiedTest implements Cleanable {
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(
             outLog.resolveSibling("compare").resolve("interfaces-simplified.yang"));
-        assertEquals(fileCreated, compareWith);
+        assertEquals(compareWith, fileCreated);
     }
 
     private void prepare(final String format, final FormatPlugin plugin) {
