@@ -140,7 +140,7 @@ public final class ItUtils {
         verifyLengthOfElements(splitOut, splitExp);
         splitExp.sort(null);
         splitOut.sort(null);
-        assertEquals(splitOut, splitExp);
+        assertEquals(splitExp, splitOut);
     }
 
     private static void verifyLengthOfElements(final List<String> output, final List<String> expected) {
