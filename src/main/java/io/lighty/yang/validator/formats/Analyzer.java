@@ -10,6 +10,7 @@ package io.lighty.yang.validator.formats;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.lighty.yang.validator.GroupArguments;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -32,11 +33,12 @@ public class Analyzer extends FormatPlugin {
 
     @Override
     void emitFormat(final Module module) {
-        final Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(modelContext.getModules());
+        final Set<DeclaredStatement<?>> statements = getRecursivelyDeclaredStatements(Collections.singleton(module));
         for (final DeclaredStatement<?> declaredStatement : statements) {
             analyzeSubstatement(declaredStatement);
         }
-        printOut();
+        printOut(module);
+        counter.clear();
     }
 
     private Set<DeclaredStatement<?>> getRecursivelyDeclaredStatements(final Collection<? extends ModuleLike> modules) {
@@ -58,7 +60,8 @@ public class Analyzer extends FormatPlugin {
 
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",
                         justification = "Valid output from LYV is dependent on Logback output")
-    private void printOut() {
+    private void printOut(final Module module) {
+        LOG.info("\n{}:", module.getName());
         for (final Map.Entry<String, Integer> entry : new TreeMap<>(counter).entrySet()) {
             LOG.info("{}: {}", entry.getKey(), entry.getValue());
         }
