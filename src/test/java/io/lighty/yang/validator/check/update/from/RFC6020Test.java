@@ -112,7 +112,7 @@ public class RFC6020Test implements Cleanable {
         final String fileCreated = Files.readString(outLog);
         final String compareWith = Files.readString(outLog.resolveSibling(COMPARE).resolve(comapreFile));
 
-        assertEquals(fileCreated, compareWith);
+        assertEquals(compareWith, fileCreated);
     }
 
 }
