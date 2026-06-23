@@ -9,6 +9,7 @@ package io.lighty.yang.validator.formats.utility;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 import org.eclipse.jdt.annotation.NonNull;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
@@ -41,6 +42,6 @@ public final class LyvStack {
     }
 
     public @NonNull Absolute toSchemaNodeIdentifier() {
-        return Absolute.of(qnames);
+        return Absolute.of(List.copyOf(qnames));
     }
 }
