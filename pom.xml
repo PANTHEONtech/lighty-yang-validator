@@ -48,10 +48,6 @@
 
         <dependency>
             <groupId>org.opendaylight.yangtools</groupId>
-            <artifactId>yang-parser-impl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.opendaylight.yangtools</groupId>
             <artifactId>yang-data-impl</artifactId>
         </dependency>
         <dependency>
@@ -102,6 +98,15 @@
             <groupId>org.opendaylight.yangtools</groupId>
             <artifactId>yang-parser-rfc7950</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.opendaylight.yangtools</groupId>
+            <artifactId>yin-source-dom</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.opendaylight.yangtools</groupId>
+            <artifactId>yang-source-ir</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>

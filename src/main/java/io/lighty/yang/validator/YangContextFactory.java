@@ -28,7 +28,7 @@ import org.opendaylight.yangtools.yang.model.spi.source.FileYangTextSource;
 import org.opendaylight.yangtools.yang.parser.api.YangParser;
 import org.opendaylight.yangtools.yang.parser.api.YangParserException;
 import org.opendaylight.yangtools.yang.parser.api.YangParserFactory;
-import org.opendaylight.yangtools.yang.parser.impl.DefaultYangParserFactory;
+import org.opendaylight.yangtools.yang.parser.ri.DefaultYangParserFactory;
 
 final class YangContextFactory {
 
