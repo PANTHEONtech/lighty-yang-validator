@@ -60,7 +60,6 @@ import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.api.ElementCountConstraint;
 import org.opendaylight.yangtools.yang.model.api.ElementCountConstraintAware;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
@@ -72,6 +71,7 @@ import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.Status;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinitionAware;
+import org.opendaylight.yangtools.yang.model.api.meta.ElementCountMatcher;
 import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.RevisionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
@@ -365,47 +365,53 @@ public class CheckUpdateFrom {
     }
 
     private void checkMaxElements(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        final Optional<ElementCountConstraint> oldElementCountConstraint =
-                ((ElementCountConstraintAware) oldNode).getElementCountConstraint();
-        final Optional<ElementCountConstraint> newElementCountConstraint =
-                ((ElementCountConstraintAware) newNode).getElementCountConstraint();
-        if (newElementCountConstraint.isPresent() && oldElementCountConstraint.isPresent()) {
-            final Integer newMaxElements = newElementCountConstraint.get().getMaxElements();
-            final Integer oldMaxElements = oldElementCountConstraint.get().getMaxElements();
-            if (newMaxElements != null && oldMaxElements != null && newMaxElements < oldMaxElements) {
-                errors.add(maxElementsError().updateInformation(newSchemaIS.toSchemaNodeIdentifier()
-                                + MAX_ELEMENTS + newMaxElements,
-                        oldSchemaIS.toSchemaNodeIdentifier() + MAX_ELEMENTS + oldMaxElements));
-            }
+        final ElementCountMatcher oldMatcher = ((ElementCountConstraintAware) oldNode).elementCountMatcher();
+        final ElementCountMatcher newMatcher = ((ElementCountConstraintAware) newNode).elementCountMatcher();
+
+        final Integer oldMaxElements = extractMaxElements(oldMatcher);
+        final Integer newMaxElements = extractMaxElements(newMatcher);
+
+        if (newMaxElements != null && oldMaxElements != null && newMaxElements < oldMaxElements) {
+            errors.add(maxElementsError().updateInformation(newSchemaIS.toSchemaNodeIdentifier()
+                    + MAX_ELEMENTS + newMaxElements,
+                oldSchemaIS.toSchemaNodeIdentifier() + MAX_ELEMENTS + oldMaxElements));
         }
     }
 
     private void checkMinElements(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        final Optional<ElementCountConstraint> oldElementCountConstraint =
-                ((ElementCountConstraintAware) oldNode).getElementCountConstraint();
-        final Optional<ElementCountConstraint> newElementCountConstraint =
-                ((ElementCountConstraintAware) newNode).getElementCountConstraint();
-        if (newElementCountConstraint.isPresent() && oldElementCountConstraint.isEmpty()) {
-            if (newElementCountConstraint.get().getMinElements() != null) {
-                errors.add(minElementsError().updateInformation(newSchemaIS.toSchemaNodeIdentifier()
-                                + MIN_ELEMENTS + newElementCountConstraint.get().getMinElements(),
-                        oldSchemaIS.toSchemaNodeIdentifier() + MIN_ELEMENTS + DONT_EXISTS));
-            }
-        } else if (newElementCountConstraint.isPresent()) {
-            final Integer newMinElements = newElementCountConstraint.get().getMinElements();
-            final Integer oldMinElements = oldElementCountConstraint.get().getMinElements();
-            if (newMinElements != null && oldMinElements == null) {
-                errors.add(minElementsError().updateInformation(newSchemaIS.toSchemaNodeIdentifier()
-                                + MIN_ELEMENTS + newElementCountConstraint.get().getMinElements(),
-                        oldSchemaIS.toSchemaNodeIdentifier() + MIN_ELEMENTS + DONT_EXISTS));
-            } else if (newMinElements != null && oldMinElements < newMinElements) {
-                errors.add(minElementsError().updateInformation(newSchemaIS.toSchemaNodeIdentifier()
-                                + MIN_ELEMENTS + newElementCountConstraint.get().getMinElements(),
-                        oldSchemaIS.toSchemaNodeIdentifier() + MIN_ELEMENTS
-                                + oldElementCountConstraint.get().getMinElements()));
-            }
+        final ElementCountMatcher oldMatcher = ((ElementCountConstraintAware) oldNode).elementCountMatcher();
+        final ElementCountMatcher newMatcher = ((ElementCountConstraintAware) newNode).elementCountMatcher();
 
+        final Integer oldMinElements = extractMinElements(oldMatcher);
+        final Integer newMinElements = extractMinElements(newMatcher);
+
+        if (newMinElements != null && oldMinElements == null) {
+            errors.add(minElementsError().updateInformation(newSchemaIS.toSchemaNodeIdentifier()
+                    + MIN_ELEMENTS + newMinElements,
+                oldSchemaIS.toSchemaNodeIdentifier() + MIN_ELEMENTS + DONT_EXISTS));
+        } else if (newMinElements != null && oldMinElements != null && oldMinElements < newMinElements) {
+            errors.add(minElementsError().updateInformation(newSchemaIS.toSchemaNodeIdentifier()
+                    + MIN_ELEMENTS + newMinElements,
+                oldSchemaIS.toSchemaNodeIdentifier() + MIN_ELEMENTS + oldMinElements));
         }
+    }
+
+    private Integer extractMaxElements(final ElementCountMatcher matcher) {
+        if (matcher instanceof ElementCountMatcher.AtMost) {
+            return ((ElementCountMatcher.AtMost) matcher).asSaturatedInt();
+        } else if (matcher instanceof ElementCountMatcher.InRange) {
+            return ((ElementCountMatcher.InRange) matcher).atMost().asSaturatedInt();
+        }
+        return null;
+    }
+
+    private Integer extractMinElements(final ElementCountMatcher matcher) {
+        if (matcher instanceof ElementCountMatcher.AtLeast) {
+            return ((ElementCountMatcher.AtLeast) matcher).lowerInt();
+        } else if (matcher instanceof ElementCountMatcher.InRange) {
+            return ((ElementCountMatcher.InRange) matcher).atLeast().lowerInt();
+        }
+        return null;
     }
 
     private boolean checkType(final TypeDefinition<?> oldNode, final TypeDefinition<?> newNode) {
