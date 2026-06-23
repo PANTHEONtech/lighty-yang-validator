@@ -710,9 +710,9 @@ public class CheckUpdateFrom {
             }
 
             final Collection<? extends RevisionStatement> revisionsNew =
-                    Objects.requireNonNull(((ModuleEffectiveStatement) newModule).getDeclared()).getRevisions();
+                    Objects.requireNonNull(((ModuleEffectiveStatement) newModule).getDeclared()).revisionStatements();
             final Collection<? extends RevisionStatement> revisionsOld =
-                    Objects.requireNonNull(((ModuleEffectiveStatement) oldModule).getDeclared()).getRevisions();
+                    Objects.requireNonNull(((ModuleEffectiveStatement) oldModule).getDeclared()).revisionStatements();
 
             final List<Revision> newDates = revisionsNew
                     .stream()

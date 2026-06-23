@@ -402,7 +402,7 @@ public class ModulePrinter {
 
         if (module instanceof ModuleEffectiveStatement) {
             final Collection<? extends RevisionStatement> revisions = Objects
-                    .requireNonNull(((ModuleEffectiveStatement) module).getDeclared()).getRevisions();
+                    .requireNonNull(((ModuleEffectiveStatement) module).getDeclared()).revisionStatements();
             printEachRevision(revisions);
         } else {
             doPrintSimpleRevision(revision.get());
@@ -411,18 +411,16 @@ public class ModulePrinter {
 
     private void printEachRevision(final Collection<? extends RevisionStatement> revisions) {
         for (final RevisionStatement rev : revisions) {
-            if (rev.getDescription().isPresent() || rev.getReference().isPresent()) {
-                printer.openStatement(Statement.REVISION, rev.argument().toString());
-                final Optional<ReferenceStatement> optReference = rev.getReference();
-                if (optReference.isPresent()) {
-                    printer.printSimpleSeparately(REFERENCE_STRING, "\""
-                            + optReference.get().rawArgument() + "\"");
-                }
-                final Optional<DescriptionStatement> optDescription = rev.getDescription();
-                if (optDescription.isPresent()) {
-                    printer.printSimpleSeparately(DESCRIPTION_STRING, "\""
-                            + optDescription.get().rawArgument() + "\"");
+            final DescriptionStatement desc = rev.descriptionStatement();
+            final ReferenceStatement ref = rev.referenceStatement();
 
+            if (desc != null || ref != null) {
+                printer.openStatement(Statement.REVISION, rev.argument().toString());
+                if (ref != null) {
+                    printer.printSimpleSeparately(REFERENCE_STRING, "\"" + ref.argument() + "\"");
+                }
+                if (desc != null) {
+                    printer.printSimpleSeparately(DESCRIPTION_STRING, "\"" + desc.argument() + "\"");
                 }
                 printer.closeStatement();
                 printer.printEmptyLine();
