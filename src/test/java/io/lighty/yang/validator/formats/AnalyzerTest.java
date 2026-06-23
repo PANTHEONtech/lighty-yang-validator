@@ -25,6 +25,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -73,6 +74,7 @@ public class AnalyzerTest implements Cleanable {
 
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void analyzeTest() throws Exception {
         final String module = Paths.get(yangPath).resolve("ietf-netconf-common@2013-10-21.yang").toString();
         builder.setYangModules(List.of(module));

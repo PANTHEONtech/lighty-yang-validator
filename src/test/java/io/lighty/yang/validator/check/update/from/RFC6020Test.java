@@ -24,6 +24,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -73,6 +74,7 @@ public class RFC6020Test implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void testMissingRevision() throws Exception {
         testCheckUpdateFrom("missingRevision/",
                 "ietf-interfaces@2018-02-20.yang",
@@ -81,6 +83,7 @@ public class RFC6020Test implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void testWrongRevision() throws Exception {
         testCheckUpdateFrom("wrongRevision/",
                 "ietf-interfaces@2018-02-20.yang",
@@ -89,6 +92,7 @@ public class RFC6020Test implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void testNoRevision() throws Exception {
         testCheckUpdateFrom("noRevision/",
                 "ietf-interfaces@2018-02-20.yang",

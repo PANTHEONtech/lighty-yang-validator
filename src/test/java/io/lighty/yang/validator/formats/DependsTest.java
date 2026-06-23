@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class DependsTest extends FormatTest {
@@ -33,6 +34,7 @@ public class DependsTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void onlySubmodulesTest() throws Exception {
         setFormat();
         builder.setDependConfiguration(false, false, true,
@@ -45,6 +47,7 @@ public class DependsTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void onlyImportsTest() throws Exception {
         setFormat();
         builder.setDependConfiguration(false, true, false,
@@ -57,6 +60,7 @@ public class DependsTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void dependsTestNotRecursive() throws Exception {
         setFormat();
         builder.setDependConfiguration(true, false, false,
@@ -69,6 +73,7 @@ public class DependsTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void dependsTestNotRecursiveSubmodulesOnly() throws Exception {
         setFormat();
         builder.setDependConfiguration(true, false, true,
@@ -81,6 +86,7 @@ public class DependsTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void dependsTestNotRecursiveModulesOnly() throws Exception {
         setFormat();
         builder.setDependConfiguration(true, true, false,
@@ -93,6 +99,7 @@ public class DependsTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void dependsTestExcludeModule() throws Exception {
         setFormat();
         builder.setDependConfiguration(false, false, false,
