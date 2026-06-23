@@ -70,8 +70,8 @@ import org.opendaylight.yangtools.yang.model.api.MustDefinition;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.Status;
-import org.opendaylight.yangtools.yang.model.api.TypeAware;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
+import org.opendaylight.yangtools.yang.model.api.TypeDefinitionAware;
 import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.RevisionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
@@ -313,8 +313,9 @@ public class CheckUpdateFrom {
                 }
                 //     oldNode.getMi
 
-                if (oldNode instanceof TypeAware) {
-                    checkTypeAware(((TypeAware) oldNode).getType(), ((TypeAware) newNode).getType());
+                if (oldNode instanceof TypeDefinitionAware) {
+                    checkTypeAware(((TypeDefinitionAware) oldNode).typeDefinition(),
+                        ((TypeDefinitionAware) newNode).typeDefinition());
                 }
 
                 if (oldNode instanceof DataNodeContainer) {

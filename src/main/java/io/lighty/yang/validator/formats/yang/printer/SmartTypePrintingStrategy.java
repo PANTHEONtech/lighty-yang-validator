@@ -46,7 +46,7 @@ class SmartTypePrintingStrategy {
 
     void printType(final StatementPrinter printer, final TypedDataSchemaNode typed) {
         final TypePrinter typePrinter = new TypePrinter(printer, moduleToPrefix);
-        final TypeDefinition<? extends TypeDefinition<?>> type = typed.getType();
+        final TypeDefinition<? extends TypeDefinition<?>> type = typed.typeDefinition();
         TypeDefinition<? extends TypeDefinition<?>> maybeTypedef = type;
         while (maybeTypedef.getBaseType() != null) {
             if (typedefs.contains(maybeTypedef) || !type.getQName().getModule().equals(module.getQNameModule())) {
@@ -55,8 +55,8 @@ class SmartTypePrintingStrategy {
             }
             maybeTypedef = maybeTypedef.getBaseType();
         }
-        if (typed.getType() instanceof BooleanTypeDefinition
-                && !"boolean".equals(typed.getType().getQName().getLocalName())) {
+        if (typed.typeDefinition() instanceof BooleanTypeDefinition
+                && !"boolean".equals(typed.typeDefinition().getQName().getLocalName())) {
             typePrinter.printType(BaseTypes.booleanType());
         } else {
             typePrinter.printType(type);

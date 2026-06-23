@@ -323,7 +323,7 @@ public class JsonTree extends FormatPlugin {
                 jsonModuleChild.append(CHILDREN, resolveChildMetadata(caseNode, stack, isConfig));
             }
         } else if (node instanceof TypedDataSchemaNode) {
-            jsonModuleChild.put(TYPE_INFO, resolveType(((TypedDataSchemaNode) node).getType()));
+            jsonModuleChild.put(TYPE_INFO, resolveType(((TypedDataSchemaNode) node).typeDefinition()));
             jsonModuleChild.put(CHILDREN, Collections.emptyList());
         }
         stack.exit();

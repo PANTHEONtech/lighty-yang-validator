@@ -134,7 +134,7 @@ public class MultiModulePrinter extends FormatPlugin {
     private void gatherUsedTypeDefs(final SchemaTree tree, final Module module) {
         if (tree.getSchemaNode() instanceof TypedDataSchemaNode) {
             final TypeDefinition<? extends TypeDefinition<?>> type =
-                    ((TypedDataSchemaNode) tree.getSchemaNode()).getType();
+                    ((TypedDataSchemaNode) tree.getSchemaNode()).typeDefinition();
             resolveType(type, module);
 
         }

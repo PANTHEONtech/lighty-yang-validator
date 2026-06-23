@@ -108,7 +108,7 @@ abstract class Line {
 
     private void resolvePathAndType(final SchemaNode node) {
         if (node instanceof TypedDataSchemaNode) {
-            final TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).getType();
+            final TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).typeDefinition();
             resolvePathAndTypeForDataSchemaNode(type);
         } else if (node instanceof AnydataEffectiveStatement) {
             typeName = ANYDATA;
