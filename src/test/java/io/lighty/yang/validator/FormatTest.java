@@ -20,6 +20,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -63,6 +64,7 @@ public abstract class FormatTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void testIetfInterfacesAllFormats() throws Exception {
         //only root tree
         setFormat();
@@ -74,6 +76,7 @@ public abstract class FormatTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void testIpAllFormats() throws Exception {
         //contains augmentations
         setFormat();
@@ -85,6 +88,7 @@ public abstract class FormatTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void testConnectionOrientedOamAllFormats() throws Exception {
         //contains notifications and rpcs
         setFormat();
@@ -97,6 +101,7 @@ public abstract class FormatTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void testRoutingFormats() throws Exception {
         //contains actions
         setFormat();
@@ -108,6 +113,7 @@ public abstract class FormatTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void testCustomTestModelFormats() throws Exception {
         /*
          The test model contains notification with/without leaf data, rpc, list with action
@@ -132,6 +138,7 @@ public abstract class FormatTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void testMultipleFiles() throws Exception {
         setFormat();
         final var module1 = Paths.get(yangPath + "/ietf-connection-oriented-oam@2019-04-16.yang").toString();

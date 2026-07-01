@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class JsTreeTest extends FormatTest {
@@ -29,6 +30,7 @@ public class JsTreeTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void testUndeclared() throws Exception {
         //testing for undeclared choice-case statement (no case inside of choice)
         setFormat();

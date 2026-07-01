@@ -16,6 +16,7 @@ import io.lighty.yang.validator.formats.FormatPlugin;
 import io.lighty.yang.validator.utils.ItUtils;
 import java.io.IOException;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -28,6 +29,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void treeFormatParseAllTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvParseAllWithFileOutput("integration/yang/parse/all", "tree");
         final String outputWithoutGenInfo = ItUtils.removeHtmlGeneratedInfo(lyvOutput);
@@ -37,6 +39,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void noFormatParseAllValidationTest() throws Exception {
         final var lyvOutput = ItUtils.startLyvParseAllWithFileOutput("integration/yang/parse/all");
         assertFalse(lyvOutput.trim().isEmpty());
@@ -58,6 +61,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void notFoundImportFormatParseAllTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvParseAllWithFileOutput("integration/yang", "tree");
 
@@ -73,6 +77,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void treeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "tree");
         final String expectedOutput = ItUtils.getExpectedOutput("integrationTestTree.txt");
@@ -80,6 +85,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void treeFormatRecursivelyTest() throws IOException {
         final String lyvOutput = ItUtils.startRecursivelyLyvWithFileOutput("yang",
                 "integration/yang/ietf-interfaces-modified@2018-02-20.yang", "tree");
@@ -88,6 +94,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void notFoundImportTreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput(
                 "integration/yang/ietf-interfaces-modified@2018-02-20.yang", "tree");
@@ -96,6 +103,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void dependFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/ietf-netconf-config@2013-10-21.yang", "depend");
         final String expected = "module ietf-netconf-config@2013-10-21 depends on following modules: "
@@ -105,6 +113,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void notFoundImportDependFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput(
                 "integration/yang/ietf-interfaces-modified@2018-02-20.yang", "depend");
@@ -113,6 +122,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void jsonTreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "json-tree");
         final String expectedOutput = ItUtils.getExpectedOutput("integrationTestJsonTree.json");
@@ -120,6 +130,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void notFoundImportJsonTreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput(
                 "integration/yang/ietf-interfaces-modified@2018-02-20.yang", "json-tree");
@@ -128,6 +139,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void jstreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("yang/test_model@2020-12-03.yang", "jstree");
         final String expectedOutput = ItUtils.getExpectedOutput("integrationTestJsTree.html");
@@ -135,6 +147,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void notFoundImportJstreeFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput(
                 "integration/yang/ietf-interfaces-modified@2018-02-20.yang", "jstree");
@@ -153,6 +166,7 @@ public class IntegrationTest implements Cleanable {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void notFoundImportYangFormatTest() throws IOException {
         final String lyvOutput = ItUtils.startLyvWithFileOutput("integration/xml", "integration/yang",
                 "integration/yang/ietf-interfaces-modified@2018-02-20.yang", "yang");

@@ -26,7 +26,6 @@ import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.AnydataEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.AnyxmlEffectiveStatement;
-import org.opendaylight.yangtools.yang.model.api.stmt.IfFeatureAwareDeclaredStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.IfFeatureStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
 import org.opendaylight.yangtools.yang.model.api.type.BooleanTypeDefinition;
@@ -85,8 +84,8 @@ abstract class Line {
 
     private void resolveIfFeatures(final SchemaNode node) {
         final DeclaredStatement<?> declared = getDeclared(node);
-        if (declared instanceof IfFeatureAwareDeclaredStatement) {
-            final var ifFeature = ((IfFeatureAwareDeclaredStatement<?>) declared).getIfFeatures();
+        if (declared instanceof IfFeatureStatement.MultipleIn) {
+            final var ifFeature = ((IfFeatureStatement.MultipleIn<?>) declared).ifFeatureStatements();
             ifFeatures.addAll(ifFeature);
         }
     }
@@ -108,7 +107,7 @@ abstract class Line {
 
     private void resolvePathAndType(final SchemaNode node) {
         if (node instanceof TypedDataSchemaNode) {
-            final TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).getType();
+            final TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).typeDefinition();
             resolvePathAndTypeForDataSchemaNode(type);
         } else if (node instanceof AnydataEffectiveStatement) {
             typeName = ANYDATA;

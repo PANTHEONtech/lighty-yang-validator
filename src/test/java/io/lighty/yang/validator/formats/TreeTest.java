@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class TreeTest extends FormatTest {
@@ -30,6 +31,7 @@ public class TreeTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void treePrefixMainModuleTest() throws Exception {
         setFormat();
         builder.setTreeConfiguration(0, 0, false, false, true);
@@ -41,6 +43,7 @@ public class TreeTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void treePrefixModuleTest() throws Exception {
         setFormat();
         builder.setTreeConfiguration(0, 0, false, true, false);
@@ -52,6 +55,7 @@ public class TreeTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void treeLineLengthTest() throws Exception {
         setFormat();
         builder.setTreeConfiguration(0, 20, false, false, false);
@@ -72,6 +76,7 @@ public class TreeTest extends FormatTest {
     }
 
     @Test
+    @Disabled("Disabled until YANGTOOLS-1896 is resolved")
     public void treeDepthTest() throws Exception {
         setFormat();
         builder.setTreeConfiguration(3, 0, false, false, false);
