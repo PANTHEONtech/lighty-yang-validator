@@ -12,24 +12,20 @@ import io.lighty.yang.validator.formats.utility.LyvNodeData;
 import io.lighty.yang.validator.formats.utility.SchemaHtmlEnum;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
-import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
-import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ActionEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.DescriptionEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.InputEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.NotificationEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.OutputEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.RpcEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
-import org.opendaylight.yangtools.yang.model.spi.meta.AbstractUndeclaredEffectiveStatement;
 
 public class HtmlLine extends Line {
 
@@ -45,9 +41,9 @@ public class HtmlLine extends Line {
             final Map<XMLNamespace, String> namespacePrefix) {
         super(lyvND, inputOutput, namespacePrefix);
         this.ids = ids;
-        final SchemaNode node = lyvND.getNode();
-        description = node.getDescription().orElse("");
-        schema = getSchemaBySchemaNode(node);
+        final EffectiveStatement<?, ?> statement = lyvND.getStatement();
+        description = description(statement);
+        schema = getSchemaByStatement(statement);
         path = createPath(lyvND.getAbsolutePath().getNodeIdentifiers(), namespacePrefix, lyvND.getContext());
     }
 
@@ -65,26 +61,30 @@ public class HtmlLine extends Line {
         path = createPath(pathFromRoot, namespacePrefix, lyvNodeData.getContext());
     }
 
-    private static SchemaHtmlEnum getSchemaBySchemaNode(final SchemaNode node) {
-        if (node instanceof EffectiveStatement) {
-            if (node instanceof AbstractUndeclaredEffectiveStatement) {
-                if (node instanceof CaseEffectiveStatement) {
-                    return SchemaHtmlEnum.CASE;
-                } else if (node instanceof InputEffectiveStatement) {
-                    return SchemaHtmlEnum.INPUT;
-                } else if (node instanceof OutputEffectiveStatement) {
-                    return SchemaHtmlEnum.OUTPUT;
-                } else {
-                    return SchemaHtmlEnum.EMPTY;
-                }
-            } else {
-                return SchemaHtmlEnum.getSchemaHtmlEnumByName(
-                        Objects.requireNonNull(((EffectiveStatement<?, ?>) node).getDeclared())
-                                .statementDefinition().getStatementName().getLocalName());
+    private static String description(final EffectiveStatement<?, ?> statement) {
+        for (final EffectiveStatement<?, ?> sub : statement.effectiveSubstatements()) {
+            if (sub instanceof DescriptionEffectiveStatement description) {
+                return description.argument();
             }
-        } else {
-            return SchemaHtmlEnum.EMPTY;
         }
+        return "";
+    }
+
+    private static SchemaHtmlEnum getSchemaByStatement(final EffectiveStatement<?, ?> statement) {
+        final var declared = statement.declared();
+        if (declared == null) {
+            if (statement instanceof CaseEffectiveStatement) {
+                return SchemaHtmlEnum.CASE;
+            } else if (statement instanceof InputEffectiveStatement) {
+                return SchemaHtmlEnum.INPUT;
+            } else if (statement instanceof OutputEffectiveStatement) {
+                return SchemaHtmlEnum.OUTPUT;
+            } else {
+                return SchemaHtmlEnum.EMPTY;
+            }
+        }
+        return SchemaHtmlEnum.getSchemaHtmlEnumByName(
+                declared.statementDefinition().getStatementName().getLocalName());
     }
 
     private static String createPath(final Iterable<QName> pathFromRoot,
@@ -169,10 +169,11 @@ public class HtmlLine extends Line {
     }
 
     @Override
-    protected void resolveFlag(SchemaNode node, final Absolute absolutePath, EffectiveModelContext context) {
-        if (node instanceof CaseSchemaNode || node instanceof RpcDefinition || node instanceof NotificationDefinition
-                || node instanceof ActionDefinition) {
-            // do not emit the "config/no config" for rpc/action/notification/case SchemaNode
+    protected void resolveFlag(final EffectiveStatement<?, ?> statement, final Absolute absolutePath,
+            final EffectiveModelContext context) {
+        if (statement instanceof CaseEffectiveStatement || statement instanceof RpcEffectiveStatement
+                || statement instanceof NotificationEffectiveStatement || statement instanceof ActionEffectiveStatement) {
+            // do not emit the "config/no config" for rpc/action/notification/case
             flag = "";
         } else if (context.findNotification(absolutePath.firstNodeIdentifier()).isPresent()) {
             flag = NO_CONFIG;
@@ -180,9 +181,7 @@ public class HtmlLine extends Line {
             flag = CONFIG;
         } else if (inputOutput == RpcInputOutput.OUTPUT) {
             flag = NO_CONFIG;
-        } else if (node instanceof DataSchemaNode) {
-            resolveFlagForDataSchemaNode((DataSchemaNode) node, CONFIG, NO_CONFIG);
-        } else {
+        } else if (!resolveFlagForDataSchemaNode(statement, CONFIG, NO_CONFIG)) {
             flag = CONFIG;
         }
     }
