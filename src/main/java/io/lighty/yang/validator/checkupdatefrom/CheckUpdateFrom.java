@@ -57,25 +57,35 @@ import net.sourceforge.argparse4j.impl.choice.CollectionArgumentChoice;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.DocumentedNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
+import org.opendaylight.yangtools.yang.model.api.EffectiveStatementEquivalent;
 import org.opendaylight.yangtools.yang.model.api.ElementCountConstraintAware;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
 import org.opendaylight.yangtools.yang.model.api.Module;
-import org.opendaylight.yangtools.yang.model.api.MustConstraintAware;
 import org.opendaylight.yangtools.yang.model.api.MustDefinition;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.Status;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinitionAware;
+import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.meta.ElementCountMatcher;
+import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.IdentityEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ReferenceEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.RevisionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaTreeAwareEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaTreeEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.StatusEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.WhenEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.type.BitsTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.EnumTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
@@ -105,7 +115,6 @@ public class CheckUpdateFrom {
 
     private final SchemaInferenceStack oldSchemaIS;
     private final SchemaInferenceStack newSchemaIS;
-    private final EffectiveModelContext oldContext;
     private final EffectiveModelContext newContext;
     private final Module oldModule;
     private final Module newModule;
@@ -118,7 +127,6 @@ public class CheckUpdateFrom {
         final String oldModuleName = extractModuleName(oldModule);
         oldSchemaIS = SchemaInferenceStack.of(oldContext);
         newSchemaIS = SchemaInferenceStack.of(newContext);
-        this.oldContext = oldContext;
         this.newContext = newContext;
         this.newModule = newModule;
         this.oldModule = oldContext.findModules(oldModuleName).iterator().next();
@@ -145,8 +153,7 @@ public class CheckUpdateFrom {
         if (is7950) {
             checkIdentities();
         }
-        final Collection<? extends DataSchemaNode> childNodes = oldModule.getChildNodes();
-        findNodesRecursively(childNodes);
+        findNodesRecursively(dataChildren(oldModule.asEffectiveStatement()));
 
         checkNotifications();
         checkAugmentations();
@@ -156,21 +163,23 @@ public class CheckUpdateFrom {
     }
 
     private void checkIdentities() {
-        final Collection<? extends IdentitySchemaNode> oldIdentities = oldModule.getIdentities();
-        final Collection<? extends IdentitySchemaNode> newIdentities = newModule.getIdentities();
-        for (final IdentitySchemaNode oldIdentity : oldIdentities) {
+        final Collection<IdentityEffectiveStatement> oldIdentities = oldModule.asEffectiveStatement()
+                .collectEffectiveSubstatements(IdentityEffectiveStatement.class);
+        final Collection<IdentityEffectiveStatement> newIdentities = newModule.asEffectiveStatement()
+                .collectEffectiveSubstatements(IdentityEffectiveStatement.class);
+        for (final IdentityEffectiveStatement oldIdentity : oldIdentities) {
             if (isIdentityNotFound(newIdentities, oldIdentity)) {
-                errors.add(missingIdentityError().updateInformation(DONT_EXISTS, oldIdentity.getQName().toString()));
+                errors.add(missingIdentityError().updateInformation(DONT_EXISTS, oldIdentity.argument().toString()));
             }
         }
 
     }
 
-    private boolean isIdentityNotFound(final Collection<? extends IdentitySchemaNode> newIdentities,
-            final IdentitySchemaNode oldIdentity) {
+    private boolean isIdentityNotFound(final Collection<IdentityEffectiveStatement> newIdentities,
+            final IdentityEffectiveStatement oldIdentity) {
         boolean identityNotFound = true;
-        for (final IdentitySchemaNode newIdentity : newIdentities) {
-            if (oldIdentity.getQName().getLocalName().equals(newIdentity.getQName().getLocalName())) {
+        for (final IdentityEffectiveStatement newIdentity : newIdentities) {
+            if (oldIdentity.argument().getLocalName().equals(newIdentity.argument().getLocalName())) {
                 identityNotFound = false;
                 checkBaseIdentities(oldIdentity, newIdentity);
                 break;
@@ -179,9 +188,11 @@ public class CheckUpdateFrom {
         return identityNotFound;
     }
 
-    private void checkBaseIdentities(final IdentitySchemaNode oldIdentity, final IdentitySchemaNode newIdentity) {
-        final Collection<? extends IdentitySchemaNode> oldBaseIdentities = oldIdentity.getBaseIdentities();
-        final Collection<? extends IdentitySchemaNode> newBaseIdentities = newIdentity.getBaseIdentities();
+    private void checkBaseIdentities(final IdentityEffectiveStatement oldIdentityStatement,
+            final IdentityEffectiveStatement newIdentityStatement) {
+        //left as is because no equivalent to getBaseIdentities() exists.
+        final var oldBaseIdentities = oldIdentityStatement.toSchemaNode().getBaseIdentities();
+        final var newBaseIdentities = newIdentityStatement.toSchemaNode().getBaseIdentities();
         if (oldBaseIdentities.size() > newBaseIdentities.size()) {
             errors.add(baseIdentityError().updateInformation(newBaseIdentities.toString(),
                     oldBaseIdentities.toString()));
@@ -231,8 +242,8 @@ public class CheckUpdateFrom {
                     checkReference(oldRPC.getReference(), newRPC.getReference());
                     checkStatus(oldRPC.getStatus(), newRPC.getStatus(), oldSchemaIS.toSchemaNodeIdentifier(),
                             newSchemaIS.toSchemaNodeIdentifier());
-                    findNodesRecursively(Collections.singletonList(oldRPC.getInput()));
-                    findNodesRecursively(Collections.singletonList(oldRPC.getOutput()));
+                    findNodesRecursively(Collections.singletonList(oldRPC.getInput().asEffectiveStatement()));
+                    findNodesRecursively(Collections.singletonList(oldRPC.getOutput().asEffectiveStatement()));
                     rpcFound = true;
                     break;
                 }
@@ -256,7 +267,7 @@ public class CheckUpdateFrom {
                     checkReference(oldAug.getReference(), newAug.getReference());
                     checkStatus(oldAug.getStatus(), newAug.getStatus(), oldAug.getTargetPath(),
                             newAug.getTargetPath());
-                    findNodesRecursively(oldAug.getChildNodes());
+                    findNodesRecursively(dataChildren(oldAug.asEffectiveStatement()));
                     augFound = true;
                     break;
                 }
@@ -266,6 +277,16 @@ public class CheckUpdateFrom {
                         oldAug.getTargetPath().toString()));
             }
         }
+    }
+
+    private static Status status(final EffectiveStatement<?, ?> statement) {
+        return statement.findFirstEffectiveSubstatement(StatusEffectiveStatement.class)
+                .map(StatusEffectiveStatement::argument)
+                .orElse(Status.CURRENT);
+    }
+
+    private static Optional<String> reference(final EffectiveStatement<?, ?> statement) {
+        return statement.findFirstEffectiveSubstatementArgument(ReferenceEffectiveStatement.class);
     }
 
     private void checkNotifications() {
@@ -282,7 +303,7 @@ public class CheckUpdateFrom {
                     checkReference(oldNotification.getReference(), newNotification.getReference());
                     checkStatus(oldNotification.getStatus(), newNotification.getStatus(),
                             oldSchemaIS.toSchemaNodeIdentifier(), newSchemaIS.toSchemaNodeIdentifier());
-                    findNodesRecursively(oldNotification.getChildNodes());
+                    findNodesRecursively(dataChildren(oldNotification.asEffectiveStatement()));
                     notificationFound = true;
                     newSchemaIS.exit();
                     break;
@@ -296,39 +317,50 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void findNodesRecursively(final Collection<? extends DataSchemaNode> childNodes) {
-        for (final DataSchemaNode oldNode : childNodes) {
-            oldSchemaIS.enterDataTree(oldNode.getQName());
-            final DataSchemaNode newNode = getNodeFromNewModule(oldSchemaIS.toSchemaNodeIdentifier());
-            if (newNode != null) {
-                newSchemaIS.enterDataTree(newNode.getQName());
-                checkReference(oldNode.getReference(), newNode.getReference());
-                checkMust(oldNode, newNode);
+    private void findNodesRecursively(final Collection<? extends DataSchemaCompat<?, ?>> childNodes) {
+        for (final DataSchemaCompat<?, ?> oldNode : childNodes) {
+            oldSchemaIS.enterDataTree((QName) oldNode.argument());
+            final EffectiveStatement<?, ?> newStatement = getNodeFromNewModule(oldSchemaIS.toSchemaNodeIdentifier());
+            if (newStatement != null) {
+                newSchemaIS.enterDataTree((QName) newStatement.argument());
+                checkReference(reference(oldSchemaIS.currentStatement()), reference(newStatement));
+                checkMust();
                 if (is7950) {
-                    checkWhen(oldNode, newNode);
+                    checkWhen();
                 }
-                checkMandatory(oldNode, newNode);
-                checkState(oldNode, newNode);
-                checkStatus(oldNode.getStatus(), newNode.getStatus(), oldSchemaIS.toSchemaNodeIdentifier(),
-                        newSchemaIS.toSchemaNodeIdentifier());
+                checkMandatory();
+                checkState();
+                checkStatus(((DocumentedNode.WithStatus) oldNode).getStatus(),
+                        ((DocumentedNode.WithStatus) newStatement).getStatus(),
+                        oldSchemaIS.toSchemaNodeIdentifier(), newSchemaIS.toSchemaNodeIdentifier());
                 if (oldNode instanceof ElementCountConstraintAware) {
-                    checkMinElements(oldNode, newNode);
-                    checkMaxElements(oldNode, newNode);
+                    checkMinElements();
+                    checkMaxElements();
                 }
-                //     oldNode.getMi
 
                 if (oldNode instanceof TypeDefinitionAware tda) {
-                    checkTypeAware((tda).typeDefinition(),
-                        ((TypeDefinitionAware) newNode).typeDefinition());
+                    checkTypeAware(tda.typeDefinition(), ((TypeDefinitionAware) newStatement).typeDefinition());
                 }
 
-                if (oldNode instanceof DataNodeContainer) {
-                    findNodesRecursively(((DataNodeContainer) oldNode).getChildNodes());
-                }
+                findNodesRecursively(dataChildren(oldNode));
                 newSchemaIS.exit();
             }
             oldSchemaIS.exit();
         }
+    }
+
+    private static List<DataSchemaCompat<?, ?>> dataChildren(final EffectiveStatement<?, ?> statement) {
+        if (!(statement instanceof SchemaTreeAwareEffectiveStatement<?, ?> aware)) {
+            return List.of();
+        }
+        final List<DataSchemaCompat<?, ?>> children = new ArrayList<>();
+        for (final SchemaTreeEffectiveStatement<?> child : aware.schemaTreeNodes()) {
+            if ((child instanceof DataTreeEffectiveStatement<?> || child instanceof ChoiceEffectiveStatement
+                    || child instanceof CaseEffectiveStatement) && child instanceof DataSchemaCompat<?, ?> dataCompat) {
+                children.add(dataCompat);
+            }
+        }
+        return children;
     }
 
     private void checkTypeAware(final TypeDefinition<? extends TypeDefinition<?>> oldType,
@@ -358,6 +390,7 @@ public class CheckUpdateFrom {
         }
     }
 
+    // left as is because EffectiveStatement does not have getIdentities()
     private void checkIdentityref(final IdentityrefTypeDefinition oldType, final IdentityrefTypeDefinition newType) {
         if (oldType.getIdentities().isEmpty()) {
             errors.add(identityRefBaseError());
@@ -368,9 +401,11 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkMaxElements(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        final ElementCountMatcher oldMatcher = ((ElementCountConstraintAware) oldNode).elementCountMatcher();
-        final ElementCountMatcher newMatcher = ((ElementCountConstraintAware) newNode).elementCountMatcher();
+    private void checkMaxElements() {
+        final ElementCountMatcher oldMatcher =
+                ((ElementCountConstraintAware) oldSchemaIS.currentStatement()).elementCountMatcher();
+        final ElementCountMatcher newMatcher =
+                ((ElementCountConstraintAware) newSchemaIS.currentStatement()).elementCountMatcher();
 
         final Integer oldMaxElements = extractMaxElements(oldMatcher);
         final Integer newMaxElements = extractMaxElements(newMatcher);
@@ -382,9 +417,11 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkMinElements(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        final ElementCountMatcher oldMatcher = ((ElementCountConstraintAware) oldNode).elementCountMatcher();
-        final ElementCountMatcher newMatcher = ((ElementCountConstraintAware) newNode).elementCountMatcher();
+    private void checkMinElements() {
+        final ElementCountMatcher oldMatcher =
+                ((ElementCountConstraintAware) oldSchemaIS.currentStatement()).elementCountMatcher();
+        final ElementCountMatcher newMatcher =
+                ((ElementCountConstraintAware) newSchemaIS.currentStatement()).elementCountMatcher();
 
         final Integer oldMinElements = extractMinElements(oldMatcher);
         final Integer newMinElements = extractMinElements(newMatcher);
@@ -444,35 +481,33 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkState(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        // Nodes reached through an augmentation's own child tree do not have their own effectiveConfig()
-        // applicable (same as inside a grouping), so oldNode/newNode's own effectiveConfig() cannot be trusted
-        // directly here; resolve config through the real, correctly-positioned schema-tree node instead. Using the
-        // full schema tree (rather than findDataTreeChild) means choice/case segments in the path do not need any
-        // special handling.
-        final boolean oldIsConfig = oldContext.findSchemaTreeNode(oldSchemaIS.toSchemaNodeIdentifier())
-                .filter(DataSchemaNode.class::isInstance)
-                .map(DataSchemaNode.class::cast)
-                .flatMap(DataSchemaNode::effectiveConfig)
-                .orElse(Boolean.TRUE);
-        final boolean newIsConfig = newContext.findSchemaTreeNode(newSchemaIS.toSchemaNodeIdentifier())
-                .filter(DataSchemaNode.class::isInstance)
-                .map(DataSchemaNode.class::cast)
-                .flatMap(DataSchemaNode::effectiveConfig)
-                .orElse(Boolean.TRUE);
+    private void checkState() {
+        final boolean oldIsConfig = effectiveConfig(oldSchemaIS.currentStatement());
+        final boolean newIsConfig = effectiveConfig(newSchemaIS.currentStatement());
+        final EffectiveStatement<?, ?> newStatement = newSchemaIS.currentStatement();
         if (!oldIsConfig && newIsConfig
-                && newNode instanceof MandatoryAware && ((MandatoryAware) newNode).isMandatory()) {
+                && newStatement instanceof MandatoryAware mandatoryAware && mandatoryAware.isMandatory()) {
             errors.add(illegalConfigStateError().updateInformation(newSchemaIS.toSchemaNodeIdentifier()
                             + CONFIG + "true mandatory true",
-                    oldNode.getQName() + CONFIG + FALSE));
+                    oldSchemaIS.currentStatement().argument() + CONFIG + FALSE));
         } else if (oldIsConfig && !newIsConfig) {
             errors.add(illegalConfigChangeError().updateInformation(newSchemaIS.toSchemaNodeIdentifier()
                             + CONFIG + FALSE,
-                    oldNode.getQName() + CONFIG + "true"));
+                    oldSchemaIS.currentStatement().argument() + CONFIG + "true"));
         }
     }
 
-    private void checkMandatory(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
+    // left as is because effectiveConfig() has no EffectiveStatement equivalent
+    private static boolean effectiveConfig(final EffectiveStatement<?, ?> statement) {
+        if (statement instanceof DataSchemaCompat<?, ?> compat) {
+            return compat.toDataSchemaNode().effectiveConfig().orElse(Boolean.TRUE);
+        }
+        return true;
+    }
+
+    private void checkMandatory() {
+        final var oldNode = oldSchemaIS.currentStatement();
+        final var newNode = newSchemaIS.currentStatement();
         if (oldNode instanceof MandatoryAware && newNode instanceof MandatoryAware) {
             final boolean oldMandatory = ((MandatoryAware) oldNode).isMandatory();
             final boolean newMandatory = ((MandatoryAware) newNode).isMandatory();
@@ -484,21 +519,11 @@ public class CheckUpdateFrom {
         }
     }
 
-    private void checkMust(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        if (newNode instanceof MustConstraintAware) {
-            final Collection<? extends MustDefinition> newMust = ((MustConstraintAware) newNode).getMustConstraints();
-            if (oldNode instanceof MustConstraintAware) {
-                checkOldAndNewMust(oldNode, newMust);
-            } else {
-                errors.add(addedMustError().updateInformation(
-                        newSchemaIS.toSchemaNodeIdentifier() + MUST + new ArrayList<>(newMust),
-                        DONT_EXISTS));
-            }
-        }
-    }
-
-    private void checkOldAndNewMust(final DataSchemaNode oldNode, final Collection<? extends MustDefinition> newMust) {
-        final Collection<? extends MustDefinition> oldMust = ((MustConstraintAware) oldNode).getMustConstraints();
+    private void checkMust() {
+        final Collection<? extends MustDefinition> newMust =
+                newSchemaIS.currentStatement().filterEffectiveStatements(MustDefinition.class);
+        final Collection<? extends MustDefinition> oldMust =
+                oldSchemaIS.currentStatement().filterEffectiveStatements(MustDefinition.class);
         if (oldMust.size() < newMust.size()) {
             errors.add(addedMustError().updateInformation(
                     newSchemaIS.toSchemaNodeIdentifier() + MUST + getXpathStringFromMustCollection(newMust),
@@ -520,9 +545,11 @@ public class CheckUpdateFrom {
                 .collect(Collectors.joining(",")) + "]";
     }
 
-    private void checkWhen(final DataSchemaNode oldNode, final DataSchemaNode newNode) {
-        final Optional<? extends QualifiedBound> newWhen = newNode.getWhenCondition();
-        final Optional<? extends QualifiedBound> oldWhen = oldNode.getWhenCondition();
+    private void checkWhen() {
+        final Optional<? extends QualifiedBound> newWhen = newSchemaIS.currentStatement()
+                .findFirstEffectiveSubstatementArgument(WhenEffectiveStatement.class);
+        final Optional<? extends QualifiedBound> oldWhen = oldSchemaIS.currentStatement()
+                .findFirstEffectiveSubstatementArgument(WhenEffectiveStatement.class);
         if (oldWhen.isEmpty() && newWhen.isPresent()) {
             errors.add(addedWhenError().updateInformation(
                     newSchemaIS.toSchemaNodeIdentifier() + WHEN + newWhen.get(),
@@ -700,16 +727,20 @@ public class CheckUpdateFrom {
         }
     }
 
-    private DataSchemaNode getNodeFromNewModule(final Absolute nodeAbsolutePath) {
+    private EffectiveStatement<?, ?> getNodeFromNewModule(final Absolute nodeAbsolutePath) {
         final List<QName> finalList = new LinkedList<>();
         for (final QName qname : nodeAbsolutePath.getNodeIdentifiers()) {
             finalList.add(QName.create(newModule.getNamespace(), newModule.getRevision(), qname.getLocalName()));
         }
 
-        final Optional<DataSchemaNode> dataChildByName = newModule.findDataTreeChild(finalList);
-        if (dataChildByName.isPresent()) {
-            return dataChildByName.get();
-        } else {
+        final SchemaInferenceStack lookupStack = SchemaInferenceStack.of(newContext);
+        try {
+            EffectiveStatement<?, ?> result = null;
+            for (final QName qname : finalList) {
+                result = lookupStack.enterDataTree(qname);
+            }
+            return result;
+        } catch (final IllegalArgumentException e) {
             errors.add(missingNodeError().updateInformation("missing node",
                     oldSchemaIS.toSchemaNodeIdentifier().toString()));
             return null;
@@ -728,10 +759,8 @@ public class CheckUpdateFrom {
                         oldOptionalRevision.get().toString()));
             }
 
-            final Collection<? extends RevisionStatement> revisionsNew =
-                    Objects.requireNonNull(((ModuleEffectiveStatement) newModule).getDeclared()).revisionStatements();
-            final Collection<? extends RevisionStatement> revisionsOld =
-                    Objects.requireNonNull(((ModuleEffectiveStatement) oldModule).getDeclared()).revisionStatements();
+            final Collection<? extends RevisionStatement> revisionsNew = revisionStatements(newModule);
+            final Collection<? extends RevisionStatement> revisionsOld = revisionStatements(oldModule);
 
             final List<Revision> newDates = revisionsNew
                     .stream()
@@ -743,6 +772,14 @@ public class CheckUpdateFrom {
                 }
             }
         }
+    }
+
+    private static Collection<? extends RevisionStatement> revisionStatements(final Module module) {
+        if (module instanceof EffectiveStatementEquivalent<?> equivalent
+                && equivalent.asEffectiveStatement() instanceof ModuleEffectiveStatement moduleStatement) {
+            return Objects.requireNonNull(moduleStatement.declared()).revisionStatements();
+        }
+        return List.of();
     }
 
     private void checkName() {

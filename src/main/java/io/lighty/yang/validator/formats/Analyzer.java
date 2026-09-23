@@ -16,10 +16,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import org.opendaylight.yangtools.yang.model.api.EffectiveStatementEquivalent;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.ModuleLike;
 import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
-import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +42,9 @@ public class Analyzer extends FormatPlugin {
     private Set<DeclaredStatement<?>> getRecursivelyDeclaredStatements(final Collection<? extends ModuleLike> modules) {
         final Set<DeclaredStatement<?>> declaredStatements = new HashSet<>();
         for (final ModuleLike module : modules) {
-            declaredStatements.add(((EffectiveStatement<?, ?>) module).getDeclared());
+            if (module instanceof EffectiveStatementEquivalent<?> equivalent) {
+                declaredStatements.add(equivalent.asEffectiveStatement().declared());
+            }
 
             final Collection<? extends ModuleLike> submodules = module.getSubmodules();
             if (submodulesAreNotEmpty(submodules)) {
