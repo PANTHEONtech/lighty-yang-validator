@@ -14,7 +14,6 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import javax.xml.stream.XMLInputFactory;
@@ -26,14 +25,19 @@ import org.opendaylight.yangtools.yang.data.codec.xml.XmlCodecFactory;
 import org.opendaylight.yangtools.yang.data.impl.schema.ImmutableNormalizedNodeStreamWriter;
 import org.opendaylight.yangtools.yang.data.impl.schema.NormalizationResultHolder;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
-import org.opendaylight.yangtools.yang.model.api.ActionNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
+import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ActionEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeAwareEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaTreeAwareEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaTreeEffectiveStatement;
 
 public class SchemaSelector {
 
@@ -74,19 +78,16 @@ public class SchemaSelector {
         final var stack = new LyvStack();
 
         for (final Module module : effectiveModelContext.getModules()) {
-            for (final DataSchemaNode node : module.getChildNodes()) {
-                resolveChildNodes(tree, node, true, false, stack, true);
+            for (final SchemaTreeEffectiveStatement<?> statement : dataChildren(module.asEffectiveStatement())) {
+                resolveChildNodes(tree, statement, true, false, stack, true);
                 stack.clear();
             }
 
             for (final AugmentationSchemaNode aug : module.getAugmentations()) {
                 stack.enter(aug.getTargetPath());
-                // The nodes returned by aug.getChildNodes() are not grafted onto the augment's target, so their
-                // own effectiveConfig() is not applicable (same as inside a grouping); resolveChildNodes looks
-                // each node's own position up via effectiveModelContext.findSchemaTreeNode() instead.
                 final boolean augmentConfig = isAugmentConfig(aug);
-                for (final DataSchemaNode node : aug.getChildNodes()) {
-                    resolveChildNodes(tree, node, true, true, stack, augmentConfig);
+                for (final SchemaTreeEffectiveStatement<?> statement : dataChildren(aug.asEffectiveStatement())) {
+                    resolveChildNodes(tree, statement, true, true, stack, augmentConfig);
                 }
                 stack.clear();
             }
@@ -103,31 +104,65 @@ public class SchemaSelector {
      * false;} on an augmented descendant visible. {@code ambientConfig} is the fallback used when that lookup is
      * absent (e.g. deviated away) or does not resolve a config value of its own.
      */
-    private void resolveChildNodes(final SchemaTree schemaTree, final DataSchemaNode node, final boolean rootNode,
-            final boolean augNode, final LyvStack stack, final boolean ambientConfig) {
-        stack.enter(node);
+    private void resolveChildNodes(final SchemaTree schemaTree, final SchemaTreeEffectiveStatement<?> statement,
+            final boolean rootNode, final boolean augNode, final LyvStack stack, final boolean ambientConfig) {
+        stack.enter(statement);
         final boolean isConfig = resolveEffectiveConfig(stack).orElse(ambientConfig);
+        final DataSchemaNode node = toDataSchemaNode(statement);
         SchemaTree childSchemaTree = schemaTree.addChild(node, rootNode, augNode, stack, isConfig);
-        if (node instanceof DataNodeContainer) {
-            for (final DataSchemaNode schemaNode : ((DataNodeContainer) node).getChildNodes()) {
-                resolveChildNodes(childSchemaTree, schemaNode, false, false, stack, isConfig);
-            }
-        } else if (node instanceof ChoiceSchemaNode) {
-            for (final DataSchemaNode singleCase : ((ChoiceSchemaNode) node).getCases()) {
-                resolveChildNodes(childSchemaTree, singleCase, false, false, stack, isConfig);
+        if (statement instanceof SchemaTreeAwareEffectiveStatement<?, ?>) {
+            for (final SchemaTreeEffectiveStatement<?> child : dataChildren(statement)) {
+                resolveChildNodes(childSchemaTree, child, false, false, stack, isConfig);
             }
         }
 
-        if (node instanceof ActionNodeContainer) {
-            for (final ActionDefinition action : ((ActionNodeContainer) node).getActions()) {
-                stack.enter(action);
-                childSchemaTree = childSchemaTree.addChild(action, false, false, stack);
-                resolveChildNodes(childSchemaTree, action.getInput(), false, false, stack, true);
-                resolveChildNodes(childSchemaTree, action.getOutput(), false, false, stack, true);
-                stack.exit();
-            }
+        for (final ActionDefinition action : actionChildren(statement)) {
+            stack.enter(action.asEffectiveStatement());
+            childSchemaTree = childSchemaTree.addChild(action, false, false, stack);
+            resolveChildNodes(childSchemaTree, action.getInput().asEffectiveStatement(), false, false, stack,
+                    true);
+            resolveChildNodes(childSchemaTree, action.getOutput().asEffectiveStatement(), false, false, stack,
+                    true);
+            stack.exit();
         }
         stack.exit();
+    }
+
+    // Excludes ActionEffectiveStatement (also a SchemaTreeEffectiveStatement) - handled by actionChildren().
+    private static List<SchemaTreeEffectiveStatement<?>> dataChildren(final EffectiveStatement<?, ?> statement) {
+        if (!(statement instanceof SchemaTreeAwareEffectiveStatement<?, ?> aware)) {
+            return List.of();
+        }
+        final List<SchemaTreeEffectiveStatement<?>> children = new ArrayList<>();
+        for (final SchemaTreeEffectiveStatement<?> child : aware.schemaTreeNodes()) {
+            if (child instanceof DataTreeEffectiveStatement<?> || child instanceof ChoiceEffectiveStatement
+                    || child instanceof CaseEffectiveStatement) {
+                children.add(child);
+            }
+        }
+        return children;
+    }
+
+    private static List<ActionDefinition> actionChildren(final EffectiveStatement<?, ?> statement) {
+        if (!(statement instanceof SchemaTreeAwareEffectiveStatement<?, ?> aware)) {
+            return List.of();
+        }
+        final List<ActionDefinition> actions = new ArrayList<>();
+        for (final SchemaTreeEffectiveStatement<?> child : aware.schemaTreeNodes()) {
+            if (child instanceof ActionEffectiveStatement && child instanceof ActionDefinition actionDefinition) {
+                actions.add(actionDefinition);
+            }
+        }
+        return actions;
+    }
+
+    // dataChildren()'s filter guarantees DataSchemaCompat for every element it returns (verified per-type against
+    // yang-model-api 15.1.3); SchemaTree still carries the old model, so every node is bridged back here once.
+    private static DataSchemaNode toDataSchemaNode(final SchemaTreeEffectiveStatement<?> statement) {
+        if (statement instanceof DataSchemaCompat<?, ?> compat) {
+            return compat.toDataSchemaNode();
+        }
+        throw new IllegalStateException("Cannot bridge " + statement + " to DataSchemaNode");
     }
 
     /**
@@ -137,15 +172,16 @@ public class SchemaSelector {
      */
     private Optional<Boolean> resolveEffectiveConfig(final LyvStack stack) {
         return effectiveModelContext.findSchemaTreeNode(stack.toSchemaNodeIdentifier())
-                .filter(DataSchemaNode.class::isInstance)
-                .map(DataSchemaNode.class::cast)
+                .filter(DataSchemaCompat.class::isInstance)
+                .map(statement -> ((DataSchemaCompat<?, ?>) statement).toDataSchemaNode())
                 .flatMap(DataSchemaNode::effectiveConfig);
     }
 
     private boolean isAugmentConfig(final AugmentationSchemaNode augmentation) {
-        final List<QName> qNames = new ArrayList<>();
-        Collection<? extends ActionDefinition> actions = new HashSet<>();
+        Collection<? extends ActionDefinition> actions = List.of();
         boolean isAction = false;
+        boolean initialized = false;
+        DataTreeAwareEffectiveStatement<?, ?> current = null;
         for (final QName path : augmentation.getTargetPath().getNodeIdentifiers()) {
             if (isAction) {
                 return !OUTPUT_TEXT.equals(path.getLocalName());
@@ -155,20 +191,24 @@ public class SchemaSelector {
                 continue;
             }
 
-            qNames.add(path);
-            final Optional<DataSchemaNode> optDataTreeChild = effectiveModelContext.findDataTreeChild(qNames);
+            if (!initialized) {
+                current = effectiveModelContext.findModule(path.getModule()).map(Module::asEffectiveStatement)
+                        .orElse(null);
+                initialized = true;
+            }
+            final Optional<DataTreeEffectiveStatement<?>> child = current == null
+                    ? Optional.empty() : current.findDataTreeNode(path);
 
-            if (optDataTreeChild.isPresent()) {
-                final DataSchemaNode dataTreeChild = optDataTreeChild.orElseThrow();
-                final Optional<Boolean> isConfig = dataTreeChild.effectiveConfig();
-                if (isConfig.isPresent() && !isConfig.orElseThrow()) {
-                    return false;
+            if (child.isPresent()) {
+                final DataTreeEffectiveStatement<?> dataTreeChild = child.orElseThrow();
+                if (dataTreeChild instanceof DataSchemaCompat<?, ?> compat) {
+                    final Optional<Boolean> isConfig = compat.toDataSchemaNode().effectiveConfig();
+                    if (isConfig.isPresent() && !isConfig.orElseThrow()) {
+                        return false;
+                    }
                 }
-                if (dataTreeChild instanceof ActionNodeContainer) {
-                    actions = ((ActionNodeContainer) dataTreeChild).getActions();
-                }
-            } else {
-                qNames.remove(path);
+                actions = actionChildren(dataTreeChild);
+                current = dataTreeChild instanceof DataTreeAwareEffectiveStatement<?, ?> aware ? aware : null;
             }
         }
         return true;
