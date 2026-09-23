@@ -14,25 +14,26 @@ import java.util.Map;
 import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
-import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Status;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
 import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.AnydataEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.AnyxmlEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.IfFeatureStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.LeafListEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ListEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
+import org.opendaylight.yangtools.yang.model.api.stmt.StatusEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.type.BooleanTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.type.LeafrefTypeDefinition;
-import org.opendaylight.yangtools.yang.model.spi.meta.AbstractDeclaredEffectiveStatement;
 
 abstract class Line {
 
@@ -58,70 +59,83 @@ abstract class Line {
 
     Line(final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
             final Map<XMLNamespace, String> namespacePrefix) {
-        final SchemaNode node = lyvNodeData.getNode();
-        status = node.getStatus();
+        final EffectiveStatement<?, ?> statement = lyvNodeData.getStatement();
+        status = status(statement);
         isMandatory = lyvNodeData.isNodeMandatory();
-        isListOrLeafList = node instanceof LeafListSchemaNode || node instanceof ListSchemaNode;
-        isChoice = node instanceof ChoiceSchemaNode;
-        isCase = node instanceof CaseSchemaNode;
-        nodeName = node.getQName().getLocalName();
+        isListOrLeafList = statement instanceof LeafListEffectiveStatement
+                || statement instanceof ListEffectiveStatement;
+        isChoice = statement instanceof ChoiceEffectiveStatement;
+        isCase = statement instanceof CaseEffectiveStatement;
+        nodeName = lyvNodeData.getQName().getLocalName();
         this.inputOutput = inputOutput;
         this.namespacePrefix = namespacePrefix;
         this.resolvedConfig = lyvNodeData.getResolvedConfig();
-        resolveFlag(node, lyvNodeData.getAbsolutePath(), lyvNodeData.getContext());
-        resolvePathAndType(node);
-        resolveKeys(node);
-        resolveIfFeatures(node);
+        resolveFlag(statement, lyvNodeData.getAbsolutePath(), lyvNodeData.getContext());
+        resolvePathAndType(statement);
+        resolveKeys(statement);
+        resolveIfFeatures(statement);
     }
 
-    protected abstract void resolveFlag(SchemaNode node, Absolute absolutePath, EffectiveModelContext context);
+    private static Status status(final EffectiveStatement<?, ?> statement) {
+        return statement.findFirstEffectiveSubstatement(StatusEffectiveStatement.class)
+                .map(StatusEffectiveStatement::argument)
+                .orElse(Status.CURRENT);
+    }
+
+    protected abstract void resolveFlag(EffectiveStatement<?, ?> statement, Absolute absolutePath,
+            EffectiveModelContext context);
 
     /**
-     * Resolves the rw/ro-style flag from config. Prefers the resolved config passed in via {@code LyvNodeData}
-     * (needed when {@code dataSchemaNode} was reached through an augmentation's own child tree, whose own
-     * effectiveConfig() is not applicable - same as inside a grouping), falling back to the node's own
-     * effectiveConfig() otherwise.
+     * Resolves the rw/ro-style flag from config for a plain data-tree node, returning whether {@code statement}
+     * was one. RpcEffectiveStatement/ActionEffectiveStatement also implement DataSchemaCompat (via DataCompat),
+     * so this excludes them explicitly rather than testing DataSchemaCompat alone (same pitfall as dataChildren()
+     * elsewhere in this migration). Prefers the resolved config passed in via {@code LyvNodeData} (needed when
+     * the node was reached through an augmentation's own child tree, whose own effectiveConfig() is not
+     * applicable - same as inside a grouping), falling back to the node's own effectiveConfig() otherwise.
      */
-    protected void resolveFlagForDataSchemaNode(final DataSchemaNode dataSchemaNode, final String config,
+    protected boolean resolveFlagForDataSchemaNode(final EffectiveStatement<?, ?> statement, final String config,
             final String noConfig) {
-        if (resolvedConfig.orElseGet(() -> dataSchemaNode.effectiveConfig().orElse(Boolean.TRUE))) {
+        if (!((statement instanceof DataTreeEffectiveStatement<?> || statement instanceof ChoiceEffectiveStatement)
+                && statement instanceof DataSchemaCompat<?, ?> compat)) {
+            return false;
+        }
+        if (resolvedConfig.orElseGet(() -> compat.toDataSchemaNode().effectiveConfig().orElse(Boolean.TRUE))) {
             flag = config;
         } else {
             flag = noConfig;
         }
+        return true;
     }
 
-    private void resolveIfFeatures(final SchemaNode node) {
-        final DeclaredStatement<?> declared = getDeclared(node);
+    private void resolveIfFeatures(final EffectiveStatement<?, ?> statement) {
+        final DeclaredStatement<?> declared = statement.declared();
         if (declared instanceof IfFeatureStatement.MultipleIn) {
             final var ifFeature = ((IfFeatureStatement.MultipleIn<?>) declared).ifFeatureStatements();
             ifFeatures.addAll(ifFeature);
         }
     }
 
-    private static DeclaredStatement<?> getDeclared(final SchemaNode node) {
-        if (node instanceof AbstractDeclaredEffectiveStatement) {
-            return ((AbstractDeclaredEffectiveStatement<?, ?>) node).getDeclared();
-        }
-        return null;
-    }
-
-    private void resolveKeys(final SchemaNode node) {
-        if (node instanceof ListSchemaNode) {
-            for (final QName qname : ((ListSchemaNode) node).getKeyDefinition()) {
+    private void resolveKeys(final EffectiveStatement<?, ?> statement) {
+        if (statement instanceof ListEffectiveStatement listStatement) {
+            for (final QName qname : listStatement.findKeyStatement()
+                    .map(key -> key.argument().asList()).orElse(List.of())) {
                 keys.add(qname.getLocalName());
             }
         }
     }
 
-    private void resolvePathAndType(final SchemaNode node) {
-        if (node instanceof TypedDataSchemaNode) {
-            final TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).typeDefinition();
+    private void resolvePathAndType(final EffectiveStatement<?, ?> statement) {
+        // TypeEffectiveStatement.typeDefinition() is the bare `type` statement's own definition; it does not
+        // reflect a leaf's own `default`, which TypedDataSchemaNode.typeDefinition() layers on top of it (see
+        // JsonTree's resolveChildMetadata() for the same finding).
+        if (statement instanceof DataSchemaCompat<?, ?> compat
+                && compat.toDataSchemaNode() instanceof TypedDataSchemaNode typed) {
+            final TypeDefinition<? extends TypeDefinition<?>> type = typed.typeDefinition();
             resolvePathAndTypeForDataSchemaNode(type);
-        } else if (node instanceof AnydataEffectiveStatement) {
+        } else if (statement instanceof AnydataEffectiveStatement) {
             typeName = ANYDATA;
             path = null;
-        } else if (node instanceof AnyxmlEffectiveStatement) {
+        } else if (statement instanceof AnyxmlEffectiveStatement) {
             typeName = ANYXML;
             path = null;
         } else {
