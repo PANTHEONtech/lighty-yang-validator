@@ -268,7 +268,11 @@ public class CheckUpdateFrom {
                 if (oldAug.argument().equals(newAug.argument())) {
                     checkReference(reference(oldAug), reference(newAug));
                     checkStatus(status(oldAug), status(newAug), oldAug.argument(), newAug.argument());
+                    oldSchemaIS.enterSchemaTree(oldAug.argument());
+                    newSchemaIS.enterSchemaTree(newAug.argument());
                     findNodesRecursively(dataChildren(oldAug));
+                    oldSchemaIS.clear();
+                    newSchemaIS.clear();
                     augFound = true;
                     break;
                 }
@@ -731,7 +735,11 @@ public class CheckUpdateFrom {
     private EffectiveStatement<?, ?> getNodeFromNewModule(final Absolute nodeAbsolutePath) {
         final List<QName> finalList = new LinkedList<>();
         for (final QName qname : nodeAbsolutePath.getNodeIdentifiers()) {
-            finalList.add(QName.create(newModule.getNamespace(), newModule.getRevision(), qname.getLocalName()));
+            if (qname.getModule().equals(oldModule.getQNameModule())) {
+                finalList.add(QName.create(newModule.getNamespace(), newModule.getRevision(), qname.getLocalName()));
+            } else {
+                finalList.add(qname);
+            }
         }
 
         final SchemaInferenceStack lookupStack = SchemaInferenceStack.of(newContext);
