@@ -232,19 +232,20 @@ public class CheckUpdateFrom {
         final Collection<? extends RpcDefinition> oldRPCs = oldModule.getRpcs();
         final Collection<? extends RpcDefinition> newRPCs = newModule.getRpcs();
         for (final RpcDefinition oldRPC : oldRPCs) {
-            oldSchemaIS.enterDataTree(QName.create(oldModule.getQNameModule(),
+            oldSchemaIS.enterSchemaTree(QName.create(oldModule.getQNameModule(),
                     oldRPC.getQName().getLocalName()));
             boolean rpcFound = false;
             for (final RpcDefinition newRPC : newRPCs) {
-                newSchemaIS.enterDataTree(QName.create(newModule.getQNameModule(),
+                newSchemaIS.enterSchemaTree(QName.create(newModule.getQNameModule(),
                         newRPC.getQName().getLocalName()));
-                if (oldRPC.equals(newRPC)) {
+                if (oldRPC.getQName().getLocalName().equals(newRPC.getQName().getLocalName())) {
                     checkReference(oldRPC.getReference(), newRPC.getReference());
                     checkStatus(oldRPC.getStatus(), newRPC.getStatus(), oldSchemaIS.toSchemaNodeIdentifier(),
                             newSchemaIS.toSchemaNodeIdentifier());
                     findNodesRecursively(Collections.singletonList(oldRPC.getInput().asEffectiveStatement()));
                     findNodesRecursively(Collections.singletonList(oldRPC.getOutput().asEffectiveStatement()));
                     rpcFound = true;
+                    newSchemaIS.exit();
                     break;
                 }
                 newSchemaIS.exit();
@@ -298,12 +299,12 @@ public class CheckUpdateFrom {
         final Collection<? extends NotificationDefinition> oldNotifications = oldModule.getNotifications();
         final Collection<? extends NotificationDefinition> newNotifications = newModule.getNotifications();
         for (final NotificationDefinition oldNotification : oldNotifications) {
-            oldSchemaIS.enterDataTree(QName.create(oldModule.getQNameModule(),
+            oldSchemaIS.enterSchemaTree(QName.create(oldModule.getQNameModule(),
                     oldNotification.getQName().getLocalName()));
             boolean notificationFound = false;
             for (final NotificationDefinition newNotification : newNotifications) {
-                if (oldNotification.equals(newNotification)) {
-                    newSchemaIS.enterDataTree(QName.create(newModule.getQNameModule(),
+                if (oldNotification.getQName().getLocalName().equals(newNotification.getQName().getLocalName())) {
+                    newSchemaIS.enterSchemaTree(QName.create(newModule.getQNameModule(),
                             newNotification.getQName().getLocalName()));
                     checkReference(oldNotification.getReference(), newNotification.getReference());
                     checkStatus(oldNotification.getStatus(), newNotification.getStatus(),
@@ -745,8 +746,10 @@ public class CheckUpdateFrom {
         final SchemaInferenceStack lookupStack = SchemaInferenceStack.of(newContext);
         try {
             EffectiveStatement<?, ?> result = null;
+            boolean first = true;
             for (final QName qname : finalList) {
-                result = lookupStack.enterDataTree(qname);
+                result = first ? lookupStack.enterSchemaTree(qname) : lookupStack.enterDataTree(qname);
+                first = false;
             }
             return result;
         } catch (final IllegalArgumentException e) {
