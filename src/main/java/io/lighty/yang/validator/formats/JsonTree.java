@@ -24,7 +24,6 @@ import org.json.JSONObject;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
-import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
@@ -39,6 +38,7 @@ import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ActionEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.AnydataEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.AnyxmlEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.AugmentEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ContainerEffectiveStatement;
@@ -121,19 +121,20 @@ public class JsonTree extends FormatPlugin {
             appendRpcsToJsonTree(module, jsonTree, stack);
             stack.clear();
 
-            for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
-                stack.enter(augmentation.getTargetPath());
+            for (final AugmentEffectiveStatement augmentation
+                    : module.asEffectiveStatement().collectEffectiveSubstatements(AugmentEffectiveStatement.class)) {
+                stack.enter(augmentation.argument());
                 final JSONObject augmentationJson = new JSONObject();
                 final boolean isConfig = isAugmentConfig(augmentation);
                 augmentationJson.put(CONFIG, isConfig);
-                augmentationJson.put(STATUS, augmentation.getStatus().name());
-                augmentationJson.put(DESCRIPTION, augmentation.getDescription().orElse(EMPTY));
-                augmentationJson.put(STATUS, augmentation.getStatus().name());
+                augmentationJson.put(STATUS, status(augmentation).name());
+                augmentationJson.put(DESCRIPTION, description(augmentation).orElse(EMPTY));
+                augmentationJson.put(STATUS, status(augmentation).name());
                 augmentationJson.put(CLASS, AUG);
-                final String path = resolvePath(augmentation.getTargetPath());
+                final String path = resolvePath(augmentation.argument());
                 augmentationJson.put(PATH, path);
                 augmentationJson.put(NAME, path);
-                for (final SchemaTreeEffectiveStatement<?> child : dataChildren(augmentation.asEffectiveStatement())) {
+                for (final SchemaTreeEffectiveStatement<?> child : dataChildren(augmentation)) {
                     if (isConfig) {
                         augmentationJson.append(CHILDREN, resolveChildMetadata(child, stack, null, Boolean.TRUE));
                     } else {
@@ -174,9 +175,9 @@ public class JsonTree extends FormatPlugin {
         }
     }
 
-    private void appendActionsToAugmentationJson(final AugmentationSchemaNode augmentation,
+    private void appendActionsToAugmentationJson(final AugmentEffectiveStatement augmentation,
             final JSONObject augmentationJson, final LyvStack stack) {
-        for (final ActionEffectiveStatement action : actionChildren(augmentation.asEffectiveStatement())) {
+        for (final ActionEffectiveStatement action : actionChildren(augmentation)) {
             stack.enter(action);
             final JSONObject jsonModuleChildAction = new JSONObject();
             jsonModuleChildAction.put(NAME, action.argument().getLocalName());
@@ -240,12 +241,12 @@ public class JsonTree extends FormatPlugin {
         }
     }
 
-    private boolean isAugmentConfig(final AugmentationSchemaNode augmentation) {
+    private boolean isAugmentConfig(final AugmentEffectiveStatement augmentation) {
         Collection<ActionEffectiveStatement> actions = List.of();
         boolean isAction = false;
         boolean initialized = false;
         DataTreeAwareEffectiveStatement<?, ?> current = null;
-        for (final QName path : augmentation.getTargetPath().getNodeIdentifiers()) {
+        for (final QName path : augmentation.argument().getNodeIdentifiers()) {
             if (isAction) {
                 return !OUTPUT_TEXT.equals(path.getLocalName());
             }

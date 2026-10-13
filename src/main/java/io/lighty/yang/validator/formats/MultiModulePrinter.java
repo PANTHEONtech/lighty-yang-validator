@@ -28,7 +28,6 @@ import java.util.TreeSet;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.QNameModule;
 import org.opendaylight.yangtools.yang.common.Revision;
-import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveStatementEquivalent;
 import org.opendaylight.yangtools.yang.model.api.Module;
@@ -36,6 +35,7 @@ import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.AugmentEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.LeafEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.LeafListEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.type.UnionTypeDefinition;
@@ -115,8 +115,9 @@ public class MultiModulePrinter extends FormatPlugin {
             for (final SchemaTree singleEntry : entry.getValue()) {
                 gatherUsedTypeDefs(singleEntry, module);
             }
-            for (final AugmentationSchemaNode aug : module.getAugmentations()) {
-                for (final QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
+            for (final AugmentEffectiveStatement aug
+                    : module.asEffectiveStatement().collectEffectiveSubstatements(AugmentEffectiveStatement.class)) {
+                for (final QName pathQname : aug.argument().getNodeIdentifiers()) {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                             .add(this.modelContext.findModule(pathQname.getModule())
                                     .orElseThrow(

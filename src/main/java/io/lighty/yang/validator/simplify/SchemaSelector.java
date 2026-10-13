@@ -25,13 +25,13 @@ import org.opendaylight.yangtools.yang.data.codec.xml.XmlCodecFactory;
 import org.opendaylight.yangtools.yang.data.impl.schema.ImmutableNormalizedNodeStreamWriter;
 import org.opendaylight.yangtools.yang.data.impl.schema.NormalizationResultHolder;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
-import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ActionEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.AugmentEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeAwareEffectiveStatement;
@@ -83,10 +83,11 @@ public class SchemaSelector {
                 stack.clear();
             }
 
-            for (final AugmentationSchemaNode aug : module.getAugmentations()) {
-                stack.enter(aug.getTargetPath());
+            for (final AugmentEffectiveStatement aug
+                    : module.asEffectiveStatement().collectEffectiveSubstatements(AugmentEffectiveStatement.class)) {
+                stack.enter(aug.argument());
                 final boolean augmentConfig = isAugmentConfig(aug);
-                for (final SchemaTreeEffectiveStatement<?> statement : dataChildren(aug.asEffectiveStatement())) {
+                for (final SchemaTreeEffectiveStatement<?> statement : dataChildren(aug)) {
                     resolveChildNodes(tree, statement, true, true, stack, augmentConfig);
                 }
                 stack.clear();
@@ -177,12 +178,12 @@ public class SchemaSelector {
                 .flatMap(DataSchemaNode::effectiveConfig);
     }
 
-    private boolean isAugmentConfig(final AugmentationSchemaNode augmentation) {
+    private boolean isAugmentConfig(final AugmentEffectiveStatement augmentation) {
         Collection<? extends ActionDefinition> actions = List.of();
         boolean isAction = false;
         boolean initialized = false;
         DataTreeAwareEffectiveStatement<?, ?> current = null;
-        for (final QName path : augmentation.getTargetPath().getNodeIdentifiers()) {
+        for (final QName path : augmentation.argument().getNodeIdentifiers()) {
             if (isAction) {
                 return !OUTPUT_TEXT.equals(path.getLocalName());
             }
