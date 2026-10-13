@@ -42,9 +42,9 @@ public class Analyzer extends FormatPlugin {
     private Set<DeclaredStatement<?>> getRecursivelyDeclaredStatements(final Collection<? extends ModuleLike> modules) {
         final Set<DeclaredStatement<?>> declaredStatements = new HashSet<>();
         for (final ModuleLike module : modules) {
-            if (module instanceof EffectiveStatementEquivalent<?> equivalent) {
-                declaredStatements.add(equivalent.asEffectiveStatement().declared());
-            }
+            // ModuleLike itself does not declare asEffectiveStatement(), but both of its real implementors
+            // (Module, Submodule) do, via DocumentedNode.Mixin<...> extends EffectiveStatementEquivalent<...>.
+            declaredStatements.add(((EffectiveStatementEquivalent<?>) module).asEffectiveStatement().declared());
 
             final Collection<? extends ModuleLike> submodules = module.getSubmodules();
             if (submodulesAreNotEmpty(submodules)) {
