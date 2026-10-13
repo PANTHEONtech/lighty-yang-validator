@@ -15,10 +15,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
-import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ActionEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.AugmentEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.DescriptionEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.InputEffectiveStatement;
@@ -48,15 +48,15 @@ public class HtmlLine extends Line {
     }
 
     HtmlLine(final List<Integer> ids, final LyvNodeData lyvNodeData, final RpcInputOutput inputOutput,
-            final Map<XMLNamespace, String> namespacePrefix, final AugmentationSchemaNode augment) {
+            final Map<XMLNamespace, String> namespacePrefix, final AugmentEffectiveStatement augment) {
         super(lyvNodeData, inputOutput, namespacePrefix);
         this.ids = ids;
         final Iterable<QName> pathFromRoot;
-        description = augment.getDescription().orElse("");
+        description = augment.findDescriptionStatement().map(DescriptionEffectiveStatement::argument).orElse("");
         schema = SchemaHtmlEnum.AUGMENT;
-        pathFromRoot = augment.getTargetPath().getNodeIdentifiers();
-        nodeName = augment.getTargetPath().lastNodeIdentifier().getLocalName();
-        status = augment.getStatus();
+        pathFromRoot = augment.argument().getNodeIdentifiers();
+        nodeName = augment.argument().lastNodeIdentifier().getLocalName();
+        status = status(augment);
         flag = "";
         path = createPath(pathFromRoot, namespacePrefix, lyvNodeData.getContext());
     }

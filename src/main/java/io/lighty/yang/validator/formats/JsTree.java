@@ -27,7 +27,6 @@ import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
-import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.Module;
@@ -36,6 +35,7 @@ import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
 import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ActionEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.AugmentEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeAwareEffectiveStatement;
@@ -67,7 +67,8 @@ public class JsTree extends FormatPlugin {
             printLines(getChildNodesLines(singletonListInitializer, module));
 
             // Augmentations
-            for (final AugmentationSchemaNode augNode : module.getAugmentations()) {
+            for (final AugmentEffectiveStatement augNode
+                    : module.asEffectiveStatement().collectEffectiveSubstatements(AugmentEffectiveStatement.class)) {
                 printLines(getAugmentationNodesLines(singletonListInitializer.getSingletonListWithIncreasedValue(),
                         augNode));
             }
@@ -181,11 +182,11 @@ public class JsTree extends FormatPlugin {
         return lines;
     }
 
-    private List<Line> getAugmentationNodesLines(final List<Integer> ids, final AugmentationSchemaNode augNode) {
+    private List<Line> getAugmentationNodesLines(final List<Integer> ids, final AugmentEffectiveStatement augNode) {
         final List<Line> lines = new ArrayList<>();
         final LyvStack stack = new LyvStack();
-        stack.enter(augNode.getTargetPath());
-        final List<SchemaTreeEffectiveStatement<?>> augChildNodes = dataChildren(augNode.asEffectiveStatement());
+        stack.enter(augNode.argument());
+        final List<SchemaTreeEffectiveStatement<?>> augChildNodes = dataChildren(augNode);
         final SchemaTreeEffectiveStatement<?> firstStatement = augChildNodes.iterator().next();
         stack.enter(firstStatement);
         LyvNodeData lyvNodeData = new LyvNodeData(modelContext, firstStatement, stack);

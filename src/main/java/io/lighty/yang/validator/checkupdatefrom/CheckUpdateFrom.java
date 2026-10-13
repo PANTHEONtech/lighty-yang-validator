@@ -56,7 +56,6 @@ import java.util.stream.Collectors;
 import net.sourceforge.argparse4j.impl.choice.CollectionArgumentChoice;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
-import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DocumentedNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.EffectiveStatementEquivalent;
@@ -73,6 +72,7 @@ import org.opendaylight.yangtools.yang.model.api.TypeDefinitionAware;
 import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.meta.ElementCountMatcher;
+import org.opendaylight.yangtools.yang.model.api.stmt.AugmentEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeEffectiveStatement;
@@ -258,23 +258,24 @@ public class CheckUpdateFrom {
     }
 
     private void checkAugmentations() {
-        final Collection<? extends AugmentationSchemaNode> oldAugmentations = oldModule.getAugmentations();
-        final Collection<? extends AugmentationSchemaNode> newAugmentations = newModule.getAugmentations();
-        for (final AugmentationSchemaNode oldAug : oldAugmentations) {
+        final Collection<AugmentEffectiveStatement> oldAugmentations = oldModule.asEffectiveStatement()
+                .collectEffectiveSubstatements(AugmentEffectiveStatement.class);
+        final Collection<AugmentEffectiveStatement> newAugmentations = newModule.asEffectiveStatement()
+                .collectEffectiveSubstatements(AugmentEffectiveStatement.class);
+        for (final AugmentEffectiveStatement oldAug : oldAugmentations) {
             boolean augFound = false;
-            for (final AugmentationSchemaNode newAug : newAugmentations) {
-                if (oldAug.getTargetPath().equals(newAug.getTargetPath())) {
-                    checkReference(oldAug.getReference(), newAug.getReference());
-                    checkStatus(oldAug.getStatus(), newAug.getStatus(), oldAug.getTargetPath(),
-                            newAug.getTargetPath());
-                    findNodesRecursively(dataChildren(oldAug.asEffectiveStatement()));
+            for (final AugmentEffectiveStatement newAug : newAugmentations) {
+                if (oldAug.argument().equals(newAug.argument())) {
+                    checkReference(reference(oldAug), reference(newAug));
+                    checkStatus(status(oldAug), status(newAug), oldAug.argument(), newAug.argument());
+                    findNodesRecursively(dataChildren(oldAug));
                     augFound = true;
                     break;
                 }
             }
             if (!augFound) {
                 errors.add(missingNodeError().updateInformation("missing augmentation node",
-                        oldAug.getTargetPath().toString()));
+                        oldAug.argument().toString()));
             }
         }
     }

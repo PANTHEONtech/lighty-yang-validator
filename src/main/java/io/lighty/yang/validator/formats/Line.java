@@ -76,7 +76,7 @@ abstract class Line {
         resolveIfFeatures(statement);
     }
 
-    private static Status status(final EffectiveStatement<?, ?> statement) {
+    static Status status(final EffectiveStatement<?, ?> statement) {
         return statement.findFirstEffectiveSubstatement(StatusEffectiveStatement.class)
                 .map(StatusEffectiveStatement::argument)
                 .orElse(Status.CURRENT);

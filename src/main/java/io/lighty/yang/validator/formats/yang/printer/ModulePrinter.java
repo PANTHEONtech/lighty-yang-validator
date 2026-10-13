@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.QNameModule;
 import org.opendaylight.yangtools.yang.common.Revision;
-import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.EffectiveStatementEquivalent;
@@ -38,6 +37,7 @@ import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
 import org.opendaylight.yangtools.yang.model.api.meta.DeclaredStatement;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.AugmentEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ContainerEffectiveStatement;
@@ -118,7 +118,8 @@ public class ModulePrinter {
     }
 
     private void printAugmentations() {
-        for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
+        for (final AugmentEffectiveStatement augmentation
+                : module.asEffectiveStatement().collectEffectiveSubstatements(AugmentEffectiveStatement.class)) {
             boolean printOpeningStatement = true;
             for (final SchemaTree st : schemaTree) {
                 if (isStAugmentOrStParentEqualsToAugmPath(st, augmentation)) {
@@ -132,10 +133,11 @@ public class ModulePrinter {
         }
     }
 
-    private boolean isPrintOpeningStatement(final AugmentationSchemaNode augmentation, boolean printOpeningStatement) {
+    private boolean isPrintOpeningStatement(final AugmentEffectiveStatement augmentation,
+            boolean printOpeningStatement) {
         if (printOpeningStatement) {
             final StringBuilder target = new StringBuilder();
-            for (final QName name : augmentation.getTargetPath().getNodeIdentifiers()) {
+            for (final QName name : augmentation.argument().getNodeIdentifiers()) {
                 target.append('/');
                 target.append(moduleToPrefix.get(name.getModule()));
                 target.append(':');
@@ -471,12 +473,12 @@ public class ModulePrinter {
     }
 
     private static boolean isStAugmentOrStParentEqualsToAugmPath(final SchemaTree st,
-            final AugmentationSchemaNode augmSN) {
+            final AugmentEffectiveStatement augmSN) {
         if (st.isAugmenting()) {
             final List<QName> qnamePath = st.getAbsolutePath().getNodeIdentifiers();
             if (qnamePath.size() > 1) {
                 final Absolute parentPath = Absolute.of(qnamePath.subList(0, qnamePath.size() - 1));
-                return parentPath.equals(augmSN.getTargetPath());
+                return parentPath.equals(augmSN.argument());
             }
         }
         return false;
