@@ -329,7 +329,7 @@ public class ModulePrinter {
                 printer.openStatement(Statement.LEAF, qname.getLocalName());
                 //needs to be TypedDataSchemaNode because printType() calls typed.typeDefinition(), which has no
                 // EffectiveStatement substitute
-                typePrinter.printType(printer, (TypedDataSchemaNode) toDataSchemaNode(statement));
+                typePrinter.printType(printer, (TypedDataSchemaNode) statement);
             } else if (statement instanceof ChoiceEffectiveStatement) {
                 printer.openStatement(Statement.CHOICE, qname.getLocalName());
             } else if (statement instanceof CaseEffectiveStatement) {
@@ -337,7 +337,7 @@ public class ModulePrinter {
             } else if (statement instanceof LeafListEffectiveStatement) {
                 printer.openStatement(Statement.LEAF_LIST, qname.getLocalName());
                 //same as above
-                typePrinter.printType(printer, (TypedDataSchemaNode) toDataSchemaNode(statement));
+                typePrinter.printType(printer, (TypedDataSchemaNode) statement);
             } else {
                 throw new IllegalStateException("Unknown node " + statement);
             }
@@ -377,11 +377,13 @@ public class ModulePrinter {
     }
 
     private void doPrintMandatory(final EffectiveStatement<?, ?> statement) {
-        if (toDataSchemaNode(statement) instanceof MandatoryAware mandatoryAware && mandatoryAware.isMandatory()) {
+        if (statement instanceof MandatoryAware mandatoryAware && mandatoryAware.isMandatory()) {
             printer.printSimple("mandatory", "true");
             printer.printEmptyLine();
         }
     }
+
+    // left as is because effectiveConfig()/isAddedByUses() have no EffectiveStatement equivalent
     private static DataSchemaNode toDataSchemaNode(final EffectiveStatement<?, ?> statement) {
         if (statement instanceof DataSchemaCompat<?, ?> compat) {
             return compat.toDataSchemaNode();

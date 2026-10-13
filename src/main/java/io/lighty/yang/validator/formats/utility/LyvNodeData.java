@@ -14,7 +14,6 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
-import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
 import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ActionEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
@@ -106,8 +105,8 @@ public class LyvNodeData {
     }
 
     public boolean isNodeMandatory() {
-        final boolean mandatoryAware = statement instanceof DataSchemaCompat<?, ?> compat
-                && compat.toDataSchemaNode() instanceof MandatoryAware mandatoryNode && mandatoryNode.isMandatory();
+        final boolean mandatoryAware = statement instanceof MandatoryAware mandatoryNode
+                && mandatoryNode.isMandatory();
         return mandatoryAware
                 || statement instanceof ContainerEffectiveStatement || statement instanceof InputEffectiveStatement
                 || statement instanceof OutputEffectiveStatement || statement instanceof CaseEffectiveStatement
