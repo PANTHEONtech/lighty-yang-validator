@@ -109,8 +109,7 @@ public class SchemaSelector {
             final boolean rootNode, final boolean augNode, final LyvStack stack, final boolean ambientConfig) {
         stack.enter(statement);
         final boolean isConfig = resolveEffectiveConfig(stack).orElse(ambientConfig);
-        final DataSchemaNode node = toDataSchemaNode(statement);
-        SchemaTree childSchemaTree = schemaTree.addChild(node, rootNode, augNode, stack, isConfig);
+        SchemaTree childSchemaTree = schemaTree.addChild(statement, rootNode, augNode, stack, isConfig);
         if (statement instanceof SchemaTreeAwareEffectiveStatement<?, ?>) {
             for (final SchemaTreeEffectiveStatement<?> child : dataChildren(statement)) {
                 resolveChildNodes(childSchemaTree, child, false, false, stack, isConfig);
@@ -155,15 +154,6 @@ public class SchemaSelector {
             }
         }
         return actions;
-    }
-
-    // dataChildren()'s filter guarantees DataSchemaCompat for every element it returns (verified per-type against
-    // yang-model-api 15.1.3); SchemaTree still carries the old model, so every node is bridged back here once.
-    private static DataSchemaNode toDataSchemaNode(final SchemaTreeEffectiveStatement<?> statement) {
-        if (statement instanceof DataSchemaCompat<?, ?> compat) {
-            return compat.toDataSchemaNode();
-        }
-        throw new IllegalStateException("Cannot bridge " + statement + " to DataSchemaNode");
     }
 
     /**
