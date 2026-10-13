@@ -69,7 +69,6 @@ public class ModulePrinter {
     private final SmartTypePrintingStrategy typePrinter;
     private final Module module;
     private final Map<QNameModule, String> moduleToPrefix;
-    private final Set<String> usedGroupingNames = new HashSet<>();
 
     private final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTreesMap = new HashMap<>();
 
@@ -124,7 +123,7 @@ public class ModulePrinter {
             for (final SchemaTree st : schemaTree) {
                 if (isStAugmentOrStParentEqualsToAugmPath(st, augmentation)) {
                     printOpeningStatement = isPrintOpeningStatement(augmentation, printOpeningStatement);
-                    doPrintSchema(true, st, null, groupingTreesMap);
+                    doPrintSchema(true, st, null, groupingTreesMap, new HashSet<>());
                 }
             }
             if (!printOpeningStatement) {
@@ -151,7 +150,7 @@ public class ModulePrinter {
 
     private void printSchema(final SchemaTree tree) {
         if (module.findDataChildByName(tree.getSchemaNode().getQName()).isPresent()) {
-            doPrintSchema(true, tree, null, groupingTreesMap);
+            doPrintSchema(true, tree, null, groupingTreesMap, new HashSet<>());
         }
     }
 
@@ -159,25 +158,25 @@ public class ModulePrinter {
         for (final Map.Entry<GroupingDefinition, Set<SchemaTree>> tree : trees.entrySet()) {
             printer.openStatement(Statement.GROUPING, tree.getKey().getQName().getLocalName());
             for (final SchemaTree entry : tree.getValue()) {
-                doPrintSchema(true, entry, tree.getKey().getQName().getLocalName(), new HashMap<>());
+                doPrintSchema(true, entry, tree.getKey().getQName().getLocalName(), new HashMap<>(), new HashSet<>());
             }
             printer.closeStatement();
         }
     }
 
     private boolean doPrintUses(final EffectiveStatement<?, ?> statement, final boolean isPrintingAllowed,
-            final String groupingName,
-            final SchemaTree tree, final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
+            final String groupingName, final SchemaTree tree,
+            final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees, final Set<String> usedGroupingNames) {
         //left untouched because AddedByUsesAware is deprecated
         if (toDataSchemaNode(statement).isAddedByUses()) {
-            return printingUses(statement, isPrintingAllowed, groupingName, tree, groupingTrees);
+            return printingUses(statement, isPrintingAllowed, groupingName, tree, groupingTrees, usedGroupingNames);
         }
         return isPrintingAllowed;
     }
 
     private boolean printingUses(final EffectiveStatement<?, ?> statement, final boolean isPrintingAllowed,
             final String groupingName, final SchemaTree tree,
-            final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
+            final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees, final Set<String> usedGroupingNames) {
         final QName qname = (QName) statement.argument();
         final List<GroupingDefinition> groupingDefinitions = module.getGroupings().stream()
                 .filter(g -> g.findDataChildByName(qname).isPresent())
@@ -302,12 +301,13 @@ public class ModulePrinter {
     }
 
     private void doPrintSchema(boolean isPrintingAllowed, final SchemaTree tree, final String groupingName,
-            final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees) {
+            final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees, final Set<String> usedGroupingNames) {
         final DataSchemaNode schemaNode = tree.getSchemaNode();
         if (moduleName.equals(schemaNode.getQName().getModule())) {
             final EffectiveStatement<?, ?> statement = schemaNode instanceof EffectiveStatementEquivalent<?> equivalent
                     ? equivalent.asEffectiveStatement() : null;
-            isPrintingAllowed = doPrintUses(statement, isPrintingAllowed, groupingName, tree, groupingTrees);
+            isPrintingAllowed = doPrintUses(statement, isPrintingAllowed, groupingName, tree, groupingTrees,
+                    usedGroupingNames);
             doPrintSchema(isPrintingAllowed, tree, groupingName, groupingTrees, statement);
         }
     }
@@ -349,8 +349,9 @@ public class ModulePrinter {
             doPrintReference(statement);
             doPrintWhen(statement);
         }
+        final Set<String> usedGroupingNames = new HashSet<>();
         for (final SchemaTree child : tree.getChildren()) {
-            doPrintSchema(isPrintingAllowed, child, groupingName, groupingTrees);
+            doPrintSchema(isPrintingAllowed, child, groupingName, groupingTrees, usedGroupingNames);
         }
         if (isPrintingAllowed) {
             printer.closeStatement();
