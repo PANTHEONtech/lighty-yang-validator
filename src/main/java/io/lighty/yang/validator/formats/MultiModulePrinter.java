@@ -29,10 +29,15 @@ import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.QNameModule;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveStatementEquivalent;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.LeafEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.LeafListEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.type.UnionTypeDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -132,15 +137,22 @@ public class MultiModulePrinter extends FormatPlugin {
     }
 
     private void gatherUsedTypeDefs(final SchemaTree tree, final Module module) {
-        if (tree.getSchemaNode() instanceof TypedDataSchemaNode) {
-            final TypeDefinition<? extends TypeDefinition<?>> type =
-                    ((TypedDataSchemaNode) tree.getSchemaNode()).typeDefinition();
+        final DataSchemaNode node = tree.getSchemaNode();
+        if (isTyped(node)) {
+            final TypeDefinition<? extends TypeDefinition<?>> type = ((TypedDataSchemaNode) node).typeDefinition();
             resolveType(type, module);
-
         }
         for (final SchemaTree child : tree.getChildren()) {
             gatherUsedTypeDefs(child, module);
         }
+    }
+
+    // TypedDataSchemaNode is sealed to leaf/leaf-list, so check their EffectiveStatement equivalents directly.
+    // tree.getSchemaNode() can be null (action-only tree entries) - instanceof on null is safely false either way.
+    private static boolean isTyped(final DataSchemaNode node) {
+        final EffectiveStatement<?, ?> statement = node instanceof EffectiveStatementEquivalent<?> equivalent
+                ? equivalent.asEffectiveStatement() : null;
+        return statement instanceof LeafEffectiveStatement || statement instanceof LeafListEffectiveStatement;
     }
 
     private void resolveType(final TypeDefinition<? extends TypeDefinition<?>> type, final Module module) {
