@@ -149,7 +149,7 @@ public class ModulePrinter {
     }
 
     private void printSchema(final SchemaTree tree) {
-        if (module.findDataChildByName(tree.getSchemaNode().getQName()).isPresent()) {
+        if (module.findDataChildByName((QName) tree.getEffectiveStatement().argument()).isPresent()) {
             doPrintSchema(true, tree, null, groupingTreesMap, new HashSet<>());
         }
     }
@@ -196,12 +196,12 @@ public class ModulePrinter {
         }
 
         final Set<SchemaTree> schemaTrees = groupingTrees.get(groupingDefinition);
-        if (isChoice(tree.getSchemaNode())) {
+        if (isChoice(tree.getEffectiveStatement())) {
             resolveChoiceSchemaNode(schemaTrees, tree);
         } else {
             boolean containsKey = false;
             for (final SchemaTree st : schemaTrees) {
-                if (st.getSchemaNode().getQName().equals(tree.getSchemaNode().getQName())) {
+                if (st.getQname().equals(tree.getQname())) {
                     containsKey = true;
                     break;
                 }
@@ -247,15 +247,14 @@ public class ModulePrinter {
         return Optional.empty();
     }
 
-    private static boolean isChoice(final DataSchemaNode node) {
-        return node instanceof EffectiveStatementEquivalent<?> equivalent
-                && equivalent.asEffectiveStatement() instanceof ChoiceEffectiveStatement;
+    private static boolean isChoice(final EffectiveStatement<?, ?> statement) {
+        return statement instanceof ChoiceEffectiveStatement;
     }
 
     private static void resolveChoiceSchemaNode(final Set<SchemaTree> schemaTrees, final SchemaTree tree) {
         boolean extendedTree = false;
         for (final SchemaTree st : schemaTrees) {
-            if (isChoice(st.getSchemaNode()) && st.getQname().equals(tree.getQname())) {
+            if (isChoice(st.getEffectiveStatement()) && st.getQname().equals(tree.getQname())) {
                 extendedTree = true;
                 for (final SchemaTree entry : tree.getChildren()) {
                     if (!st.getChildren().contains(entry)) {
@@ -302,10 +301,8 @@ public class ModulePrinter {
 
     private void doPrintSchema(boolean isPrintingAllowed, final SchemaTree tree, final String groupingName,
             final HashMap<GroupingDefinition, Set<SchemaTree>> groupingTrees, final Set<String> usedGroupingNames) {
-        final DataSchemaNode schemaNode = tree.getSchemaNode();
-        if (moduleName.equals(schemaNode.getQName().getModule())) {
-            final EffectiveStatement<?, ?> statement = schemaNode instanceof EffectiveStatementEquivalent<?> equivalent
-                    ? equivalent.asEffectiveStatement() : null;
+        final EffectiveStatement<?, ?> statement = tree.getEffectiveStatement();
+        if (moduleName.equals(((QName) statement.argument()).getModule())) {
             isPrintingAllowed = doPrintUses(statement, isPrintingAllowed, groupingName, tree, groupingTrees,
                     usedGroupingNames);
             doPrintSchema(isPrintingAllowed, tree, groupingName, groupingTrees, statement);

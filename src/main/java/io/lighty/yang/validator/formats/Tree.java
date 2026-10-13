@@ -31,9 +31,7 @@ import net.sourceforge.argparse4j.impl.choice.CollectionArgumentChoice;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.api.EffectiveStatementEquivalent;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
@@ -137,8 +135,7 @@ public class Tree extends FormatPlugin {
         LOG.info("{}", augmentText.substring(0, min(augmentText.length(), lineLength)));
         int augmentationNodes = st.getValue().size();
         for (final SchemaTree value : st.getValue()) {
-            final DataSchemaNode node = value.getSchemaNode();
-            final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, asStatement(node),
+            final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, value.getEffectiveStatement(),
                     value.getAbsolutePath(), null, value.isConfig());
             final ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData, RpcInputOutput.OTHER,
                 NAMESPACE_PREFIX);
@@ -154,7 +151,7 @@ public class Tree extends FormatPlugin {
         final List<Line> lines = new ArrayList<>();
         for (final SchemaTree st : schemaTree.getChildren()) {
             if (st.getQname().getModule().equals(module.getQNameModule()) && !st.isAugmenting()) {
-                final EffectiveStatement<?, ?> statement = asStatement(st.getSchemaNode());
+                final EffectiveStatement<?, ?> statement = st.getEffectiveStatement();
                 final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, statement, st.getAbsolutePath(),
                         null, st.isConfig());
                 final ConsoleLine consoleLine = new ConsoleLine(Collections.emptyList(), lyvNodeData,
@@ -267,7 +264,7 @@ public class Tree extends FormatPlugin {
         if (--treeDepth == 0) {
             return;
         }
-        final EffectiveStatement<?, ?> statement = asStatement(st.getSchemaNode());
+        final EffectiveStatement<?, ?> statement = st.getEffectiveStatement();
         final boolean actionExists = !actionChildren(statement).isEmpty();
         if (statement instanceof SchemaTreeAwareEffectiveStatement<?, ?>) {
             isConnected.add(hasNext);
@@ -401,12 +398,11 @@ public class Tree extends FormatPlugin {
 
     private void resolveChoiceSchemaNode(final List<Line> lines, final List<Boolean> isConnected, final SchemaTree st,
             final RpcInputOutput inputOutput, final boolean actionExists, final Module module) {
-        final Iterator<SchemaTree> caseNodes = st.getDataSchemaNodeChildren().iterator();
+        final Iterator<SchemaTree> caseNodes = st.getEffectiveStatementChildren().iterator();
         while (caseNodes.hasNext()) {
             final SchemaTree nextST = caseNodes.next();
             if (nextST.getQname().getModule().equals(module.getQNameModule())) {
-                final DataSchemaNode child = nextST.getSchemaNode();
-                final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, asStatement(child),
+                final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, nextST.getEffectiveStatement(),
                         nextST.getAbsolutePath(), null, nextST.isConfig());
                 final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
                     NAMESPACE_PREFIX);
@@ -421,11 +417,11 @@ public class Tree extends FormatPlugin {
     private void resolveDataNodeContainer(final List<Line> lines, final List<Boolean> isConnected, final SchemaTree st,
             final RpcInputOutput inputOutput, final List<QName> keys,
             final boolean actionExists, final Module module) {
-        final Iterator<SchemaTree> childNodes = st.getDataSchemaNodeChildren().iterator();
+        final Iterator<SchemaTree> childNodes = st.getEffectiveStatementChildren().iterator();
         while (childNodes.hasNext()) {
             final SchemaTree nextST = childNodes.next();
             if (nextST.getQname().getModule().equals(module.getQNameModule())) {
-                final EffectiveStatement<?, ?> statement = asStatement(nextST.getSchemaNode());
+                final EffectiveStatement<?, ?> statement = nextST.getEffectiveStatement();
                 final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, statement,
                         nextST.getAbsolutePath(), keys, nextST.isConfig());
                 final ConsoleLine consoleLine = new ConsoleLine(new ArrayList<>(isConnected), lyvNodeData, inputOutput,
@@ -489,15 +485,6 @@ public class Tree extends FormatPlugin {
             return listStatement.findKeyStatement().map(key -> key.argument().asList()).orElse(List.of());
         }
         return List.of();
-    }
-
-    // DataSchemaNode itself does not implement EffectiveStatementEquivalent (only its concrete subtypes do, each
-    // with their own EffectiveStatement type), so the bridge needs the defensive instanceof check.
-    private static EffectiveStatement<?, ?> asStatement(final DataSchemaNode node) {
-        if (node instanceof EffectiveStatementEquivalent<?> equivalent) {
-            return equivalent.asEffectiveStatement();
-        }
-        throw new IllegalStateException("Cannot bridge " + node + " to EffectiveStatement");
     }
 
     @SuppressFBWarnings(value = "SLF4J_SIGN_ONLY_FORMAT",

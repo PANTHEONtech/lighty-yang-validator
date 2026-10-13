@@ -134,7 +134,7 @@ public class MultiModulePrinter extends FormatPlugin {
 
     // left as is because typeDefinition()'s default-layering has no EffectiveStatement equivalent
     private void gatherUsedTypeDefs(final SchemaTree tree, final Module module) {
-        if (tree.getSchemaNode() instanceof TypedDataSchemaNode typed) {
+        if (tree.getEffectiveStatement() instanceof TypedDataSchemaNode typed) {
             resolveType(typed.typeDefinition(), module);
         }
         for (final SchemaTree child : tree.getChildren()) {
