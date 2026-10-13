@@ -47,7 +47,6 @@ import org.opendaylight.yangtools.yang.model.api.stmt.InputEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.LeafEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.LeafListEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ListEffectiveStatement;
-import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.OutputEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ReferenceEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ReferenceStatement;
@@ -425,14 +424,9 @@ public class ModulePrinter {
             return;
         }
 
-        if (module instanceof EffectiveStatementEquivalent<?> equivalent
-                && equivalent.asEffectiveStatement() instanceof ModuleEffectiveStatement moduleStatement) {
-            final Collection<? extends RevisionStatement> revisions =
-                    Objects.requireNonNull(moduleStatement.declared()).revisionStatements();
-            printEachRevision(revisions);
-        } else {
-            doPrintSimpleRevision(revision.get());
-        }
+        final Collection<? extends RevisionStatement> revisions =
+                Objects.requireNonNull(module.asEffectiveStatement().declared()).revisionStatements();
+        printEachRevision(revisions);
     }
 
     private void printEachRevision(final Collection<? extends RevisionStatement> revisions) {

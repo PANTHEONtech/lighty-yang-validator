@@ -58,7 +58,6 @@ import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.model.api.DocumentedNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.api.EffectiveStatementEquivalent;
 import org.opendaylight.yangtools.yang.model.api.ElementCountConstraintAware;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
@@ -77,7 +76,6 @@ import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.IdentityEffectiveStatement;
-import org.opendaylight.yangtools.yang.model.api.stmt.ModuleEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.ReferenceEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.RevisionStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
@@ -787,11 +785,7 @@ public class CheckUpdateFrom {
     }
 
     private static Collection<? extends RevisionStatement> revisionStatements(final Module module) {
-        if (module instanceof EffectiveStatementEquivalent<?> equivalent
-                && equivalent.asEffectiveStatement() instanceof ModuleEffectiveStatement moduleStatement) {
-            return Objects.requireNonNull(moduleStatement.declared()).revisionStatements();
-        }
-        return List.of();
+        return Objects.requireNonNull(module.asEffectiveStatement().declared()).revisionStatements();
     }
 
     private void checkName() {
