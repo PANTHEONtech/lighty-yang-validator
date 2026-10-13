@@ -128,8 +128,7 @@ abstract class Line {
         // TypeEffectiveStatement.typeDefinition() is the bare `type` statement's own definition; it does not
         // reflect a leaf's own `default`, which TypedDataSchemaNode.typeDefinition() layers on top of it (see
         // JsonTree's resolveChildMetadata() for the same finding).
-        if (statement instanceof DataSchemaCompat<?, ?> compat
-                && compat.toDataSchemaNode() instanceof TypedDataSchemaNode typed) {
+        if (statement instanceof TypedDataSchemaNode typed) {
             final TypeDefinition<? extends TypeDefinition<?>> type = typed.typeDefinition();
             resolvePathAndTypeForDataSchemaNode(type);
         } else if (statement instanceof AnydataEffectiveStatement) {
