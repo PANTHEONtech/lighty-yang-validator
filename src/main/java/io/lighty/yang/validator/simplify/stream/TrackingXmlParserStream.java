@@ -60,7 +60,9 @@ import org.opendaylight.yangtools.yang.data.util.SimpleNodeDataWithSchema;
 import org.opendaylight.yangtools.yang.data.util.codec.TypeAwareCodec;
 import org.opendaylight.yangtools.yang.model.api.AnyxmlSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.EffectiveStatementEquivalent;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.util.SchemaInferenceStack;
 import org.w3c.dom.Document;
 
@@ -342,9 +344,10 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
              If yes, the node is not from another module.
              */
             schemaIS.enterSchemaTree(less.getQName());
+            final EffectiveStatement<?, ?> statement = asStatement(less);
             final List<QName> nodeIdentifiers = schemaIS.toSchemaNodeIdentifier().getNodeIdentifiers();
             if (nodeIdentifiers.size() == 1) {
-                schemaTree = schemaTree.addChild(less, true, false,
+                schemaTree = schemaTree.addChild(statement, true, false,
                         schemaIS.toSchemaNodeIdentifier());
             /*
              If not, the node can be augmented, we need to check if the modules
@@ -355,15 +358,24 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
                 final QName first = nodeIdentifiers.get(nodeIdentifiers.size() - 1);
                 final QName second = nodeIdentifiers.get(nodeIdentifiers.size() - 2);
                 if (second.getModule().equals(first.getModule())) {
-                    schemaTree = schemaTree.addChild(less, false, false,
+                    schemaTree = schemaTree.addChild(statement, false, false,
                             schemaIS.toSchemaNodeIdentifier());
                 } else {
-                    schemaTree = schemaTree.addChild(less, true, true,
+                    schemaTree = schemaTree.addChild(statement, true, true,
                             schemaIS.toSchemaNodeIdentifier());
                 }
             }
         }
         return schemaTree;
+    }
+
+    // less comes from ParserStreamUtils.findSchemaNodeByNameAndNamespace(), an old-model-only yangtools XML
+    // utility - this is the one genuine boundary where SchemaTree's EffectiveStatement needs bridging from.
+    private static EffectiveStatement<?, ?> asStatement(final DataSchemaNode node) {
+        if (node instanceof EffectiveStatementEquivalent<?> equivalent) {
+            return equivalent.asEffectiveStatement();
+        }
+        throw new IllegalStateException("Cannot bridge " + node + " to EffectiveStatement");
     }
 
     private static boolean isNextEndDocument(final XMLStreamReader in) throws XMLStreamException {
@@ -436,6 +448,8 @@ public final class TrackingXmlParserStream implements Closeable, Flushable {
             return new DOMSource(((Document) value).getDocumentElement());
         }
 
+        // left as is because XmlCodecFactory.codecFor() is old-model-only (TypeDefinitionAware), no
+        // EffectiveStatement equivalent
         checkArgument(node instanceof TypedDataSchemaNode);
         checkArgument(value instanceof String);
         final TypeAwareCodec<?, NamespaceContext, ?> xmlCodec

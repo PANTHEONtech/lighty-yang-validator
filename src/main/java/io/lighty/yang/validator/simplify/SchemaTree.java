@@ -13,7 +13,8 @@ import java.util.Objects;
 import java.util.Set;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
 
 public class SchemaTree implements Comparable<SchemaTree> {
@@ -21,24 +22,24 @@ public class SchemaTree implements Comparable<SchemaTree> {
     public static final Absolute ROOT = Absolute.of(QName.create("root", "root"));
 
     private final Absolute absolutePath;
-    private final DataSchemaNode schemaNode;
+    private final EffectiveStatement<?, ?> statement;
     private final boolean isRootNode;
     private final boolean isAugmenting;
     private final ActionDefinition actionNode;
     private final boolean isConfig;
     private final Set<SchemaTree> children = new LinkedHashSet<>();
 
-    SchemaTree(final Absolute absolutePath, final DataSchemaNode schemaNode,
+    SchemaTree(final Absolute absolutePath, final EffectiveStatement<?, ?> statement,
             final boolean isRootNode, final boolean isAugmenting,
             final ActionDefinition actionNode) {
-        this(absolutePath, schemaNode, isRootNode, isAugmenting, actionNode, defaultConfig(schemaNode));
+        this(absolutePath, statement, isRootNode, isAugmenting, actionNode, defaultConfig(statement));
     }
 
-    SchemaTree(final Absolute absolutePath, final DataSchemaNode schemaNode,
+    SchemaTree(final Absolute absolutePath, final EffectiveStatement<?, ?> statement,
             final boolean isRootNode, final boolean isAugmenting,
             final ActionDefinition actionNode, final boolean isConfig) {
         this.absolutePath = absolutePath;
-        this.schemaNode = schemaNode;
+        this.statement = statement;
         this.isRootNode = isRootNode;
         this.isAugmenting = isAugmenting;
         this.actionNode = actionNode;
@@ -46,15 +47,17 @@ public class SchemaTree implements Comparable<SchemaTree> {
     }
 
     /**
-     * The default config resolution: the schema node's own effectiveConfig(), defaulting to {@code true} when
-     * absent (no explicit/inherited value, or not applicable, e.g. no node at all). Correct as long as
-     * {@code schemaNode} is already the real, correctly-positioned node - which does not hold for nodes reached
-     * only through an augmentation's own child tree (same as inside a grouping); those must have their isConfig
-     * resolved through the real, grafted position and passed in explicitly instead - see
-     * {@link SchemaSelector#noXml()}.
+     * The default config resolution: the node's own effectiveConfig(), defaulting to {@code true} when absent (no
+     * explicit/inherited value, not applicable, or no node at all). Correct as long as {@code statement} is
+     * already the real, correctly-positioned node - which does not hold for nodes reached only through an
+     * augmentation's own child tree (same as inside a grouping); those must have their isConfig resolved through
+     * the real, grafted position and passed in explicitly instead - see {@link SchemaSelector#noXml()}.
      */
-    private static boolean defaultConfig(final DataSchemaNode schemaNode) {
-        return schemaNode == null || schemaNode.effectiveConfig().orElse(Boolean.TRUE);
+    private static boolean defaultConfig(final EffectiveStatement<?, ?> statement) {
+        if (statement instanceof DataSchemaCompat<?, ?> compat) {
+            return compat.toDataSchemaNode().effectiveConfig().orElse(Boolean.TRUE);
+        }
+        return true;
     }
 
     public QName getQname() {
@@ -73,8 +76,8 @@ public class SchemaTree implements Comparable<SchemaTree> {
         return isAugmenting;
     }
 
-    public DataSchemaNode getSchemaNode() {
-        return schemaNode;
+    public EffectiveStatement<?, ?> getEffectiveStatement() {
+        return statement;
     }
 
     public boolean isConfig() {
@@ -97,27 +100,20 @@ public class SchemaTree implements Comparable<SchemaTree> {
         }
     }
 
-    public SchemaTree addChild(final DataSchemaNode schemaNodeInput, final boolean isRootNodeInput,
+    public SchemaTree addChild(final EffectiveStatement<?, ?> statementInput, final boolean isRootNodeInput,
             final boolean isAugmentingInput, final Absolute absolute) {
-        final SchemaTree tree = new SchemaTree(absolute, schemaNodeInput, isRootNodeInput, isAugmentingInput, null);
-        return addChild(tree);
-    }
-
-    public SchemaTree addChild(final DataSchemaNode schemaNodeInput, final boolean isRootNodeInput,
-            final boolean isAugmentingInput, final LyvStack stack) {
-        final SchemaTree tree = new SchemaTree(stack.toSchemaNodeIdentifier(), schemaNodeInput, isRootNodeInput,
-            isAugmentingInput, null);
+        final SchemaTree tree = new SchemaTree(absolute, statementInput, isRootNodeInput, isAugmentingInput, null);
         return addChild(tree);
     }
 
     /**
-     * Same as {@link #addChild(DataSchemaNode, boolean, boolean, LyvStack)}, but with an explicitly resolved
-     * {@code isConfig} instead of deriving it from {@code schemaNodeInput} itself - see
+     * Same as {@link #addChild(EffectiveStatement, boolean, boolean, Absolute)}, but with an explicitly resolved
+     * {@code isConfig} instead of deriving it from {@code statementInput} itself - see
      * {@link SchemaSelector#noXml()} for why that matters for augmentation content.
      */
-    public SchemaTree addChild(final DataSchemaNode schemaNodeInput, final boolean isRootNodeInput,
+    public SchemaTree addChild(final EffectiveStatement<?, ?> statementInput, final boolean isRootNodeInput,
             final boolean isAugmentingInput, final LyvStack stack, final boolean isConfig) {
-        final SchemaTree tree = new SchemaTree(stack.toSchemaNodeIdentifier(), schemaNodeInput, isRootNodeInput,
+        final SchemaTree tree = new SchemaTree(stack.toSchemaNodeIdentifier(), statementInput, isRootNodeInput,
             isAugmentingInput, null, isConfig);
         return addChild(tree);
     }
@@ -133,10 +129,10 @@ public class SchemaTree implements Comparable<SchemaTree> {
         return children;
     }
 
-    public Set<SchemaTree> getDataSchemaNodeChildren() {
+    public Set<SchemaTree> getEffectiveStatementChildren() {
         final Set<SchemaTree> ret = new LinkedHashSet<>();
         for (final SchemaTree child : children) {
-            if (child.getSchemaNode() != null) {
+            if (child.getEffectiveStatement() != null) {
                 ret.add(child);
             }
         }

@@ -12,12 +12,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
-import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.IfFeatureStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.NotificationEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
 
 public class ConsoleLine extends Line {
@@ -33,10 +32,11 @@ public class ConsoleLine extends Line {
     }
 
     @Override
-    protected void resolveFlag(SchemaNode node, final Absolute absolutePath, EffectiveModelContext context) {
-        if (node instanceof CaseSchemaNode) {
+    protected void resolveFlag(final EffectiveStatement<?, ?> statement, final Absolute absolutePath,
+            final EffectiveModelContext context) {
+        if (statement instanceof CaseEffectiveStatement) {
             flag = "";
-        } else if (node instanceof NotificationDefinition) {
+        } else if (statement instanceof NotificationEffectiveStatement) {
             flag = "-n";
         } else if (context.findNotification(absolutePath.firstNodeIdentifier()).isPresent()) {
             flag = RO;
@@ -44,9 +44,7 @@ public class ConsoleLine extends Line {
             flag = "-w";
         } else if (inputOutput == RpcInputOutput.OUTPUT) {
             flag = RO;
-        } else if (node instanceof DataSchemaNode) {
-            resolveFlagForDataSchemaNode((DataSchemaNode) node, RW, RO);
-        } else {
+        } else if (!resolveFlagForDataSchemaNode(statement, RW, RO)) {
             flag = "-x";
         }
     }

@@ -16,7 +16,6 @@ import io.lighty.yang.validator.simplify.SchemaTree;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.jdt.annotation.Nullable;
@@ -25,27 +24,38 @@ import org.json.JSONObject;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.Revision;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
-import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
-import org.opendaylight.yangtools.yang.model.api.ActionNodeContainer;
-import org.opendaylight.yangtools.yang.model.api.AnydataSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.AnyxmlSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ContainerLike;
-import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.IdentitySchemaNode;
-import org.opendaylight.yangtools.yang.model.api.LeafListSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.LeafSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
+import org.opendaylight.yangtools.yang.model.api.Status;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ActionEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.AnydataEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.AnyxmlEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.AugmentEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ContainerEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeAwareEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.DescriptionEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.InputEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.LeafEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.LeafListEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ListEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.NotificationEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.OutputEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.RpcEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaTreeAwareEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaTreeEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.StatusEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.type.IdentityrefTypeDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,24 +121,20 @@ public class JsonTree extends FormatPlugin {
             appendRpcsToJsonTree(module, jsonTree, stack);
             stack.clear();
 
-            for (final AugmentationSchemaNode augmentation : module.getAugmentations()) {
-                stack.enter(augmentation.getTargetPath());
+            for (final AugmentEffectiveStatement augmentation
+                    : module.asEffectiveStatement().collectEffectiveSubstatements(AugmentEffectiveStatement.class)) {
+                stack.enter(augmentation.argument());
                 final JSONObject augmentationJson = new JSONObject();
                 final boolean isConfig = isAugmentConfig(augmentation);
                 augmentationJson.put(CONFIG, isConfig);
-                augmentationJson.put(STATUS, augmentation.getStatus().name());
-                augmentationJson.put(DESCRIPTION, augmentation.getDescription().orElse(EMPTY));
-                augmentationJson.put(STATUS, augmentation.getStatus().name());
+                augmentationJson.put(STATUS, status(augmentation).name());
+                augmentationJson.put(DESCRIPTION, description(augmentation).orElse(EMPTY));
+                augmentationJson.put(STATUS, status(augmentation).name());
                 augmentationJson.put(CLASS, AUG);
-                final String path = resolvePath(augmentation.getTargetPath());
+                final String path = resolvePath(augmentation.argument());
                 augmentationJson.put(PATH, path);
                 augmentationJson.put(NAME, path);
-                // The nodes returned by augmentation.getChildNodes() are not grafted onto the augment's target,
-                // so their own effectiveConfig() is not applicable (same as inside a grouping): use them for
-                // structure/type/name/description (deviation-oblivious, as intended), but resolve config through
-                // the real, correctly-positioned counterpart in the effective model context (resolveChildMetadata
-                // looks each node's own position up via modelContext.findSchemaTreeNode()).
-                for (final DataSchemaNode child : augmentation.getChildNodes()) {
+                for (final SchemaTreeEffectiveStatement<?> child : dataChildren(augmentation)) {
                     if (isConfig) {
                         augmentationJson.append(CHILDREN, resolveChildMetadata(child, stack, null, Boolean.TRUE));
                     } else {
@@ -161,7 +167,7 @@ public class JsonTree extends FormatPlugin {
             final LyvStack stack) {
         for (final NotificationDefinition notification : module.getNotifications()) {
             final JSONObject jsonNotification = new JSONObject();
-            for (final DataSchemaNode node : notification.getChildNodes()) {
+            for (final SchemaTreeEffectiveStatement<?> node : dataChildren(notification.asEffectiveStatement())) {
                 jsonNotification.append(CHILDREN, resolveChildMetadata(node, stack, Boolean.FALSE));
             }
             putNotificationDataToJsonNotification(notification, jsonNotification, stack);
@@ -169,19 +175,19 @@ public class JsonTree extends FormatPlugin {
         }
     }
 
-    private void appendActionsToAugmentationJson(final AugmentationSchemaNode augmentation,
+    private void appendActionsToAugmentationJson(final AugmentEffectiveStatement augmentation,
             final JSONObject augmentationJson, final LyvStack stack) {
-        for (final ActionDefinition child : augmentation.getActions()) {
-            stack.enter(child);
+        for (final ActionEffectiveStatement action : actionChildren(augmentation)) {
+            stack.enter(action);
             final JSONObject jsonModuleChildAction = new JSONObject();
-            jsonModuleChildAction.put(NAME, child.getQName().getLocalName());
-            jsonModuleChildAction.put(DESCRIPTION, child.getDescription().orElse(EMPTY));
-            jsonModuleChildAction.put(STATUS, child.getStatus().name());
+            jsonModuleChildAction.put(NAME, action.argument().getLocalName());
+            jsonModuleChildAction.put(DESCRIPTION, description(action).orElse(EMPTY));
+            jsonModuleChildAction.put(STATUS, status(action).name());
             jsonModuleChildAction.put(TYPE_INFO, new JSONObject());
             jsonModuleChildAction.put(CLASS, ACTION);
             jsonModuleChildAction.put(PATH, resolvePath(stack));
-            jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getInput(), stack));
-            jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getOutput(), stack, Boolean.FALSE));
+            jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(action.inputStatement(), stack));
+            jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(action.outputStatement(), stack, Boolean.FALSE));
             augmentationJson.append(CHILDREN, jsonModuleChildAction);
             stack.exit();
         }
@@ -189,16 +195,17 @@ public class JsonTree extends FormatPlugin {
 
     private void appendRpcsToJsonTree(final Module module, final JSONObject jsonTree, final LyvStack stack) {
         for (final RpcDefinition rpc : module.getRpcs()) {
-            stack.enter(rpc);
+            final RpcEffectiveStatement statement = rpc.asEffectiveStatement();
+            stack.enter(statement);
             final JSONObject jsonRpc = new JSONObject();
-            jsonRpc.put(NAME, rpc.getQName().getLocalName());
+            jsonRpc.put(NAME, statement.argument().getLocalName());
             jsonRpc.put(DESCRIPTION, rpc.getDescription().orElse(EMPTY));
             jsonRpc.put(STATUS, rpc.getStatus().name());
             jsonRpc.put(TYPE_INFO, new JSONObject());
             jsonRpc.put(CLASS, RPC);
             jsonRpc.put(PATH, resolvePath(stack));
-            jsonRpc.append(CHILDREN, resolveChildMetadata(rpc.getInput(), stack));
-            jsonRpc.append(CHILDREN, resolveChildMetadata(rpc.getOutput(), stack, Boolean.FALSE));
+            jsonRpc.append(CHILDREN, resolveChildMetadata(statement.inputStatement(), stack));
+            jsonRpc.append(CHILDREN, resolveChildMetadata(statement.outputStatement(), stack, Boolean.FALSE));
             jsonTree.append(RPCS, jsonRpc);
             stack.exit();
         }
@@ -206,9 +213,10 @@ public class JsonTree extends FormatPlugin {
 
     private void appendNotificationsToJsonTree(final Module module, final JSONObject jsonTree, final LyvStack stack) {
         for (final NotificationDefinition notification : module.getNotifications()) {
-            stack.enter(notification);
+            final NotificationEffectiveStatement statement = notification.asEffectiveStatement();
+            stack.enter(statement);
             final JSONObject jsonNotification = new JSONObject();
-            for (final DataSchemaNode node : notification.getChildNodes()) {
+            for (final SchemaTreeEffectiveStatement<?> node : dataChildren(statement)) {
                 jsonNotification.append(CHILDREN, resolveChildMetadata(node, stack, Boolean.FALSE));
             }
             putNotificationDataToJsonNotification(notification, jsonNotification, stack);
@@ -219,7 +227,7 @@ public class JsonTree extends FormatPlugin {
 
     private static void putNotificationDataToJsonNotification(final NotificationDefinition notification,
             final JSONObject jsonNotification, final LyvStack stack) {
-        jsonNotification.put(NAME, notification.getQName().getLocalName());
+        jsonNotification.put(NAME, notification.asEffectiveStatement().argument().getLocalName());
         jsonNotification.put(DESCRIPTION, notification.getDescription().orElse(EMPTY));
         jsonNotification.put(STATUS, notification.getStatus().name());
         jsonNotification.put(TYPE_INFO, new JSONObject());
@@ -228,16 +236,17 @@ public class JsonTree extends FormatPlugin {
     }
 
     private void appendChildNodesToJsonTree(final Module module, final JSONObject jsonTree, final LyvStack stack) {
-        for (final DataSchemaNode node : module.getChildNodes()) {
+        for (final SchemaTreeEffectiveStatement<?> node : dataChildren(module.asEffectiveStatement())) {
             jsonTree.append(CHILDREN, resolveChildMetadata(node, stack));
         }
     }
 
-    private boolean isAugmentConfig(final AugmentationSchemaNode augmentation) {
-        final List<QName> qNames = new ArrayList<>();
-        Collection<? extends ActionDefinition> actions = new HashSet<>();
+    private boolean isAugmentConfig(final AugmentEffectiveStatement augmentation) {
+        Collection<ActionEffectiveStatement> actions = List.of();
         boolean isAction = false;
-        for (final QName path : augmentation.getTargetPath().getNodeIdentifiers()) {
+        boolean initialized = false;
+        DataTreeAwareEffectiveStatement<?, ?> current = null;
+        for (final QName path : augmentation.argument().getNodeIdentifiers()) {
             if (isAction) {
                 return !OUTPUT_TEXT.equals(path.getLocalName());
             }
@@ -246,32 +255,32 @@ public class JsonTree extends FormatPlugin {
                 continue;
             }
 
-            // FIXME: This is inefficient: we end up re-looking up each previous QName, i.e. this has O(N!) complexity.
-            //        We should use DataNodeContainer.findDataTreeChild(path) and iteratively move parent, i.e. we do
-            //        not need qNames at all!
-            qNames.add(path);
-            final Optional<DataSchemaNode> optDataTreeChild = modelContext.findDataTreeChild(qNames);
+            if (!initialized) {
+                current = modelContext.findModule(path.getModule()).map(Module::asEffectiveStatement).orElse(null);
+                initialized = true;
+            }
+            final Optional<DataTreeEffectiveStatement<?>> child = current == null
+                    ? Optional.empty() : current.findDataTreeNode(path);
 
-            if (optDataTreeChild.isPresent()) {
-                final DataSchemaNode dataTreeChild = optDataTreeChild.orElseThrow();
-                final Optional<Boolean> isConfig = dataTreeChild.effectiveConfig();
-                if (isConfig.isPresent() && !isConfig.orElseThrow()) {
-                    return false;
+            if (child.isPresent()) {
+                final DataTreeEffectiveStatement<?> dataTreeChild = child.orElseThrow();
+                if (dataTreeChild instanceof DataSchemaCompat<?, ?> compat) {
+                    final Optional<Boolean> isConfig = compat.toDataSchemaNode().effectiveConfig();
+                    if (isConfig.isPresent() && !isConfig.orElseThrow()) {
+                        return false;
+                    }
                 }
-                if (dataTreeChild instanceof ActionNodeContainer) {
-                    actions = ((ActionNodeContainer) dataTreeChild).getActions();
-                }
-            } else {
-                qNames.remove(path);
+                actions = actionChildren(dataTreeChild);
+                current = dataTreeChild instanceof DataTreeAwareEffectiveStatement<?, ?> aware ? aware : null;
             }
         }
         return true;
     }
 
-    private static boolean shouldSkipThisIteration(final Collection<? extends ActionDefinition> actions,
+    private static boolean shouldSkipThisIteration(final Collection<ActionEffectiveStatement> actions,
             final QName path) {
-        for (final ActionDefinition action : actions) {
-            if (action.getQName().getLocalName().equals(path.getLocalName())) {
+        for (final ActionEffectiveStatement action : actions) {
+            if (action.argument().getLocalName().equals(path.getLocalName())) {
                 return true;
             }
         }
@@ -288,67 +297,104 @@ public class JsonTree extends FormatPlugin {
         return Optional.empty();
     }
 
-    private JSONObject resolveChildMetadata(final DataSchemaNode node, final LyvStack stack) {
-        return resolveChildMetadata(node, stack, null);
+    private JSONObject resolveChildMetadata(final SchemaTreeEffectiveStatement<?> statement, final LyvStack stack) {
+        return resolveChildMetadata(statement, stack, null);
     }
 
-    private JSONObject resolveChildMetadata(final DataSchemaNode node, final LyvStack stack,
+    private JSONObject resolveChildMetadata(final SchemaTreeEffectiveStatement<?> statement, final LyvStack stack,
             final @Nullable Boolean isConfig) {
-        return resolveChildMetadata(node, stack, isConfig, Boolean.TRUE);
+        return resolveChildMetadata(statement, stack, isConfig, Boolean.TRUE);
     }
 
     /**
-     * Resolves a single node's JSON metadata. {@code node} is used for structure/type/name/description (the
+     * Resolves a single node's JSON metadata. {@code statement} is used for structure/type/name/description (the
      * declared view, deviation-oblivious by design). {@code config} is either {@code isConfig} when forced, or
      * else looked up fresh through the effective model context via the node's own schema-tree position (which
-     * includes {@code node} itself, since {@code stack.enter(node)} happens first) — a node reached only through
-     * an augmentation's own child tree does not have its own effectiveConfig() applicable (same as inside a
+     * includes {@code statement} itself, since {@code stack.enter(statement)} happens first) — a node reached only
+     * through an augmentation's own child tree does not have its own effectiveConfig() applicable (same as inside a
      * grouping), so looking it up this way instead of calling {@code node.effectiveConfig()} directly is what
      * makes an explicit {@code config false;} on an augmented descendant visible. {@code ambientConfig} is the
      * fallback used when that lookup is absent (e.g. deviated away) or does not resolve a config value of its own.
      */
-    private JSONObject resolveChildMetadata(final DataSchemaNode node, final LyvStack stack,
+    private JSONObject resolveChildMetadata(final SchemaTreeEffectiveStatement<?> statement, final LyvStack stack,
             final @Nullable Boolean isConfig, final boolean ambientConfig) {
-        stack.enter(node);
+        stack.enter(statement);
         final boolean config = isConfig != null ? isConfig : resolveEffectiveConfig(stack).orElse(ambientConfig);
         final JSONObject jsonModuleChild = new JSONObject();
-        jsonModuleChild.put(NAME, node.getQName().getLocalName());
+        jsonModuleChild.put(NAME, statement.argument().getLocalName());
         jsonModuleChild.put(CONFIG, config);
-        jsonModuleChild.put(DESCRIPTION, node.getDescription().orElse(EMPTY));
-        jsonModuleChild.put(STATUS, node.getStatus().name());
+        jsonModuleChild.put(DESCRIPTION, description(statement).orElse(EMPTY));
+        jsonModuleChild.put(STATUS, status(statement).name());
         jsonModuleChild.put(TYPE_INFO, new JSONObject());
-        jsonModuleChild.put(CLASS, resolveNodeClass(node));
+        jsonModuleChild.put(CLASS, resolveNodeClass(statement));
         jsonModuleChild.put(PATH, resolvePath(stack));
-        if (node instanceof ActionNodeContainer) {
-            for (final ActionDefinition child : ((ActionNodeContainer) node).getActions()) {
-                stack.enter(child);
+        if (statement instanceof SchemaTreeAwareEffectiveStatement<?, ?>) {
+            for (final ActionEffectiveStatement action : actionChildren(statement)) {
+                stack.enter(action);
                 final JSONObject jsonModuleChildAction = new JSONObject();
-                jsonModuleChildAction.put(NAME, child.getQName().getLocalName());
-                jsonModuleChildAction.put(DESCRIPTION, child.getDescription().orElse(EMPTY));
-                jsonModuleChildAction.put(STATUS, child.getStatus().name());
+                jsonModuleChildAction.put(NAME, action.argument().getLocalName());
+                jsonModuleChildAction.put(DESCRIPTION, description(action).orElse(EMPTY));
+                jsonModuleChildAction.put(STATUS, status(action).name());
                 jsonModuleChildAction.put(TYPE_INFO, new JSONObject());
                 jsonModuleChildAction.put(PATH, resolvePath(stack));
                 jsonModuleChildAction.put(CLASS, ACTION);
-                jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getInput(), stack, isConfig));
-                jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(child.getOutput(), stack, Boolean.FALSE));
+                jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(action.inputStatement(), stack, isConfig));
+                jsonModuleChildAction.append(CHILDREN, resolveChildMetadata(action.outputStatement(), stack, Boolean.FALSE));
                 jsonModuleChild.append(CHILDREN, jsonModuleChildAction);
                 stack.exit();
             }
-        }
-        if (node instanceof DataNodeContainer) {
-            for (final DataSchemaNode child : ((DataNodeContainer) node).getChildNodes()) {
+            for (final SchemaTreeEffectiveStatement<?> child : dataChildren(statement)) {
                 jsonModuleChild.append(CHILDREN, resolveChildMetadata(child, stack, isConfig, config));
             }
-        } else if (node instanceof ChoiceSchemaNode) {
-            for (final CaseSchemaNode caseNode : ((ChoiceSchemaNode) node).getCases()) {
-                jsonModuleChild.append(CHILDREN, resolveChildMetadata(caseNode, stack, isConfig, config));
-            }
-        } else if (node instanceof TypedDataSchemaNode) {
-            jsonModuleChild.put(TYPE_INFO, resolveType(((TypedDataSchemaNode) node).typeDefinition()));
+            //Left TypedDataSchemaNode because no EffectiveStatement replacement was found
+        } else if (statement instanceof TypedDataSchemaNode typed) {
+            jsonModuleChild.put(TYPE_INFO, resolveType(typed.typeDefinition()));
             jsonModuleChild.put(CHILDREN, Collections.emptyList());
         }
         stack.exit();
         return jsonModuleChild;
+    }
+
+    private static List<SchemaTreeEffectiveStatement<?>> dataChildren(final EffectiveStatement<?, ?> statement) {
+        if (!(statement instanceof SchemaTreeAwareEffectiveStatement<?, ?> aware)) {
+            return List.of();
+        }
+        final List<SchemaTreeEffectiveStatement<?>> children = new ArrayList<>();
+        for (final SchemaTreeEffectiveStatement<?> child : aware.schemaTreeNodes()) {
+            if (child instanceof DataTreeEffectiveStatement<?> || child instanceof ChoiceEffectiveStatement
+                    || child instanceof CaseEffectiveStatement) {
+                children.add(child);
+            }
+        }
+        return children;
+    }
+
+    private static List<ActionEffectiveStatement> actionChildren(final EffectiveStatement<?, ?> statement) {
+        if (!(statement instanceof SchemaTreeAwareEffectiveStatement<?, ?> aware)) {
+            return List.of();
+        }
+        final List<ActionEffectiveStatement> actions = new ArrayList<>();
+        for (final SchemaTreeEffectiveStatement<?> child : aware.schemaTreeNodes()) {
+            if (child instanceof ActionEffectiveStatement action) {
+                actions.add(action);
+            }
+        }
+        return actions;
+    }
+
+    private static Optional<String> description(final EffectiveStatement<?, ?> statement) {
+        for (final EffectiveStatement<?, ?> sub : statement.effectiveSubstatements()) {
+            if (sub instanceof DescriptionEffectiveStatement description) {
+                return Optional.of(description.argument());
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Status status(final EffectiveStatement<?, ?> statement) {
+        return statement.findFirstEffectiveSubstatement(StatusEffectiveStatement.class)
+                .map(StatusEffectiveStatement::argument)
+                .orElse(Status.CURRENT);
     }
 
     private JSONObject resolveType(final TypeDefinition<? extends TypeDefinition<?>> nodeType) {
@@ -360,6 +406,7 @@ public class JsonTree extends FormatPlugin {
             type = typeqName.getLocalName();
         } else if (nodeType instanceof IdentityrefTypeDefinition) {
             type = typeqName.getLocalName();
+            //Left as is because effectiveStatement does not have getIdentities().
             for (final IdentitySchemaNode base : ((IdentityrefTypeDefinition) nodeType).getIdentities()) {
                 jsonLeafType.append(BASE, base.getQName().getLocalName());
             }
@@ -375,25 +422,27 @@ public class JsonTree extends FormatPlugin {
         return jsonLeafType;
     }
 
-    private static String resolveNodeClass(final DataSchemaNode node) {
-        if (node instanceof ListSchemaNode) {
+    private static String resolveNodeClass(final SchemaTreeEffectiveStatement<?> statement) {
+        if (statement instanceof ListEffectiveStatement) {
             return "list";
-        } else if (node instanceof ContainerLike) {
+        } else if (statement instanceof ContainerEffectiveStatement || statement instanceof InputEffectiveStatement
+                || statement instanceof OutputEffectiveStatement) {
+            // ContainerLike's old-model equivalent: container, and an rpc/action's input/output
             return "container";
-        } else if (node instanceof LeafListSchemaNode) {
+        } else if (statement instanceof LeafListEffectiveStatement) {
             return "leaf-list";
-        } else if (node instanceof LeafSchemaNode) {
+        } else if (statement instanceof LeafEffectiveStatement) {
             return "leaf";
-        } else if (node instanceof ChoiceSchemaNode) {
+        } else if (statement instanceof ChoiceEffectiveStatement) {
             return "choice";
-        } else if (node instanceof CaseSchemaNode) {
+        } else if (statement instanceof CaseEffectiveStatement) {
             return "case";
-        } else if (node instanceof AnyxmlSchemaNode) {
+        } else if (statement instanceof AnyxmlEffectiveStatement) {
             return "anyxml";
-        } else if (node instanceof AnydataSchemaNode) {
+        } else if (statement instanceof AnydataEffectiveStatement) {
             return "anydata";
         } else {
-            LOG.warn("Node type unknown: {}", node);
+            LOG.warn("Node type unknown: {}", statement);
             return UNKNOWN;
         }
     }
@@ -414,10 +463,11 @@ public class JsonTree extends FormatPlugin {
      * unlike {@link EffectiveModelContext#findDataTreeChild}, addresses choice/case directly instead of skipping
      * over them), returning its effectiveConfig() if resolved to a real, correctly-positioned DataSchemaNode.
      */
+    //FIXME convert this to EffectiveStatement after YANGTOOLS-1271 is resolved.
     private Optional<Boolean> resolveEffectiveConfig(final LyvStack stack) {
         return modelContext.findSchemaTreeNode(stack.toSchemaNodeIdentifier())
-                .filter(DataSchemaNode.class::isInstance)
-                .map(DataSchemaNode.class::cast)
+                .filter(DataSchemaCompat.class::isInstance)
+                .map(statement -> ((DataSchemaCompat<?, ?>) statement).toDataSchemaNode())
                 .flatMap(DataSchemaNode::effectiveConfig);
     }
 

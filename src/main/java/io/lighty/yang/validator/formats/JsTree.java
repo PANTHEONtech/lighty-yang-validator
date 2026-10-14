@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,18 +27,22 @@ import java.util.Optional;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.XMLNamespace;
 import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
-import org.opendaylight.yangtools.yang.model.api.ActionNodeContainer;
-import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ChoiceSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.DataNodeContainer;
 import org.opendaylight.yangtools.yang.model.api.DataSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
-import org.opendaylight.yangtools.yang.model.api.ListSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
 import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.DataSchemaCompat;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ActionEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.AugmentEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ChoiceEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeAwareEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.DataTreeEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ListEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaTreeAwareEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.SchemaTreeEffectiveStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +67,8 @@ public class JsTree extends FormatPlugin {
             printLines(getChildNodesLines(singletonListInitializer, module));
 
             // Augmentations
-            for (final AugmentationSchemaNode augNode : module.getAugmentations()) {
+            for (final AugmentEffectiveStatement augNode
+                    : module.asEffectiveStatement().collectEffectiveSubstatements(AugmentEffectiveStatement.class)) {
                 printLines(getAugmentationNodesLines(singletonListInitializer.getSingletonListWithIncreasedValue(),
                         augNode));
             }
@@ -94,14 +98,15 @@ public class JsTree extends FormatPlugin {
         final List<Line> lines = new ArrayList<>();
         final LyvStack stack = new LyvStack();
         for (final NotificationDefinition node : module.getNotifications()) {
-            stack.enter(node);
+            final var statement = node.asEffectiveStatement();
+            stack.enter(statement);
             final List<Integer> ids = singletonListInitializer.getSingletonListWithIncreasedValue();
-            final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, stack);
+            final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, statement, stack);
             final HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OTHER,
                     namespacePrefix);
             lines.add(htmlLine);
-            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, Collections.emptyList(), stack,
-                    true);
+            resolveChildNodes(lines, new ArrayList<>(ids), statement, RpcInputOutput.OTHER, Collections.emptyList(),
+                    stack, true);
             stack.exit();
         }
         return lines;
@@ -111,9 +116,9 @@ public class JsTree extends FormatPlugin {
         final List<Line> lines = new ArrayList<>();
         final LyvStack stack = new LyvStack();
         for (final RpcDefinition node : module.getRpcs()) {
-            stack.enter(node);
+            stack.enter(node.asEffectiveStatement());
             final List<Integer> rpcId = singletonListInitializer.getSingletonListWithIncreasedValue();
-            LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, stack);
+            LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node.asEffectiveStatement(), stack);
             HtmlLine htmlLine = new HtmlLine(rpcId, lyvNodeData, RpcInputOutput.OTHER, namespacePrefix);
             lines.add(htmlLine);
             final boolean inputExists = !node.getInput().getChildNodes().isEmpty();
@@ -121,12 +126,12 @@ public class JsTree extends FormatPlugin {
             List<Integer> ids = new ArrayList<>(rpcId);
             if (inputExists) {
                 ids.add(1);
-                stack.enter(node.getInput());
-                lyvNodeData = new LyvNodeData(modelContext, node.getInput(), stack);
+                stack.enter(node.getInput().asEffectiveStatement());
+                lyvNodeData = new LyvNodeData(modelContext, node.getInput().asEffectiveStatement(), stack);
                 htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.INPUT, namespacePrefix);
                 lines.add(htmlLine);
-                resolveChildNodes(lines, new ArrayList<>(ids), node.getInput(), RpcInputOutput.INPUT,
-                        Collections.emptyList(), stack, true);
+                resolveChildNodes(lines, new ArrayList<>(ids), node.getInput().asEffectiveStatement(),
+                        RpcInputOutput.INPUT, Collections.emptyList(), stack, true);
                 stack.exit();
             }
             ids = new ArrayList<>(rpcId);
@@ -136,12 +141,12 @@ public class JsTree extends FormatPlugin {
                 } else {
                     ids.add(2);
                 }
-                stack.enter(node.getOutput());
-                lyvNodeData = new LyvNodeData(modelContext, node.getOutput(), stack);
+                stack.enter(node.getOutput().asEffectiveStatement());
+                lyvNodeData = new LyvNodeData(modelContext, node.getOutput().asEffectiveStatement(), stack);
                 htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OUTPUT, namespacePrefix);
                 lines.add(htmlLine);
-                resolveChildNodes(lines, new ArrayList<>(ids), node.getOutput(), RpcInputOutput.OUTPUT,
-                        Collections.emptyList(), stack, true);
+                resolveChildNodes(lines, new ArrayList<>(ids), node.getOutput().asEffectiveStatement(),
+                        RpcInputOutput.OUTPUT, Collections.emptyList(), stack, true);
                 stack.exit();
             }
             stack.exit();
@@ -163,45 +168,43 @@ public class JsTree extends FormatPlugin {
         }
 
         final LyvStack stack = new LyvStack();
-        for (final DataSchemaNode node : module.getChildNodes()) {
-            stack.enter(node);
+        for (final SchemaTreeEffectiveStatement<?> statement : dataChildren(module.asEffectiveStatement())) {
+            stack.enter(statement);
             final List<Integer> ids = singletonListInitializer.getSingletonListWithIncreasedValue();
             final boolean isConfig = resolveEffectiveConfig(stack).orElse(Boolean.TRUE);
-            final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, node, stack, null, isConfig);
+            final LyvNodeData lyvNodeData = new LyvNodeData(modelContext, statement, stack, null, isConfig);
             final HtmlLine htmlLine = new HtmlLine(ids, lyvNodeData, RpcInputOutput.OTHER, namespacePrefix);
             lines.add(htmlLine);
-            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, Collections.emptyList(), stack,
-                    isConfig);
+            resolveChildNodes(lines, new ArrayList<>(ids), statement, RpcInputOutput.OTHER, Collections.emptyList(),
+                    stack, isConfig);
             stack.exit();
         }
         return lines;
     }
 
-    private List<Line> getAugmentationNodesLines(final List<Integer> ids, final AugmentationSchemaNode augNode) {
+    private List<Line> getAugmentationNodesLines(final List<Integer> ids, final AugmentEffectiveStatement augNode) {
         final List<Line> lines = new ArrayList<>();
         final LyvStack stack = new LyvStack();
-        stack.enter(augNode.getTargetPath());
-        final DataSchemaNode dataSchemaNode = augNode.getChildNodes().iterator().next();
-        stack.enter(dataSchemaNode);
-        LyvNodeData lyvNodeData = new LyvNodeData(modelContext, dataSchemaNode, stack);
+        stack.enter(augNode.argument());
+        final List<SchemaTreeEffectiveStatement<?>> augChildNodes = dataChildren(augNode);
+        final SchemaTreeEffectiveStatement<?> firstStatement = augChildNodes.iterator().next();
+        stack.enter(firstStatement);
+        LyvNodeData lyvNodeData = new LyvNodeData(modelContext, firstStatement, stack);
         final HtmlLine htmlLine = new HtmlLine(new ArrayList<>(ids), lyvNodeData, RpcInputOutput.OTHER, namespacePrefix,
                 augNode);
         lines.add(htmlLine);
         stack.exit();
-        // The nodes returned by augNode.getChildNodes() are not grafted onto the augment's target, so their own
-        // effectiveConfig() is not applicable (same as inside a grouping); resolveEffectiveConfig looks each
-        // node's own position up via modelContext.findSchemaTreeNode() instead.
         int modelAugmentationNumber = 1;
-        for (DataSchemaNode node : augNode.getChildNodes()) {
-            stack.enter(node);
+        for (final SchemaTreeEffectiveStatement<?> statement : augChildNodes) {
+            stack.enter(statement);
             final RpcInputOutput inputOutputOther = getAugmentationRpcInputOutput(stack);
             ids.add(modelAugmentationNumber++);
             final boolean isConfig = resolveEffectiveConfig(stack).orElse(Boolean.TRUE);
-            lyvNodeData = new LyvNodeData(modelContext, node, stack, null, isConfig);
+            lyvNodeData = new LyvNodeData(modelContext, statement, stack, null, isConfig);
             final HtmlLine line = new HtmlLine(new ArrayList<>(ids), lyvNodeData, inputOutputOther, namespacePrefix);
             lines.add(line);
-            resolveChildNodes(lines, new ArrayList<>(ids), node, RpcInputOutput.OTHER, Collections.emptyList(), stack,
-                    isConfig);
+            resolveChildNodes(lines, new ArrayList<>(ids), statement, RpcInputOutput.OTHER, Collections.emptyList(),
+                    stack, isConfig);
             ids.remove(ids.size() - 1);
             stack.exit();
         }
@@ -215,23 +218,32 @@ public class JsTree extends FormatPlugin {
      */
     private Optional<Boolean> resolveEffectiveConfig(final LyvStack stack) {
         return modelContext.findSchemaTreeNode(stack.toSchemaNodeIdentifier())
-                .filter(DataSchemaNode.class::isInstance)
-                .map(DataSchemaNode.class::cast)
+                .filter(DataSchemaCompat.class::isInstance)
+                .map(statement -> ((DataSchemaCompat<?, ?>) statement).toDataSchemaNode())
                 .flatMap(DataSchemaNode::effectiveConfig);
     }
 
     private RpcInputOutput getAugmentationRpcInputOutput(final LyvStack stack) {
-        // FIXME: do not perform this copy?
-        List<QName> qnames = new ArrayList<>(stack.toSchemaNodeIdentifier().getNodeIdentifiers());
+        final List<QName> qnames = stack.toSchemaNodeIdentifier().getNodeIdentifiers();
 
-        Collection<? extends ActionDefinition> actions = new HashSet<>();
+        Collection<? extends ActionDefinition> actions = List.of();
         RpcInputOutput inputOutputOther = RpcInputOutput.OTHER;
+        boolean initialized = false;
+        DataTreeAwareEffectiveStatement<?, ?> current = null;
         for (int i = 1; i <= qnames.size(); i++) {
             final List<QName> qnamesCopy = qnames.subList(0, i);
             inputOutputOther = getRpcInputOutput(qnames, actions, inputOutputOther, i, qnamesCopy);
-            final Optional<DataSchemaNode> dataTreeChild = modelContext.findDataTreeChild(qnamesCopy);
-            if (dataTreeChild.isPresent() && dataTreeChild.get() instanceof ActionNodeContainer) {
-                actions = ((ActionNodeContainer) dataTreeChild.get()).getActions();
+            final QName path = qnames.get(i - 1);
+            if (!initialized) {
+                current = modelContext.findModule(path.getModule()).map(Module::asEffectiveStatement).orElse(null);
+                initialized = true;
+            }
+            final Optional<DataTreeEffectiveStatement<?>> dataTreeChild = current == null
+                    ? Optional.empty() : current.findDataTreeNode(path);
+            if (dataTreeChild.isPresent()) {
+                final DataTreeEffectiveStatement<?> child = dataTreeChild.orElseThrow();
+                actions = actionChildren(child);
+                current = child instanceof DataTreeAwareEffectiveStatement<?, ?> aware ? aware : null;
             }
         }
         return inputOutputOther;
@@ -328,32 +340,31 @@ public class JsTree extends FormatPlugin {
         return text;
     }
 
-    private void resolveChildNodes(final List<Line> lines, final List<Integer> connections, final SchemaNode node,
-            final RpcInputOutput inputOutput, final List<QName> keys, final LyvStack stack,
-            final boolean ambientConfig) {
-        if (node instanceof DataNodeContainer) {
-            final Iterator<? extends DataSchemaNode> childNodes = ((DataNodeContainer) node).getChildNodes().iterator();
-            resolveDataNodeContainer(childNodes, lines, connections, inputOutput, keys, stack, ambientConfig);
-        } else if (node instanceof ChoiceSchemaNode) {
+    private void resolveChildNodes(final List<Line> lines, final List<Integer> connections,
+            final SchemaTreeEffectiveStatement<?> statement, final RpcInputOutput inputOutput,
+            final List<QName> keys, final LyvStack stack, final boolean ambientConfig) {
+        if (statement instanceof ChoiceEffectiveStatement) {
             connections.add(0);
-            final Collection<? extends CaseSchemaNode> cases = ((ChoiceSchemaNode) node).getCases();
-            final Iterator<? extends CaseSchemaNode> iterator = cases.iterator();
-            resolveChoiceSchemaNode(iterator, lines, connections, inputOutput, stack, ambientConfig);
+            resolveChoiceSchemaNode(dataChildren(statement).iterator(), lines, connections, inputOutput, stack,
+                    ambientConfig);
+        } else if (statement instanceof SchemaTreeAwareEffectiveStatement<?, ?>) {
+            resolveDataNodeContainer(dataChildren(statement).iterator(), lines, connections, inputOutput, keys,
+                    stack, ambientConfig);
         }
-        // If action is in container or list
-        if (node instanceof ActionNodeContainer) {
-            resolveActionNodeContainer(lines, connections, node, stack);
+        final List<ActionDefinition> actions = actionChildren(statement);
+        if (!actions.isEmpty()) {
+            resolveActionNodeContainer(lines, connections, actions, stack);
         }
     }
 
     private void resolveActionNodeContainer(final List<Line> lines, final List<Integer> connections,
-            final SchemaNode node, final LyvStack stack) {
-        for (final ActionDefinition action : ((ActionNodeContainer) node).getActions()) {
+            final List<ActionDefinition> actions, final LyvStack stack) {
+        for (final ActionDefinition action : actions) {
             final int id = 1;
             connections.add(0);
             connections.set(connections.size() - 1, id);
-            stack.enter(action);
-            LyvNodeData lyvNodeData = new LyvNodeData(modelContext, action, stack);
+            stack.enter(action.asEffectiveStatement());
+            LyvNodeData lyvNodeData = new LyvNodeData(modelContext, action.asEffectiveStatement(), stack);
             HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, RpcInputOutput.OTHER,
                     namespacePrefix);
             lines.add(htmlLine);
@@ -361,25 +372,25 @@ public class JsTree extends FormatPlugin {
             final boolean outputExists = !action.getOutput().getChildNodes().isEmpty();
             if (inputExists) {
                 connections.add(1);
-                stack.enter(action.getInput());
-                lyvNodeData = new LyvNodeData(modelContext, action.getInput(), stack);
+                stack.enter(action.getInput().asEffectiveStatement());
+                lyvNodeData = new LyvNodeData(modelContext, action.getInput().asEffectiveStatement(), stack);
                 htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, RpcInputOutput.INPUT,
                         namespacePrefix);
                 lines.add(htmlLine);
-                resolveChildNodes(lines, new ArrayList<>(connections), action.getInput(), RpcInputOutput.INPUT,
-                        Collections.emptyList(), stack, true);
+                resolveChildNodes(lines, new ArrayList<>(connections), action.getInput().asEffectiveStatement(),
+                        RpcInputOutput.INPUT, Collections.emptyList(), stack, true);
                 connections.remove(connections.size() - 1);
                 stack.exit();
             }
             if (outputExists) {
                 connections.add(1);
-                stack.enter(action.getOutput());
-                lyvNodeData = new LyvNodeData(modelContext, action.getOutput(), stack);
+                stack.enter(action.getOutput().asEffectiveStatement());
+                lyvNodeData = new LyvNodeData(modelContext, action.getOutput().asEffectiveStatement(), stack);
                 htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, RpcInputOutput.OUTPUT,
                         namespacePrefix);
                 lines.add(htmlLine);
-                resolveChildNodes(lines, new ArrayList<>(connections), action.getOutput(), RpcInputOutput.OUTPUT,
-                        Collections.emptyList(), stack, true);
+                resolveChildNodes(lines, new ArrayList<>(connections), action.getOutput().asEffectiveStatement(),
+                        RpcInputOutput.OUTPUT, Collections.emptyList(), stack, true);
                 connections.remove(connections.size() - 1);
                 stack.exit();
             }
@@ -388,12 +399,47 @@ public class JsTree extends FormatPlugin {
         }
     }
 
-    private void resolveChoiceSchemaNode(final Iterator<? extends CaseSchemaNode> iterator, final List<Line> lines,
-            final List<Integer> connections, final RpcInputOutput inputOutput, final LyvStack stack,
-            final boolean ambientConfig) {
+    // Excludes ActionEffectiveStatement (also a SchemaTreeEffectiveStatement) - handled by actionChildren().
+    private static List<SchemaTreeEffectiveStatement<?>> dataChildren(final EffectiveStatement<?, ?> statement) {
+        if (!(statement instanceof SchemaTreeAwareEffectiveStatement<?, ?> aware)) {
+            return List.of();
+        }
+        final List<SchemaTreeEffectiveStatement<?>> children = new ArrayList<>();
+        for (final SchemaTreeEffectiveStatement<?> child : aware.schemaTreeNodes()) {
+            if (child instanceof DataTreeEffectiveStatement<?> || child instanceof ChoiceEffectiveStatement
+                    || child instanceof CaseEffectiveStatement) {
+                children.add(child);
+            }
+        }
+        return children;
+    }
+
+    private static List<ActionDefinition> actionChildren(final EffectiveStatement<?, ?> statement) {
+        if (!(statement instanceof SchemaTreeAwareEffectiveStatement<?, ?> aware)) {
+            return List.of();
+        }
+        final List<ActionDefinition> actions = new ArrayList<>();
+        for (final SchemaTreeEffectiveStatement<?> child : aware.schemaTreeNodes()) {
+            if (child instanceof ActionEffectiveStatement && child instanceof ActionDefinition actionDefinition) {
+                actions.add(actionDefinition);
+            }
+        }
+        return actions;
+    }
+
+    private static List<QName> keyDefinition(final EffectiveStatement<?, ?> statement) {
+        if (statement instanceof ListEffectiveStatement listStatement) {
+            return listStatement.findKeyStatement().map(key -> key.argument().asList()).orElse(List.of());
+        }
+        return List.of();
+    }
+
+    private void resolveChoiceSchemaNode(final Iterator<SchemaTreeEffectiveStatement<?>> iterator,
+            final List<Line> lines, final List<Integer> connections, final RpcInputOutput inputOutput,
+            final LyvStack stack, final boolean ambientConfig) {
         int id = 1;
         while (iterator.hasNext()) {
-            final DataSchemaNode child = iterator.next();
+            final SchemaTreeEffectiveStatement<?> child = iterator.next();
             stack.enter(child);
             connections.set(connections.size() - 1, id++);
             final boolean childConfig = resolveEffectiveConfig(stack).orElse(ambientConfig);
@@ -409,13 +455,13 @@ public class JsTree extends FormatPlugin {
         connections.remove(connections.size() - 1);
     }
 
-    private void resolveDataNodeContainer(final Iterator<? extends DataSchemaNode> childNodes,
+    private void resolveDataNodeContainer(final Iterator<SchemaTreeEffectiveStatement<?>> childNodes,
             final List<Line> lines, final List<Integer> connections, final RpcInputOutput inputOutput,
             final List<QName> keys, final LyvStack stack, final boolean ambientConfig) {
         int id = 1;
         connections.add(0);
         while (childNodes.hasNext()) {
-            final DataSchemaNode child = childNodes.next();
+            final SchemaTreeEffectiveStatement<?> child = childNodes.next();
             stack.enter(child);
             connections.set(connections.size() - 1, id++);
             final boolean childConfig = resolveEffectiveConfig(stack).orElse(ambientConfig);
@@ -423,11 +469,7 @@ public class JsTree extends FormatPlugin {
             final HtmlLine htmlLine = new HtmlLine(new ArrayList<>(connections), lyvNodeData, inputOutput,
                     namespacePrefix);
             lines.add(htmlLine);
-            List<QName> keyDefinitions = Collections.emptyList();
-            if (child instanceof ListSchemaNode) {
-                keyDefinitions = ((ListSchemaNode) child).getKeyDefinition();
-            }
-            resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, keyDefinitions, stack,
+            resolveChildNodes(lines, new ArrayList<>(connections), child, inputOutput, keyDefinition(child), stack,
                     childConfig);
             stack.exit();
         }
