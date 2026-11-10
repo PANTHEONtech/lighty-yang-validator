@@ -20,7 +20,6 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -63,7 +62,6 @@ public abstract class FormatTest implements Cleanable {
         this.constructor.setAccessible(false);
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void testIetfInterfacesAllFormats() throws Exception {
         //only root tree
@@ -75,7 +73,6 @@ public abstract class FormatTest implements Cleanable {
         runInterfacesTest();
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void testIpAllFormats() throws Exception {
         //contains augmentations
@@ -87,7 +84,6 @@ public abstract class FormatTest implements Cleanable {
         runIpTest();
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void testConnectionOrientedOamAllFormats() throws Exception {
         //contains notifications and rpcs
@@ -100,7 +96,6 @@ public abstract class FormatTest implements Cleanable {
         runConnectionOrentedOamTest();
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void testRoutingFormats() throws Exception {
         //contains actions
@@ -112,7 +107,6 @@ public abstract class FormatTest implements Cleanable {
         runRoutingTest();
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void testCustomTestModelFormats() throws Exception {
         /*
@@ -137,7 +131,6 @@ public abstract class FormatTest implements Cleanable {
         runDeviationTest();
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void testMultipleFiles() throws Exception {
         setFormat();

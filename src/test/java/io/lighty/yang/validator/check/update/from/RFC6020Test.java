@@ -24,7 +24,6 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -73,7 +72,6 @@ public class RFC6020Test implements Cleanable {
         constructor.setAccessible(false);
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void testMissingRevision() throws Exception {
         testCheckUpdateFrom("missingRevision/",
@@ -82,7 +80,6 @@ public class RFC6020Test implements Cleanable {
                 "checkUpdateFrom1");
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void testWrongRevision() throws Exception {
         testCheckUpdateFrom("wrongRevision/",
@@ -91,7 +88,6 @@ public class RFC6020Test implements Cleanable {
                 "checkUpdateFrom3");
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void testNoRevision() throws Exception {
         testCheckUpdateFrom("noRevision/",

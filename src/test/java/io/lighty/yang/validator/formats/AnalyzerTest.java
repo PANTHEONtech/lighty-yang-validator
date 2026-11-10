@@ -25,7 +25,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -73,7 +72,6 @@ public class AnalyzerTest implements Cleanable {
     }
 
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void analyzeTest() throws Exception {
         final String module = Paths.get(yangPath).resolve("ietf-netconf-common@2013-10-21.yang").toString();

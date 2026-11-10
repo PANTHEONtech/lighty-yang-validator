@@ -79,8 +79,8 @@ public class HtmlLine extends Line {
                 }
             } else {
                 return SchemaHtmlEnum.getSchemaHtmlEnumByName(
-                        Objects.requireNonNull(((EffectiveStatement<?, ?>) node).getDeclared())
-                                .statementDefinition().getStatementName().getLocalName());
+                        Objects.requireNonNull(((EffectiveStatement<?, ?>) node).declared())
+                                .statementDefinition().statementName().getLocalName());
             }
         } else {
             return SchemaHtmlEnum.EMPTY;

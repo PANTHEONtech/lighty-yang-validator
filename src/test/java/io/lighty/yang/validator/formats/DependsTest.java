@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class DependsTest extends FormatTest {
@@ -33,7 +32,6 @@ public class DependsTest extends FormatTest {
                 new HashSet<>());
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void onlySubmodulesTest() throws Exception {
         setFormat();
@@ -46,7 +44,6 @@ public class DependsTest extends FormatTest {
         runDependendsTest("ietf-ipv6-router-advertisements_submodule-dependencies");
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void onlyImportsTest() throws Exception {
         setFormat();
@@ -59,7 +56,6 @@ public class DependsTest extends FormatTest {
         runDependendsTest("ietf-ipv6-router-advertisements_import-dependencies");
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void dependsTestNotRecursive() throws Exception {
         setFormat();
@@ -72,7 +68,6 @@ public class DependsTest extends FormatTest {
         runDependendsTest("ietf-ipv6-router-advertisements_non-recursive-dependencies");
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void dependsTestNotRecursiveSubmodulesOnly() throws Exception {
         setFormat();
@@ -85,7 +80,6 @@ public class DependsTest extends FormatTest {
         runDependendsTest("ietf-ipv6-router-advertisements_non-recursive-only-submodules-dependencies");
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void dependsTestNotRecursiveModulesOnly() throws Exception {
         setFormat();
@@ -98,7 +92,6 @@ public class DependsTest extends FormatTest {
         runDependendsTest("ietf-ipv6-router-advertisements_non-recursive-only-imports-dependencies");
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void dependsTestExcludeModule() throws Exception {
         setFormat();
