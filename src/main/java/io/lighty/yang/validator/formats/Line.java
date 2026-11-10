@@ -101,7 +101,7 @@ abstract class Line {
 
     private static DeclaredStatement<?> getDeclared(final SchemaNode node) {
         if (node instanceof AbstractDeclaredEffectiveStatement) {
-            return ((AbstractDeclaredEffectiveStatement<?, ?>) node).getDeclared();
+            return ((AbstractDeclaredEffectiveStatement<?, ?>) node).declared();
         }
         return null;
     }

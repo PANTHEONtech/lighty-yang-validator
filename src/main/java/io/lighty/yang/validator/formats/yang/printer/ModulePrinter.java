@@ -270,9 +270,9 @@ public class ModulePrinter {
 
     private static boolean isSubstatementNotFound(final Collection<? extends EffectiveStatement<?, ?>> collection,
             final EffectiveStatement<?, ?> compare) {
-        final DeclaredStatement<?> compareDeclared = compare.getDeclared();
+        final DeclaredStatement<?> compareDeclared = compare.declared();
         for (final EffectiveStatement<?, ?> substatement : collection) {
-            final DeclaredStatement<?> substatementDeclared = substatement.getDeclared();
+            final DeclaredStatement<?> substatementDeclared = substatement.declared();
             if (compareDeclared == null) {
                 if (compare.equals(substatement)) {
                     return false;
@@ -402,7 +402,7 @@ public class ModulePrinter {
 
         if (module instanceof ModuleEffectiveStatement) {
             final Collection<? extends RevisionStatement> revisions = Objects
-                    .requireNonNull(((ModuleEffectiveStatement) module).getDeclared()).revisionStatements();
+                    .requireNonNull(((ModuleEffectiveStatement) module).declared()).revisionStatements();
             printEachRevision(revisions);
         } else {
             doPrintSimpleRevision(revision.get());
