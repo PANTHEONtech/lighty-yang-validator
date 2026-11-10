@@ -65,7 +65,7 @@ public class Analyzer extends FormatPlugin {
     }
 
     private void analyzeSubstatement(final DeclaredStatement<?> subStatement) {
-        final String name = subStatement.statementDefinition().getStatementName().getLocalName();
+        final String name = subStatement.statementDefinition().statementName().getLocalName();
         counter.compute(name, (key, val) -> val == null ? 1 : val + 1);
         final Collection<? extends DeclaredStatement<?>> substatements = subStatement.declaredSubstatements();
         for (final DeclaredStatement<?> nextSubstatement : substatements) {
