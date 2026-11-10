@@ -16,7 +16,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class JsTreeTest extends FormatTest {
@@ -29,7 +28,6 @@ public class JsTreeTest extends FormatTest {
         builder.setFormat("jstree");
     }
 
-    @Disabled("FIXME: Disabled due to YANGTOOLS-1896")
     @Test
     public void testUndeclared() throws Exception {
         //testing for undeclared choice-case statement (no case inside of choice)
