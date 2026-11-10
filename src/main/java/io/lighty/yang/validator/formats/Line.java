@@ -149,7 +149,7 @@ abstract class Line {
             }
         }
         if (type instanceof LeafrefTypeDefinition) {
-            path = ((LeafrefTypeDefinition) type).getPathStatement().getOriginalString();
+            path = ((LeafrefTypeDefinition) type).getPathStatement().originalString();
         } else {
             path = null;
         }
