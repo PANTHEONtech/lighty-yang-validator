@@ -28,11 +28,11 @@ import java.util.TreeSet;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.common.QNameModule;
 import org.opendaylight.yangtools.yang.common.Revision;
-import org.opendaylight.yangtools.yang.model.api.AugmentationSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.Module;
 import org.opendaylight.yangtools.yang.model.api.SchemaNode;
 import org.opendaylight.yangtools.yang.model.api.TypeDefinition;
 import org.opendaylight.yangtools.yang.model.api.TypedDataSchemaNode;
+import org.opendaylight.yangtools.yang.model.api.stmt.AugmentEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.type.UnionTypeDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,8 +110,9 @@ public class MultiModulePrinter extends FormatPlugin {
             for (final SchemaTree singleEntry : entry.getValue()) {
                 gatherUsedTypeDefs(singleEntry, module);
             }
-            for (final AugmentationSchemaNode aug : module.getAugmentations()) {
-                for (final QName pathQname : aug.getTargetPath().getNodeIdentifiers()) {
+            for (final AugmentEffectiveStatement aug
+                    : module.asEffectiveStatement().collectEffectiveSubstatements(AugmentEffectiveStatement.class)) {
+                for (final QName pathQname : aug.argument().getNodeIdentifiers()) {
                     this.usedImports.computeIfAbsent(module.getQNameModule(), k -> new HashSet<>())
                             .add(this.modelContext.findModule(pathQname.getModule())
                                     .orElseThrow(
@@ -131,12 +132,10 @@ public class MultiModulePrinter extends FormatPlugin {
         return typeDef;
     }
 
+    // left as is because typeDefinition()'s default-layering has no EffectiveStatement equivalent
     private void gatherUsedTypeDefs(final SchemaTree tree, final Module module) {
-        if (tree.getSchemaNode() instanceof TypedDataSchemaNode) {
-            final TypeDefinition<? extends TypeDefinition<?>> type =
-                    ((TypedDataSchemaNode) tree.getSchemaNode()).typeDefinition();
-            resolveType(type, module);
-
+        if (tree.getEffectiveStatement() instanceof TypedDataSchemaNode typed) {
+            resolveType(typed.typeDefinition(), module);
         }
         for (final SchemaTree child : tree.getChildren()) {
             gatherUsedTypeDefs(child, module);

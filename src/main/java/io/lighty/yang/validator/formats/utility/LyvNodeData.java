@@ -12,75 +12,83 @@ import java.util.Optional;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.opendaylight.yangtools.yang.common.QName;
-import org.opendaylight.yangtools.yang.model.api.ActionDefinition;
-import org.opendaylight.yangtools.yang.model.api.CaseSchemaNode;
-import org.opendaylight.yangtools.yang.model.api.ContainerLike;
 import org.opendaylight.yangtools.yang.model.api.EffectiveModelContext;
 import org.opendaylight.yangtools.yang.model.api.MandatoryAware;
-import org.opendaylight.yangtools.yang.model.api.NotificationDefinition;
-import org.opendaylight.yangtools.yang.model.api.RpcDefinition;
-import org.opendaylight.yangtools.yang.model.api.SchemaNode;
+import org.opendaylight.yangtools.yang.model.api.meta.EffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ActionEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.CaseEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.ContainerEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.InputEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.NotificationEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.OutputEffectiveStatement;
+import org.opendaylight.yangtools.yang.model.api.stmt.RpcEffectiveStatement;
 import org.opendaylight.yangtools.yang.model.api.stmt.SchemaNodeIdentifier.Absolute;
 
 public class LyvNodeData {
 
     private final boolean isKey;
     private final EffectiveModelContext context;
-    private final SchemaNode node;
+    private final EffectiveStatement<?, ?> statement;
     private final Absolute absolutePath;
     private final Boolean resolvedConfig;
 
-    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull SchemaNode node,
+    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull EffectiveStatement<?, ?> statement,
             final @NonNull LyvStack stack) {
-        this(context, node, stack.toSchemaNodeIdentifier());
+        this(context, statement, stack.toSchemaNodeIdentifier());
     }
 
-    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull SchemaNode node,
+    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull EffectiveStatement<?, ?> statement,
             final @NonNull LyvStack stack, final @Nullable List<QName> keys) {
-        this(context, node, stack.toSchemaNodeIdentifier(), keys);
+        this(context, statement, stack.toSchemaNodeIdentifier(), keys);
     }
 
     /**
-     * Same as {@link #LyvNodeData(EffectiveModelContext, SchemaNode, LyvStack, List)}, but with an explicitly
-     * resolved config value - see {@link #LyvNodeData(EffectiveModelContext, SchemaNode, Absolute, List, Boolean)}.
+     * Same as {@link #LyvNodeData(EffectiveModelContext, EffectiveStatement, LyvStack, List)}, but with an
+     * explicitly resolved config value - see
+     * {@link #LyvNodeData(EffectiveModelContext, EffectiveStatement, Absolute, List, Boolean)}.
      */
-    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull SchemaNode node,
+    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull EffectiveStatement<?, ?> statement,
             final @NonNull LyvStack stack, final @Nullable List<QName> keys, final @Nullable Boolean resolvedConfig) {
-        this(context, node, stack.toSchemaNodeIdentifier(), keys, resolvedConfig);
+        this(context, statement, stack.toSchemaNodeIdentifier(), keys, resolvedConfig);
     }
 
-    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull SchemaNode node,
+    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull EffectiveStatement<?, ?> statement,
             final @NonNull Absolute absolutePath) {
-        this(context, node, absolutePath, null);
+        this(context, statement, absolutePath, null);
     }
 
-    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull SchemaNode node,
+    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull EffectiveStatement<?, ?> statement,
             final @NonNull Absolute absolutePath, final @Nullable List<QName> keys) {
-        this(context, node, absolutePath, keys, null);
+        this(context, statement, absolutePath, keys, null);
     }
 
     /**
-     * Same as {@link #LyvNodeData(EffectiveModelContext, SchemaNode, Absolute, List)}, but with an explicitly
-     * resolved config value instead of leaving it to be derived from {@code node} itself - needed when
-     * {@code node} was reached through an augmentation's own child tree, whose own effectiveConfig() is not
-     * applicable (same as inside a grouping); see {@link io.lighty.yang.validator.simplify.SchemaTree#isConfig()}.
+     * Same as {@link #LyvNodeData(EffectiveModelContext, EffectiveStatement, Absolute, List)}, but with an
+     * explicitly resolved config value instead of leaving it to be derived from {@code statement} itself - needed
+     * when {@code statement} was reached through an augmentation's own child tree, whose own effectiveConfig() is
+     * not applicable (same as inside a grouping); see
+     * {@link io.lighty.yang.validator.simplify.SchemaTree#isConfig()}.
      */
-    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull SchemaNode node,
+    public LyvNodeData(final @NonNull EffectiveModelContext context, final @NonNull EffectiveStatement<?, ?> statement,
             final @NonNull Absolute absolutePath, final @Nullable List<QName> keys,
             final @Nullable Boolean resolvedConfig) {
         this.context = context;
         this.absolutePath = absolutePath;
-        this.node = node;
+        this.statement = statement;
         this.resolvedConfig = resolvedConfig;
-        isKey = keys != null && keys.contains(node.getQName());
+        isKey = keys != null && keys.contains((QName) statement.argument());
     }
 
     public EffectiveModelContext getContext() {
         return context;
     }
 
-    public SchemaNode getNode() {
-        return node;
+    public EffectiveStatement<?, ?> getStatement() {
+        return statement;
+    }
+
+    public QName getQName() {
+        return (QName) statement.argument();
     }
 
     public Absolute getAbsolutePath() {
@@ -89,7 +97,7 @@ public class LyvNodeData {
 
     /**
      * The resolved config value, if explicitly provided at construction time; otherwise empty, meaning callers
-     * should derive it from {@link #getNode()} themselves (safe as long as the node is already at its real,
+     * should derive it from {@link #getStatement()} themselves (safe as long as the node is already at its real,
      * correctly-positioned location).
      */
     public Optional<Boolean> getResolvedConfig() {
@@ -97,9 +105,13 @@ public class LyvNodeData {
     }
 
     public boolean isNodeMandatory() {
-        return node instanceof MandatoryAware && ((MandatoryAware) node).isMandatory()
-                || node instanceof ContainerLike || node instanceof CaseSchemaNode
-                || node instanceof NotificationDefinition || node instanceof ActionDefinition
-                || node instanceof RpcDefinition || isKey;
+        final boolean mandatoryAware = statement instanceof MandatoryAware mandatoryNode
+                && mandatoryNode.isMandatory();
+        return mandatoryAware
+                || statement instanceof ContainerEffectiveStatement || statement instanceof InputEffectiveStatement
+                || statement instanceof OutputEffectiveStatement || statement instanceof CaseEffectiveStatement
+                || statement instanceof NotificationEffectiveStatement
+                || statement instanceof ActionEffectiveStatement || statement instanceof RpcEffectiveStatement
+                || isKey;
     }
 }
